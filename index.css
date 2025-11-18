@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables CSS pour le design system */
+:root {
+  --color-bg-main: #fffbff;
+  --color-bg-card: #ffffff;
+  --color-border: rgb(216, 194, 191);
+  --color-border-hover: rgb(209, 185, 182);
+}
+
+body {
+  @apply bg-[#fffbff] font-sans;
+}
+
+/* ============================================
+   DESIGN SYSTEM - Composants réutilisables
+   ============================================ */
+
+@layer components {
+  /* ========== BOUTONS ========== */
+  .btn {
+    @apply rounded-full transition-all duration-200 font-semibold inline-flex items-center justify-center;
+  }
+  
+  .btn-primary {
+    @apply btn bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-slate-200 text-slate-800 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2;
+  }
+  
+  .btn-dark {
+    @apply btn bg-slate-800 text-white hover:bg-slate-700 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2;
+  }
+  
+  .btn-outline {
+    @apply btn border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2;
+  }
+  
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2;
+  }
+  
+  .btn-active {
+    @apply btn bg-blue-600 text-white shadow-md;
+  }
+  
+  .btn-inactive {
+    @apply btn text-slate-600 hover:bg-slate-100;
+  }
+
+  /* ========== CARTES ========== */
+  .card {
+    @apply bg-white rounded-2xl border border-[rgb(216,194,191)] overflow-hidden;
+  }
+  
+  .card-hover {
+    @apply card hover:shadow-lg hover:border-[rgb(209,185,182)] transition-all duration-300 transform hover:-translate-y-1;
+  }
+  
+  .card-padding-sm {
+    @apply p-4;
+  }
+  
+  .card-padding-md {
+    @apply p-6;
+  }
+  
+  .card-padding-lg {
+    @apply p-8;
+  }
+
+  /* ========== BADGES ========== */
+  .badge {
+    @apply px-2.5 py-1 text-xs font-semibold rounded-full;
+  }
+  
+  .badge-default {
+    @apply badge bg-blue-100 text-blue-700;
+  }
+  
+  .badge-success {
+    @apply badge bg-green-100 text-green-700;
+  }
+  
+  .badge-error {
+    @apply badge bg-red-100 text-red-700;
+  }
+  
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-700;
+  }
+  
+  .badge-info {
+    @apply badge bg-slate-100 text-slate-700;
+  }
+
+  /* ========== ONGLETS ========== */
+  .tabs-container {
+    @apply flex space-x-1 bg-white rounded-full p-1.5 border border-[rgb(216,194,191)] shadow-sm;
+  }
+  
+  .tab-button {
+    @apply px-2 sm:px-4 py-1.5 text-sm font-semibold rounded-full transition-colors duration-200 whitespace-nowrap;
+  }
+  
+  .tab-button-active {
+    @apply tab-button bg-blue-600 text-white shadow;
+  }
+  
+  .tab-button-inactive {
+    @apply tab-button text-slate-600 hover:bg-slate-100;
+  }
+
+  /* ========== LIENS ========== */
+  .link {
+    @apply text-blue-600 hover:text-blue-700 underline-offset-2 transition-colors;
+  }
+  
+  .link-primary {
+    @apply link hover:underline;
+  }
+  
+  .link-button {
+    @apply link rounded-full px-4 py-2.5 bg-[#2f2f2f] hover:bg-[#3a3a3a] text-white text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg no-underline;
+  }
+
+  /* ========== INPUTS ========== */
+  .input {
+    @apply w-full px-4 py-2 rounded-full border border-[rgb(216,194,191)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  }
+  
+  .input-error {
+    @apply input border-red-300 focus:ring-red-500;
+  }
+
+  /* ========== CONTAINERS ========== */
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .section {
+    @apply py-10;
+  }
+  
+  .grid-responsive {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  /* ========== TYPOGRAPHIE ========== */
+  .heading-1 {
+    @apply text-3xl font-bold text-slate-900;
+  }
+  
+  .heading-2 {
+    @apply text-2xl font-bold text-slate-900;
+  }
+  
+  .heading-3 {
+    @apply text-xl font-bold text-slate-900;
+  }
+  
+  .text-muted {
+    @apply text-slate-500 text-sm;
+  }
+  
+  .text-label {
+    @apply text-sm font-semibold text-slate-700;
+  }
+
+  /* ========== UTILITAIRES ========== */
+  .skeleton {
+    @apply bg-slate-200 rounded animate-pulse;
+  }
+  
+  .divider {
+    @apply border-t border-[rgb(216,194,191)];
+  }
+  
+  .shadow-card {
+    @apply shadow-sm;
+  }
+  
+  .shadow-card-hover {
+    @apply shadow-md hover:shadow-lg transition-shadow duration-300;
+  }
+}
