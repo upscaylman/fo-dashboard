@@ -1,0 +1,5 @@
+{
+  "name": "FO Métaux Dashboard",
+  "description": "A dashboard for secretaries and activists of FO Métaux to manage documents, view usage statistics, and access union resources.",
+  "requestFramePermissions": []
+}
