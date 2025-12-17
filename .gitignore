@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# DocEase project (separate project)
+docease/
+
+# Environment variables (IMPORTANT: ne jamais commiter!)
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

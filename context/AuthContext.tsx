@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
+  id?: string;
   name: string;
   email: string;
   avatar?: string;
@@ -12,6 +15,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (provider: 'email' | 'outlook', data?: any) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -25,49 +29,217 @@ export const useAuth = () => {
   return context;
 };
 
-// Utilisateur simulé pour la démo
-const MOCK_USER: User = {
-  name: 'Marie Dubois',
-  email: 'marie.dubois@fo-metaux.fr',
-  role: 'Secrétaire Générale',
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marie'
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Vérification de la session au démarrage
-  useEffect(() => {
-    const storedAuth = localStorage.getItem('fo_metaux_auth');
-    if (storedAuth === 'true') {
-      setUser(MOCK_USER);
-      setIsAuthenticated(true);
+  const fetchUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, role_level, avatar_url')
+        .eq('id', authUser.id)
+        .single();
+
+      if (error || !data) {
+        const newProfile = {
+          id: authUser.id,
+          email: authUser.email || '',
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Utilisateur',
+          role_level: 'secretary',
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.email}`,
+        };
+
+        await supabase.from('users').insert(newProfile);
+
+        return {
+          id: newProfile.id,
+          name: newProfile.name,
+          email: newProfile.email,
+          role: newProfile.role_level,
+          avatar: newProfile.avatar_url,
+        };
+      }
+
+      return {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role_level || 'secretary',
+        avatar: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.email}`,
+      };
+    } catch (error) {
+      console.error('Erreur profil:', error);
+      return null;
     }
-    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const handleAuth = async () => {
+      console.log('🚀 AuthContext: Initialisation');
+      
+      // Vérifier si on a un callback OAuth dans le hash
+      const hash = window.location.hash;
+      
+      if (hash.includes('access_token')) {
+        console.log('🎯 Callback OAuth détecté dans le hash!');
+        
+        // Extraire les paramètres du hash
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        
+        if (accessToken && refreshToken) {
+          console.log('🔑 Tokens extraits, décodage JWT...');
+          
+          try {
+            // Décoder le JWT pour obtenir les infos utilisateur
+            const payload = JSON.parse(atob(accessToken.split('.')[1]));
+            console.log('📧 Email du JWT:', payload.email);
+            
+            // Créer un profil minimal immédiatement
+            const minimalUser: User = {
+              id: payload.sub,
+              email: payload.email,
+              name: payload.user_metadata?.name || payload.email?.split('@')[0] || 'Utilisateur',
+              role: 'secretary',
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${payload.email}`,
+            };
+            
+            // Authentifier immédiatement avec le profil minimal
+            if (mounted) {
+              setUser(minimalUser);
+              setIsAuthenticated(true);
+              setIsLoading(false);
+              // Nettoyer l'URL
+              window.history.replaceState({}, document.title, '/');
+              console.log('✅ Authentification réussie (profil minimal)!');
+            }
+            
+            // Essayer de configurer la session Supabase en arrière-plan (avec timeout)
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+            );
+            
+            try {
+              await Promise.race([
+                supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }),
+                timeoutPromise
+              ]);
+              console.log('✅ Session Supabase configurée');
+              
+              // Charger le vrai profil depuis la DB
+              const { data: { user: authUser } } = await supabase.auth.getUser();
+              if (authUser && mounted) {
+                const profile = await fetchUserProfile(authUser);
+                if (profile && mounted) {
+                  setUser(profile);
+                  console.log('✅ Profil complet chargé');
+                }
+              }
+            } catch (e) {
+              console.warn('⚠️ setSession timeout, requêtes DB peuvent échouer');
+            }
+            
+            return;
+          } catch (error) {
+            console.error('❌ Erreur décodage JWT:', error);
+          }
+        }
+      }
+      
+      // Pas de callback OAuth, vérifier session existante avec timeout
+      console.log('🔍 Vérification session existante...');
+      
+      const timeoutPromise = new Promise<null>((resolve) => 
+        setTimeout(() => resolve(null), 3000)
+      );
+      
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]);
+        
+        if (result && 'data' in result && result.data.session?.user && mounted) {
+          console.log('✅ Session existante:', result.data.session.user.email);
+          const profile = await fetchUserProfile(result.data.session.user);
+          if (profile && mounted) {
+            setUser(profile);
+            setIsAuthenticated(true);
+          }
+        } else {
+          console.log('❌ Aucune session (ou timeout)');
+        }
+      } catch (error) {
+        console.error('❌ Erreur getSession:', error);
+      }
+      
+      if (mounted) setIsLoading(false);
+    };
+
+    handleAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('📢 Event Supabase:', event);
+
+      if (!mounted) return;
+
+      if (event === 'SIGNED_OUT') {
+        console.log('🚪 Déconnexion');
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (provider: 'email' | 'outlook', data?: any) => {
-    setIsLoading(true);
-    
-    // Simulation d'un délai réseau
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    if (provider === 'email' && data?.email && data?.password) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-    localStorage.setItem('fo_metaux_auth', 'true');
-    setUser(MOCK_USER);
-    setIsAuthenticated(true);
-    setIsLoading(false);
+      if (error) throw new Error(error.message);
+    } else if (provider === 'outlook') {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+        options: {
+          scopes: 'email',
+          redirectTo: window.location.origin,
+        },
+      });
+
+      if (error) throw new Error('Erreur Outlook');
+    }
+  };
+
+  const register = async (email: string, password: string, name: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name }, emailRedirectTo: window.location.origin },
+    });
+
+    if (error) throw new Error(error.message);
   };
 
   const logout = () => {
-    localStorage.removeItem('fo_metaux_auth');
+    supabase.auth.signOut();
     setUser(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

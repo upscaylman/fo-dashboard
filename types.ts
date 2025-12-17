@@ -12,6 +12,7 @@ export interface GlobalStat {
 }
 
 export interface UserStat {
+  id: string; // [NEW] Added for deletion
   name: string;
   letters: number;
   signatures: number;

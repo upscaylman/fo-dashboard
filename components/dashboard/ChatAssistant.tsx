@@ -50,75 +50,125 @@ const ChatAssistant: React.FC = () => {
     setInputValue('');
     setIsTyping(true);
 
-    try {
-        // Initialisation de l'IA
-        const apiKey = import.meta.env.VITE_API_KEY;
+    // Contexte pour l'IA (System Instruction)
+    const systemInstruction = `
+          Tu es Métallo, l'assistant virtuel expert de la Fédération FO de la Métallurgie.
+          Ton ton est professionnel, fraternel (tu utilises "camarade") et engagé.
+          
+          Tu as connaissance des outils internes suivants :
+          1. DocEase (https://fo-docease.netlify.app/) : Pour générer des courriers juridiques et syndicaux automatiquement.
+          2. SignEase (https://signeasy.netlify.app/) : Pour signer électroniquement des documents PDF.
+          3. Site Fédéral (https://www.fo-metaux.fr/) : Pour les actualités et le calculateur de prime d'ancienneté.
+          
+          Si l'utilisateur pose une question juridique, réponds brièvement en citant la Convention Collective de la Métallurgie si pertinent.
+          Si l'utilisateur veut rédiger ou signer, oriente-le vers les outils ci-dessus.
+          Sois concis.
+      `;
 
-        if (!apiKey) {
-            throw new Error("Clé API manquante");
+    let botResponseText = "";
+
+    // Essayer Gemini d'abord
+    try {
+      const geminiApiKey = import.meta.env.VITE_API_KEY;
+
+      if (!geminiApiKey) {
+        throw new Error("Clé API Gemini manquante");
+      }
+
+      // @ts-ignore
+      const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+
+      // @ts-ignore
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash-lite",
+        contents: text,
+        config: {
+          systemInstruction: systemInstruction,
+        }
+      });
+
+      // @ts-ignore
+      botResponseText = response.text || "";
+      
+      if (!botResponseText) throw new Error("Réponse Gemini vide");
+      
+      console.log("✅ Réponse via Gemini");
+
+    } catch (geminiError: any) {
+      console.warn("⚠️ Gemini échoué, tentative Groq...", geminiError.message);
+
+      // Fallback vers Groq (gratuit, rapide)
+      try {
+        const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+        
+        if (!groqApiKey) {
+          throw new Error("Clé API Groq manquante");
         }
 
-        const ai = new GoogleGenAI({ apiKey });
-
-        // Contexte pour l'IA (System Instruction)
-        const systemInstruction = `
-            Tu es Métallo, l'assistant virtuel expert de la Fédération FO de la Métallurgie.
-            Ton ton est professionnel, fraternel (tu utilises "camarade") et engagé.
-            
-            Tu as connaissance des outils internes suivants :
-            1. DocEase (https://fo-docease.netlify.app/) : Pour générer des courriers juridiques et syndicaux automatiquement.
-            2. SignEase (https://signeasy.netlify.app/) : Pour signer électroniquement des documents PDF.
-            3. Site Fédéral (https://www.fo-metaux.fr/) : Pour les actualités et le calculateur de prime d'ancienneté.
-            
-            Si l'utilisateur pose une question juridique, réponds brièvement en citant la Convention Collective de la Métallurgie si pertinent.
-            Si l'utilisateur veut rédiger ou signer, oriente-le vers les outils ci-dessus.
-            Sois concis.
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: text,
-            config: {
-                systemInstruction: systemInstruction,
-                temperature: 0.7,
-            }
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${groqApiKey}`
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              { role: "system", content: systemInstruction },
+              { role: "user", content: text }
+            ],
+            max_tokens: 500,
+            temperature: 0.7
+          })
         });
 
-        const botResponseText = response.text || "Désolé, je n'ai pas réussi à formuler une réponse.";
+        if (!groqResponse.ok) {
+          throw new Error(`Groq API error: ${groqResponse.status}`);
+        }
 
-        // Création du message du bot
-        const botMsg: Message = {
-            id: (Date.now() + 1).toString(),
-            text: botResponseText,
-            sender: 'bot',
-            timestamp: new Date(),
-            // On ajoute des actions contextuelles simples si détectées dans la réponse (logique simple)
-            actions: botResponseText.includes('DocEase') ? [{ label: "Ouvrir DocEase", action: () => window.open('https://fo-docease.netlify.app/', '_blank') }] 
-                   : botResponseText.includes('SignEase') ? [{ label: "Ouvrir SignEase", action: () => window.open('https://signeasy.netlify.app/', '_blank') }]
-                   : undefined
-        };
-
-        setMessages(prev => [...prev, botMsg]);
-
-    } catch (error) {
-        console.error("Erreur Gemini:", error);
+        const groqData = await groqResponse.json();
+        botResponseText = groqData.choices?.[0]?.message?.content || "";
         
-        const errorMessage = "Je rencontre un problème technique.";
+        if (!botResponseText) throw new Error("Réponse Groq vide");
+        
+        console.log("✅ Réponse via Groq (fallback)");
 
-        // Fallback en cas d'erreur
-        const errorMsg: Message = {
-            id: (Date.now() + 1).toString(),
-            text: errorMessage + " Voici les liens utiles en attendant :",
-            sender: 'bot',
-            timestamp: new Date(),
-            actions: [
-                { label: "Ouvrir DocEase", action: () => window.open('https://fo-docease.netlify.app/', '_blank') },
-                { label: "Contacter le support", action: () => window.location.href = 'mailto:contact@fo-metaux.fr' }
-            ]
-        };
-        setMessages(prev => [...prev, errorMsg]);
+      } catch (groqError: any) {
+        console.error("❌ Groq aussi échoué:", groqError.message);
+        throw new Error("Les deux IAs sont indisponibles");
+      }
+    }
+
+    // Création du message du bot
+    try {
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: botResponseText,
+        sender: 'bot',
+        timestamp: new Date(),
+        actions: botResponseText.includes('DocEase') ? [{ label: "Ouvrir DocEase", action: () => window.open('https://fo-docease.netlify.app/', '_blank') }]
+          : botResponseText.includes('SignEase') ? [{ label: "Ouvrir SignEase", action: () => window.open('https://signeasy.netlify.app/', '_blank') }]
+            : undefined
+      };
+
+      setMessages(prev => [...prev, botMsg]);
+
+    } catch (error: any) {
+      console.error("Erreur IA:", error);
+
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "⚠️ Je rencontre un problème technique. Voici les liens utiles en attendant :",
+        sender: 'bot',
+        timestamp: new Date(),
+        actions: [
+          { label: "Ouvrir DocEase", action: () => window.open('https://fo-docease.netlify.app/', '_blank') },
+          { label: "Contacter le support", action: () => window.location.href = 'mailto:contact@fo-metaux.fr' }
+        ]
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
-        setIsTyping(false);
+      setIsTyping(false);
     }
   };
 
@@ -128,7 +178,7 @@ const ChatAssistant: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
-      
+
       {/* Fenêtre de chat */}
       {isOpen && (
         <div className="pointer-events-auto bg-white dark:bg-slate-900 w-[350px] h-[500px] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden animate-[slideIn_0.2s_ease-out]">
@@ -152,18 +202,17 @@ const ChatAssistant: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${
-                  msg.sender === 'user' 
-                    ? 'bg-blue-600 text-white rounded-br-none' 
-                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-slate-700'
-                }`}>
+                <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${msg.sender === 'user'
+                  ? 'bg-blue-600 text-white rounded-br-none'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-slate-700'
+                  }`}>
                   <p className="whitespace-pre-wrap">{msg.text}</p>
-                  
+
                   {/* Actions Rapides du Bot */}
                   {msg.actions && (
                     <div className="mt-3 flex flex-col gap-2">
                       {msg.actions.map((act, idx) => (
-                        <button 
+                        <button
                           key={idx}
                           onClick={act.action}
                           className="flex items-center justify-between w-full p-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 transition-colors"
@@ -180,14 +229,14 @@ const ChatAssistant: React.FC = () => {
                 </div>
               </div>
             ))}
-            
+
             {isTyping && (
-                <div className="flex justify-start">
-                    <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-bl-none border border-slate-100 dark:border-slate-700 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                        <span className="text-xs text-slate-400">Métallo réfléchit...</span>
-                    </div>
+              <div className="flex justify-start">
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-bl-none border border-slate-100 dark:border-slate-700 flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                  <span className="text-xs text-slate-400">Métallo réfléchit...</span>
                 </div>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -203,7 +252,7 @@ const ChatAssistant: React.FC = () => {
               placeholder="Pose une question à Métallo..."
               className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder:text-slate-400 disabled:opacity-50"
             />
-            <button 
+            <button
               onClick={() => handleSendMessage()}
               className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!inputValue.trim() || isTyping}
@@ -215,15 +264,15 @@ const ChatAssistant: React.FC = () => {
       )}
 
       {/* Bouton Flottant */}
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="pointer-events-auto bg-fo-red hover:bg-red-700 text-white p-4 rounded-full shadow-lg shadow-red-600/30 transition-all hover:scale-110 active:scale-95 group relative"
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
-        
+
         {/* Notification Badge (Fake) */}
         {!isOpen && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center text-[10px] font-bold">1</span>
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center text-[10px] font-bold">1</span>
         )}
       </button>
     </div>

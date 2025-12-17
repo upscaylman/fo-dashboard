@@ -3,6 +3,7 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import SplashScreen from './components/layout/SplashScreen';
 import ChatAssistant from './components/dashboard/ChatAssistant';
 import CommandPalette from './components/ui/CommandPalette';
@@ -16,18 +17,57 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
   // Gestion du Splash Screen au premier chargement
   const handleSplashFinish = () => {
     setShowSplash(false);
   };
 
+  // Fonction de navigation personnalisée pour éviter le rechargement de page
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+  };
+
+  // Gérer le bouton "Précédent" du navigateur
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   if (showSplash) {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDF8F6] dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-fo-red border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Routes publiques
   if (!isAuthenticated) {
-    return <LoginPage />;
+    // Si l'utilisateur est sur '/' et non authentifié, on redirige vers /login pour la logique
+    // (mais visuellement c'est la page de login)
+    if (currentPath === '/' && window.location.pathname === '/') {
+      // Optionnel: on pourrait forcer le path à /login
+    }
+
+    if (currentPath === '/register') {
+      return <RegisterPage onNavigate={navigateTo} />;
+    }
+    // Par défaut, afficher Login pour toutes les autres routes non-auth
+    return <LoginPage onNavigate={navigateTo} />;
   }
 
   return (
@@ -50,7 +90,7 @@ const App: React.FC = () => {
         <AuthProvider>
           <BookmarkProvider>
             <MobileMenuProvider>
-               <AppContent />
+              <AppContent />
             </MobileMenuProvider>
           </BookmarkProvider>
         </AuthProvider>

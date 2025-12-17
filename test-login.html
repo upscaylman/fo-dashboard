@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Supabase</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #c1272d;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #c1272d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #a01f24;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ddd;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+        .loading {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+    </style>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const supabaseUrl = 'https://geljwonckfmdkaywaxly.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlbGp3b25ja2ZtZGtheXdheGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTM3MDAsImV4cCI6MjA4MTQyOTcwMH0.K9-DyDP1sbKo59VY8iMwSgCukLk0Cm3OTBCIkipxzUQ';
+
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true,
+            }
+        });
+
+        function showResult(message, type = 'info') {
+            const result = document.getElementById('result');
+            result.className = `result ${type}`;
+            result.innerHTML = message;
+            result.style.display = 'block';
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (!email || !password) {
+                showResult('❌ Veuillez remplir tous les champs', 'error');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            showResult('⏳ Connexion en cours...', 'loading');
+
+            try {
+                console.log('Tentative de connexion:', email);
+                const start = Date.now();
+
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                const duration = Date.now() - start;
+                console.log('Durée:', duration + 'ms');
+
+                if (error) {
+                    console.error('Erreur login:', error);
+                    showResult(`❌ Erreur de connexion (${duration}ms)<br><br>${error.message}<br><br>Code: ${error.code || 'N/A'}`, 'error');
+                } else if (data.user) {
+                    console.log('✅ Connexion réussie:', data);
+                    showResult(`✅ Connexion réussie ! (${duration}ms)<br><br>Email: ${data.user.email}<br>ID: ${data.user.id}<br><br>Vous pouvez maintenant fermer cette page et rafraîchir l'application.`, 'success');
+                    
+                    // Vérifier le profil
+                    setTimeout(async () => {
+                        const { data: profile, error: profileError } = await supabase
+                            .from('users')
+                            .select('*')
+                            .eq('id', data.user.id)
+                            .single();
+                        
+                        if (!profileError && profile) {
+                            showResult(`✅ Connexion réussie ! (${duration}ms)<br><br>Email: ${data.user.email}<br>ID: ${data.user.id}<br>Nom: ${profile.name || 'N/A'}<br>Rôle: ${profile.role_level || 'N/A'}<br><br>✅ Profil chargé avec succès !`, 'success');
+                        }
+                    }, 500);
+                }
+            } catch (err) {
+                console.error('Exception:', err);
+                showResult(`❌ Exception: ${err.message}<br><br>${err.stack}`, 'error');
+            } finally {
+                loginBtn.disabled = false;
+            }
+        }
+
+        async function testSignup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const signupBtn = document.getElementById('signupBtn');
+
+            if (!email || !password) {
+                showResult('❌ Veuillez remplir tous les champs', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showResult('❌ Le mot de passe doit contenir au moins 6 caractères', 'error');
+                return;
+            }
+
+            signupBtn.disabled = true;
+            showResult('⏳ Création du compte...', 'loading');
+
+            try {
+                console.log('Tentative d\'inscription:', email);
+                const start = Date.now();
+
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            name: email.split('@')[0],
+                        }
+                    }
+                });
+
+                const duration = Date.now() - start;
+                console.log('Durée:', duration + 'ms');
+
+                if (error) {
+                    console.error('Erreur signup:', error);
+                    showResult(`❌ Erreur d'inscription (${duration}ms)<br><br>${error.message}<br><br>Code: ${error.code || 'N/A'}`, 'error');
+                } else if (data.user) {
+                    console.log('✅ Inscription réussie:', data);
+                    showResult(`✅ Compte créé ! (${duration}ms)<br><br>Email: ${data.user.email}<br>ID: ${data.user.id}<br><br>⚠️ Vérifiez votre email pour confirmer votre compte (si la confirmation est activée).`, 'success');
+                }
+            } catch (err) {
+                console.error('Exception:', err);
+                showResult(`❌ Exception: ${err.message}<br><br>${err.stack}`, 'error');
+            } finally {
+                signupBtn.disabled = false;
+            }
+        }
+
+        async function checkSession() {
+            showResult('⏳ Vérification de la session...', 'loading');
+            
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    showResult(`❌ Erreur: ${error.message}`, 'error');
+                } else if (data.session) {
+                    showResult(`✅ Session active !<br><br>Email: ${data.session.user.email}<br>Expire dans: ${Math.round((data.session.expires_at * 1000 - Date.now()) / 1000 / 60)} minutes`, 'success');
+                } else {
+                    showResult('ℹ️ Aucune session active (non connecté)', 'info');
+                }
+            } catch (err) {
+                showResult(`❌ Exception: ${err.message}`, 'error');
+            }
+        }
+
+        async function logout() {
+            showResult('⏳ Déconnexion...', 'loading');
+            
+            try {
+                await supabase.auth.signOut();
+                showResult('✅ Déconnexion réussie !', 'success');
+            } catch (err) {
+                showResult(`❌ Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        // Exposer les fonctions globalement
+        window.testLogin = testLogin;
+        window.testSignup = testSignup;
+        window.checkSession = checkSession;
+        window.logout = logout;
+
+        // Vérifier la session au chargement
+        window.addEventListener('DOMContentLoaded', checkSession);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Authentification Supabase</h1>
+        <p>Testez la connexion et l'inscription à votre projet Supabase.</p>
+
+        <div>
+            <input type="email" id="email" placeholder="Email (ex: test@fo-metaux.fr)" />
+            <input type="password" id="password" placeholder="Mot de passe (min 6 caractères)" />
+        </div>
+
+        <button id="loginBtn" onclick="testLogin()">🔑 Se connecter</button>
+        <button id="signupBtn" onclick="testSignup()">📝 Créer un compte</button>
+        <button onclick="checkSession()">🔍 Vérifier la session</button>
+        <button onclick="logout()" style="background: #6c757d;">🚪 Se déconnecter</button>
+
+        <div id="result" class="result info" style="display: none;"></div>
+
+        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 14px;">
+            <strong>💡 Conseils :</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>Si vous avez déjà un compte, utilisez "Se connecter"</li>
+                <li>Sinon, créez un compte avec "Créer un compte"</li>
+                <li>Le mot de passe doit contenir au moins 6 caractères</li>
+                <li>Vérifiez la console du navigateur (F12) pour plus de détails</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
