@@ -140,20 +140,24 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
                   <td className="px-6 py-4">
                     {/* Role Selector for Admins */}
                     {canManage ? (
-                      <div className={`relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border cursor-pointer hover:shadow-sm transition-all ${roleStyles.bg} ${roleStyles.text} ${roleStyles.border}`}>
+                      <div className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer hover:shadow-sm transition-all ${roleStyles.bg} ${roleStyles.text} ${roleStyles.border}`}>
                         <span className="truncate max-w-[120px]">{ROLE_LABELS[currentRole] || user.role}</span>
                         <ChevronDown className="w-3 h-3 opacity-70" />
                         <select
                           value={user.role}
                           onChange={(e) => handleRoleChange(user.id, e.target.value, user.name)}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer appearance-none"
+                          style={{ 
+                            paddingLeft: '12px',
+                            paddingRight: '12px'
+                          }}
                           aria-label="Changer le rôle"
                         >
                           {availableRoles.map(role => (
                             <option
                               key={role.value}
                               value={role.value}
-                              className="text-slate-900 bg-white dark:bg-slate-800 dark:text-slate-100"
+                              className="text-slate-900 bg-white dark:bg-slate-800 dark:text-slate-100 py-2 px-3"
                             >
                               {role.label}
                             </option>

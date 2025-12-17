@@ -17,19 +17,18 @@ export const useStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        // 1. Récupérer les stats globales
-        const [documentsCount, signaturesCount, usersCount, doceaseCount] = await Promise.all([
-          supabase.from('documents').select('id', { count: 'exact', head: true }),
-          supabase.from('signatures').select('id', { count: 'exact', head: true }),
-          supabase.from('users').select('id', { count: 'exact', head: true }),
-          supabase.from('docease_documents').select('id', { count: 'exact', head: true }),
-        ]);
+      // 1. Récupérer les stats globales
+      const [documentsCount, signaturesCount, usersCount, doceaseCount] = await Promise.all([
+        supabase.from('documents').select('id', { count: 'exact', head: true }),
+        supabase.from('signatures').select('id', { count: 'exact', head: true }),
+        supabase.from('users').select('id', { count: 'exact', head: true }),
+        supabase.from('docease_documents').select('id', { count: 'exact', head: true }),
+      ]);
 
         // Compter les documents/signatures du mois en cours
         const startOfMonth = new Date();
@@ -164,10 +163,68 @@ export const useStats = () => {
       } finally {
         setLoading(false);
       }
-    };
+    }, []);
 
+  useEffect(() => {
     fetchStats();
-  }, []);
+
+    // Abonnement Realtime pour détecter les nouveaux documents DocEase
+    const doceaseChannel = supabase
+      .channel('docease_documents_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'docease_documents'
+        },
+        (payload) => {
+          console.log('🔄 Nouveau document DocEase détecté, rafraîchissement des stats...', payload.new);
+          fetchStats(); // Recharger les stats automatiquement
+        }
+      )
+      .subscribe();
+
+    // Abonnement pour les signatures
+    const signaturesChannel = supabase
+      .channel('signatures_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'signatures'
+        },
+        (payload) => {
+          console.log('🔄 Nouvelle signature détectée, rafraîchissement des stats...', payload.new);
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    // Abonnement pour les documents classiques
+    const documentsChannel = supabase
+      .channel('documents_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'documents'
+        },
+        (payload) => {
+          console.log('🔄 Nouveau document détecté, rafraîchissement des stats...', payload.new);
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(doceaseChannel);
+      supabase.removeChannel(signaturesChannel);
+      supabase.removeChannel(documentsChannel);
+    };
+  }, [fetchStats]);
 
   return { stats, loading, error };
 };

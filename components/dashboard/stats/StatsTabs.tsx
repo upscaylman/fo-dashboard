@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { LayoutGrid, Users, FileStack, LayoutDashboard, Calendar, ChevronDown } from 'lucide-react';
+import { LayoutGrid, Users, FileStack, LayoutDashboard, Calendar, ChevronDown, FileText } from 'lucide-react';
 import GlobalStatsGrid from './GlobalStatsGrid';
 import UserStatsTable from './UserStatsTable';
 import DocumentStatsView from './DocumentStatsView';
+import DoceaseDocumentsTable from './DoceaseDocumentsTable';
 import { GlobalStat, UserStat, DocumentTypeStat, WeeklyActivity } from '../../../types';
 import { Skeleton } from '../../ui/Skeleton';
+import { usePermissions } from '../../../hooks/usePermissions';
 
-type StatsTab = 'global' | 'users' | 'types';
+type StatsTab = 'global' | 'users' | 'types' | 'docease';
 type TimeRange = 'week' | 'month' | 'quarter' | 'year';
 
 interface StatsTabsProps {
@@ -60,6 +62,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading }) => {
   const [activeStatsTab, setActiveStatsTab] = useState<StatsTab>('global');
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { isAdmin, isSuperAdmin } = usePermissions();
 
   // Simulation de rechargement des données lors du changement de date
   const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -78,6 +81,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading }) => {
     { id: 'global', label: 'Vue d\'ensemble', icon: LayoutGrid },
     { id: 'users', label: 'Salariés', icon: Users },
     { id: 'types', label: 'Documents', icon: FileStack },
+    ...(isAdmin || isSuperAdmin ? [{ id: 'docease', label: 'DocEase', icon: FileText }] : []),
   ];
 
   return (
@@ -154,6 +158,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading }) => {
                 {activeStatsTab === 'global' && <GlobalStatsGrid stats={stats.global} />}
                 {activeStatsTab === 'users' && <UserStatsTable users={stats.users} />}
                 {activeStatsTab === 'types' && <DocumentStatsView documentTypes={stats.documentTypes} activity={stats.activity} />}
+                {activeStatsTab === 'docease' && (isAdmin || isSuperAdmin) && <DoceaseDocumentsTable />}
             </>
         )}
       </div>
