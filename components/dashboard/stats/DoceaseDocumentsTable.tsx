@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, Download, Calendar, User, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { FileText, Download, Calendar, User, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 interface DoceaseDocument {
@@ -200,19 +200,28 @@ const DoceaseDocumentsTable: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Bandeau d'information */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-xl p-4">
+      <div className="bg-[#ffd8ec] dark:bg-[#a84383]/20 border border-[#dd60b0] dark:border-[#a84383]/50 rounded-xl p-4">
         <div className="flex items-start gap-3">
-          <Download className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <Download className="w-5 h-5 text-[#a84383] dark:text-[#dd60b0] flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">
+            <h4 className="text-sm font-semibold text-[#a84383] dark:text-[#dd60b0] mb-1">
               📥 Téléchargement des documents
             </h4>
-            <p className="text-sm text-blue-700 dark:text-blue-400">
+            <p className="text-sm text-[#a64182] dark:text-[#dd60b0]/80">
               Les documents DocEase sont générés à la demande et envoyés par email. 
               Cliquez sur <Download className="w-4 h-4 inline-block" /> pour télécharger le fichier s'il est disponible, 
               ou ouvrir DocEase pour régénérer le document.
             </p>
           </div>
+          <a 
+            href="http://localhost:3000" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#dd60b0] to-[#a84383] text-white rounded-full text-sm font-medium hover:shadow-lg hover:shadow-[#a84383]/25 transition-all shrink-0"
+          >
+            Ouvrir DocEase
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </div>
       </div>
 
@@ -225,7 +234,7 @@ const DoceaseDocumentsTable: React.FC = () => {
             placeholder="Rechercher par titre, utilisateur..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
           />
         </div>
 
@@ -234,7 +243,7 @@ const DoceaseDocumentsTable: React.FC = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="appearance-none cursor-pointer pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+              className="appearance-none cursor-pointer pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
             >
               <option value="all">Tous les types</option>
               {documentTypes.map(type => (
@@ -248,7 +257,7 @@ const DoceaseDocumentsTable: React.FC = () => {
             <select
               value={filterFormat}
               onChange={(e) => setFilterFormat(e.target.value)}
-              className="appearance-none cursor-pointer pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+              className="appearance-none cursor-pointer pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
             >
               <option value="all">Tous les formats</option>
               {documentFormats.map(format => (
@@ -305,9 +314,9 @@ const DoceaseDocumentsTable: React.FC = () => {
                   <div className="flex items-center gap-2">
                     Date
                     {sortOrder === 'desc' ? (
-                      <ArrowDown className="w-4 h-4 text-blue-500" />
+                      <ArrowDown className="w-4 h-4 text-[#a84383]" />
                     ) : (
-                      <ArrowUp className="w-4 h-4 text-blue-500" />
+                      <ArrowUp className="w-4 h-4 text-[#a84383]" />
                     )}
                   </div>
                 </th>
@@ -321,7 +330,17 @@ const DoceaseDocumentsTable: React.FC = () => {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-                    <p>Aucun document trouvé</p>
+                    <p className="font-medium mb-1">Aucun document DocEase</p>
+                    <p className="text-sm">Les documents générés apparaîtront ici automatiquement.</p>
+                    <a 
+                      href="http://localhost:3000" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#a84383] text-white rounded-full text-sm font-medium hover:bg-[#8f366e] transition-colors"
+                    >
+                      Ouvrir DocEase
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
                   </td>
                 </tr>
               ) : (
@@ -329,8 +348,8 @@ const DoceaseDocumentsTable: React.FC = () => {
                   <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                          <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <div className="p-2 bg-[#ffd8ec] dark:bg-[#a84383]/30 rounded-lg">
+                          <FileText className="w-4 h-4 text-[#a84383] dark:text-[#dd60b0]" />
                         </div>
                         <div>
                           <div className="font-medium text-slate-900 dark:text-slate-100 text-sm">
@@ -352,7 +371,7 @@ const DoceaseDocumentsTable: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        <div className="w-8 h-8 bg-gradient-to-br from-[#dd60b0] to-[#a84383] rounded-full flex items-center justify-center text-white text-xs font-bold">
                           {doc.user?.name?.[0]?.toUpperCase() || '?'}
                         </div>
                         <div>
@@ -375,7 +394,7 @@ const DoceaseDocumentsTable: React.FC = () => {
                       <div className="flex items-center justify-center">
                         <button
                           onClick={() => handleDownloadDocument(doc)}
-                          className="group relative p-2 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200"
+                          className="group relative p-2 text-slate-600 dark:text-slate-400 hover:text-[#a84383] dark:hover:text-[#dd60b0] hover:bg-[#ffd8ec] dark:hover:bg-[#a84383]/20 rounded-lg transition-all duration-200"
                           title="Télécharger le document"
                         >
                           <Download className="w-5 h-5" />

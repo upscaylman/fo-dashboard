@@ -23,11 +23,19 @@ export const useStats = () => {
       setError(null);
 
       // 1. Récupérer les stats globales
-      const [documentsCount, signaturesCount, usersCount, doceaseCount] = await Promise.all([
+      const [documentsCount, signaturesCount, usersCount, doceaseCount, signeaseCount] = await Promise.all([
         supabase.from('documents').select('id', { count: 'exact', head: true }),
         supabase.from('signatures').select('id', { count: 'exact', head: true }),
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('docease_documents').select('id', { count: 'exact', head: true }),
+        supabase.from('signease_activity').select('id', { count: 'exact', head: true }),
+      ]);
+
+      // Compter les documents SignEase par type d'action
+      const [signeaseSent, signeaseSigned, signeaseRejected] = await Promise.all([
+        supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_sent'),
+        supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_signed'),
+        supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_rejected'),
       ]);
 
       // Calculer les utilisateurs actifs (avec activité dans les 30 derniers jours)
@@ -59,7 +67,7 @@ export const useStats = () => {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
-        const [monthDocuments, monthSignatures, monthDocease] = await Promise.all([
+        const [monthDocuments, monthSignatures, monthDocease, monthSigneaseSent, monthSigneaseSigned] = await Promise.all([
           supabase
             .from('documents')
             .select('id', { count: 'exact', head: true })
@@ -71,6 +79,16 @@ export const useStats = () => {
           supabase
             .from('docease_documents')
             .select('id', { count: 'exact', head: true })
+            .gte('created_at', startOfMonth.toISOString()),
+          supabase
+            .from('signease_activity')
+            .select('id', { count: 'exact', head: true })
+            .eq('action_type', 'document_sent')
+            .gte('created_at', startOfMonth.toISOString()),
+          supabase
+            .from('signease_activity')
+            .select('id', { count: 'exact', head: true })
+            .eq('action_type', 'document_signed')
             .gte('created_at', startOfMonth.toISOString()),
         ]);
 
@@ -85,13 +103,31 @@ export const useStats = () => {
             description: 'Générés via DocEase'
           },
           {
-            label: 'Signatures réalisées',
-            value: String(signaturesCount.count || 0),
+            label: 'Documents SignEase',
+            value: String(signeaseSent.count || 0),
             icon: Edit3,
-            color: 'text-red-700',
-            bgColor: 'bg-red-100',
-            trend: `+${monthSignatures.count || 0} ce mois`,
+            color: 'text-orange-700',
+            bgColor: 'bg-orange-100',
+            trend: `+${monthSigneaseSent.count || 0} ce mois`,
+            description: 'Documents envoyés pour signature'
+          },
+          {
+            label: 'Signatures réalisées',
+            value: String(signeaseSigned.count || 0),
+            icon: Edit3,
+            color: 'text-green-700',
+            bgColor: 'bg-green-100',
+            trend: `+${monthSigneaseSigned.count || 0} ce mois`,
             description: 'PDFs signés via SignEase'
+          },
+          {
+            label: 'Envois par email',
+            value: String((doceaseCount.count || 0) + (signeaseSent.count || 0)),
+            icon: Mail,
+            color: 'text-indigo-700',
+            bgColor: 'bg-indigo-100',
+            trend: `+${(monthDocease.count || 0) + (monthSigneaseSent.count || 0)} ce mois`,
+            description: 'Documents envoyés (DocEase + SignEase)'
           },
           {
             label: 'Salariés actifs',
@@ -101,15 +137,6 @@ export const useStats = () => {
             bgColor: 'bg-blue-100',
             trend: `${activeUsersCount} actifs ce mois`,
             description: 'Utilisateurs avec activité récente (30 jours)'
-          },
-          {
-            label: 'Envois par email',
-            value: String(doceaseCount.count || 0),
-            icon: Mail,
-            color: 'text-indigo-700',
-            bgColor: 'bg-indigo-100',
-            trend: `+${monthDocease.count || 0} ce mois`,
-            description: 'Documents envoyés automatiquement (DocEase + SignEase)'
           }
         ];
 

@@ -107,6 +107,18 @@ const AnalyticsView: React.FC = () => {
       
       const { data: signaturesData } = await signaturesQuery;
 
+      // Récupérer les activités SignEase
+      let signeaseQuery = supabase
+        .from('signease_activity')
+        .select('id, user_email, user_name, action_type, document_name, recipient_email, recipient_name, envelope_id, metadata, created_at')
+        .order('created_at', { ascending: false });
+      
+      if (startDate) {
+        signeaseQuery = signeaseQuery.gte('created_at', startDate);
+      }
+      
+      const { data: signeaseData } = await signeaseQuery;
+
       // Construire la liste des activités
       const allActivities: ActivityEvent[] = [];
 
@@ -127,18 +139,44 @@ const AnalyticsView: React.FC = () => {
         });
       });
 
-      // Ajouter les signatures
+      // Ajouter les signatures (table legacy)
       (signaturesData || []).forEach((sig: any) => {
         const user = usersMap.get(sig.user_id);
         
         allActivities.push({
-          id: `signease-${sig.id}`,
+          id: `signature-${sig.id}`,
           type: 'signease',
           title: `Signature #${sig.id}`,
           document_type: 'Signature PDF',
           user_email: user?.email || 'inconnu',
           user_name: user?.name,
           date: sig.signed_at
+        });
+      });
+
+      // Ajouter les activités SignEase (nouvelle table)
+      (signeaseData || []).forEach((activity: any) => {
+        const actionLabels: { [key: string]: string } = {
+          'document_sent': 'Envoyé pour signature',
+          'document_signed': 'Document signé',
+          'document_rejected': 'Document rejeté',
+          'document_created': 'Brouillon créé'
+        };
+        
+        allActivities.push({
+          id: `signease-activity-${activity.id}`,
+          type: 'signease',
+          title: activity.document_name || 'Document SignEase',
+          document_type: actionLabels[activity.action_type] || activity.action_type,
+          user_email: activity.user_email,
+          user_name: activity.user_name,
+          date: activity.created_at,
+          metadata: {
+            ...activity.metadata,
+            destinataire: activity.recipient_name || activity.recipient_email,
+            action_type: activity.action_type,
+            envelope_id: activity.envelope_id
+          }
         });
       });
 
@@ -199,6 +237,7 @@ const AnalyticsView: React.FC = () => {
       .channel('analytics_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'docease_documents' }, fetchAnalytics)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'signatures' }, fetchAnalytics)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'signease_activity' }, fetchAnalytics)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

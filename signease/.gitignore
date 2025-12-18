@@ -1,0 +1,45 @@
+# Dépendances
+node_modules/
+package-lock.json
+
+# Build
+dist/
+build/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# 🔐 Certificats et clés privées (NE JAMAIS COMMIT!)
+certs/
+*.p12
+*.pem
+*.key
+*.crt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Temporary
+*.tmp
+*.temp
+
+# Test output
+test-output/
+
+# Local Netlify folder
+.netlify
