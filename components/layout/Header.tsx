@@ -1,15 +1,52 @@
 import React from 'react';
-import { Globe, Bell, Search, Sun, Moon, Monitor, Menu, LogOut } from 'lucide-react';
+import { Globe, Search, Menu, LogOut, User, Users } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
-import { useTheme } from '../../context/ThemeContext';
+import { NotificationPanel } from '../ui/NotificationPanel';
 import { useMobileMenu } from '../../context/MobileMenuContext';
 import { useAuth } from '../../context/AuthContext';
-import { RoleBadge } from '../auth/RoleBadge';
+import { usePresence } from '../../hooks/usePresence';
+import { usePermissions } from '../../hooks/usePermissions';
 
-const Header: React.FC = () => {
-  const { theme, setTheme } = useTheme();
+// Couleurs de bordure selon le rôle
+const getRoleBorderColor = (role?: string) => {
+  switch (role) {
+    case 'super_admin':
+      return 'ring-purple-500 ring-2';
+    case 'admin':
+      return 'ring-blue-500 ring-2';
+    case 'editor':
+      return 'ring-emerald-500 ring-2';
+    default:
+      return 'ring-slate-300 dark:ring-slate-600 ring-1';
+  }
+};
+
+// Tooltip du rôle
+const getRoleTooltip = (role?: string) => {
+  switch (role) {
+    case 'super_admin':
+      return 'Super Administrateur';
+    case 'admin':
+      return 'Administrateur';
+    case 'editor':
+      return 'Éditeur';
+    default:
+      return 'Utilisateur';
+  }
+};
+
+interface HeaderProps {
+  onNavigate?: (path: string) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const { toggleMenu } = useMobileMenu();
   const { user, logout } = useAuth();
+  const { activeUsers } = usePresence();
+  const { isAdmin, isSuperAdmin } = usePermissions();
+
+  // Seuls les admins et super_admins peuvent voir les utilisateurs en ligne
+  const canSeeOnlineUsers = isAdmin || isSuperAdmin;
 
   return (
     <header className="sticky top-4 z-40 px-4 sm:px-6 lg:px-8 pointer-events-none">
@@ -26,7 +63,10 @@ const Header: React.FC = () => {
             <Menu className="w-6 h-6" />
           </button>
 
-          <div className="flex items-center gap-3">
+          <button 
+            onClick={() => onNavigate?.('/')}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+          >
             <div className="bg-fo-red p-2.5 rounded-full shadow-lg shadow-red-500/30 shrink-0">
               <Globe className="w-5 h-5 text-white" />
             </div>
@@ -34,7 +74,7 @@ const Header: React.FC = () => {
               <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">FO Métaux</h1>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Portail Secrétaires</p>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Center Search (Trigger for Command Palette) */}
@@ -49,66 +89,52 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* User Profile & Theme Toggle */}
+        {/* User Profile & Notifications */}
         <div className="flex items-center gap-2 sm:gap-4">
+          {/* Indicateur utilisateurs en ligne - visible uniquement pour admin/super_admin */}
+          {canSeeOnlineUsers && (
+            <Tooltip content={`${activeUsers.length} utilisateur${activeUsers.length > 1 ? 's' : ''} en ligne`} position="bottom">
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-800">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{activeUsers.length}</span>
+              </div>
+            </Tooltip>
+          )}
 
-          {/* Theme Toggle */}
-          <div className="hidden sm:flex bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-slate-700">
-            <Tooltip content="Thème clair">
-              <button
-                onClick={() => setTheme('light')}
-                className={`p-1.5 rounded-full transition-all ${theme === 'light' ? 'bg-white dark:bg-slate-700 shadow text-amber-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-              >
-                <Sun className="w-4 h-4" />
-              </button>
-            </Tooltip>
-            <Tooltip content="Thème sombre">
-              <button
-                onClick={() => setTheme('dark')}
-                className={`p-1.5 rounded-full transition-all ${theme === 'dark' ? 'bg-white dark:bg-slate-600 shadow text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-              >
-                <Moon className="w-4 h-4" />
-              </button>
-            </Tooltip>
-            <Tooltip content="Système">
-              <button
-                onClick={() => setTheme('system')}
-                className={`p-1.5 rounded-full transition-all ${theme === 'system' ? 'bg-white dark:bg-slate-600 shadow text-slate-700 dark:text-slate-200' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-              >
-                <Monitor className="w-4 h-4" />
-              </button>
-            </Tooltip>
+          <div className="relative">
+            <NotificationPanel />
           </div>
-
-          <Tooltip content="3 notifications">
-            <button className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-            </button>
-          </Tooltip>
 
           <div className="pl-2 sm:pl-4 border-l border-slate-200 dark:border-slate-700 flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{user?.name || 'Utilisateur'}</p>
-              <div className="flex items-center justify-end gap-2 mt-0.5">
-                {user?.role && <RoleBadge role={user.role as any} size="sm" />}
-                <p className="text-xs text-green-600 dark:text-green-400 font-medium">En ligne</p>
-              </div>
             </div>
 
             <div className="relative group">
-              <Tooltip content="Mon Profil" position="left">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 p-0.5 cursor-pointer hover:ring-2 hover:ring-blue-200 dark:hover:ring-blue-700 transition-all">
+              <Tooltip content={getRoleTooltip(user?.role)} position="left">
+                {/* Avatar avec bordure colorée selon le rôle */}
+                <div className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-full p-0.5 cursor-pointer transition-all ${getRoleBorderColor(user?.role)} hover:ring-offset-2 hover:ring-offset-white dark:hover:ring-offset-slate-900`}>
                   <img
-                    src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Marie"}
+                    src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"}
                     alt="Avatar"
                     className="w-full h-full rounded-full bg-white dark:bg-slate-800"
                   />
+                  {/* Point vert en ligne sur l'avatar */}
+                  <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 animate-pulse"></div>
                 </div>
               </Tooltip>
 
-              {/* Dropdown simple pour la déconnexion */}
+              {/* Dropdown pour profil et déconnexion */}
               <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right z-50">
+                <button
+                  onClick={() => onNavigate?.('/profile')}
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
+                >
+                  <User className="w-4 h-4" />
+                  Mon Profil
+                </button>
+                <div className="my-1 border-t border-slate-100 dark:border-slate-800"></div>
                 <button
                   onClick={logout}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"

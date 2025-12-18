@@ -1,0 +1,862 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  FileText, Users, Calendar, Filter, 
+  Clock, Search, ChevronDown,
+  FileCheck, Send, User,
+  BarChart3, PieChart, RefreshCw, X, Eye
+} from 'lucide-react';
+import { Card, CardHeader } from '../../ui/Card';
+import { supabase } from '../../../lib/supabase';
+
+interface ActivityEvent {
+  id: string;
+  type: 'docease' | 'signease';
+  title: string;
+  document_type: string;
+  user_email: string;
+  user_name?: string;
+  date: string;
+  metadata?: {
+    format?: string;
+    destinataire?: string;
+    email_envoi?: string;
+  };
+}
+
+interface UserStats {
+  email: string;
+  name?: string;
+  doceaseCount: number;
+  signaturesCount: number;
+  lastActivity: string;
+  activities: ActivityEvent[];
+}
+
+type DateFilter = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all';
+type SourceFilter = 'all' | 'docease' | 'signease';
+
+const AnalyticsView: React.FC = () => {
+  const [activities, setActivities] = useState<ActivityEvent[]>([]);
+  const [users, setUsers] = useState<UserStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('month');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<'timeline' | 'users'>('timeline');
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+
+      // Calculer la date de début selon le filtre
+      const getStartDate = () => {
+        const now = new Date();
+        switch (dateFilter) {
+          case 'today':
+            now.setHours(0, 0, 0, 0);
+            return now.toISOString();
+          case 'week':
+            now.setDate(now.getDate() - 7);
+            return now.toISOString();
+          case 'month':
+            now.setMonth(now.getMonth() - 1);
+            return now.toISOString();
+          case 'quarter':
+            now.setMonth(now.getMonth() - 3);
+            return now.toISOString();
+          case 'year':
+            now.setFullYear(now.getFullYear() - 1);
+            return now.toISOString();
+          default:
+            return null;
+        }
+      };
+
+      const startDate = getStartDate();
+
+      // Récupérer les utilisateurs
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, email, name');
+
+      const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]));
+
+      // Récupérer les documents DocEase
+      let doceaseQuery = supabase
+        .from('docease_documents')
+        .select('id, document_type, title, created_at, metadata, user_id')
+        .order('created_at', { ascending: false });
+      
+      if (startDate) {
+        doceaseQuery = doceaseQuery.gte('created_at', startDate);
+      }
+      
+      const { data: doceaseData } = await doceaseQuery;
+
+      // Récupérer les signatures
+      let signaturesQuery = supabase
+        .from('signatures')
+        .select('id, signed_at, user_id, document_id')
+        .order('signed_at', { ascending: false });
+      
+      if (startDate) {
+        signaturesQuery = signaturesQuery.gte('signed_at', startDate);
+      }
+      
+      const { data: signaturesData } = await signaturesQuery;
+
+      // Construire la liste des activités
+      const allActivities: ActivityEvent[] = [];
+
+      // Ajouter les DocEase
+      (doceaseData || []).forEach((doc: any) => {
+        const user = usersMap.get(doc.user_id);
+        const userEmail = doc.metadata?.email_envoi || user?.email || 'inconnu';
+        
+        allActivities.push({
+          id: `docease-${doc.id}`,
+          type: 'docease',
+          title: doc.title || 'Document sans titre',
+          document_type: doc.document_type || 'Document',
+          user_email: userEmail,
+          user_name: user?.name,
+          date: doc.created_at,
+          metadata: doc.metadata
+        });
+      });
+
+      // Ajouter les signatures
+      (signaturesData || []).forEach((sig: any) => {
+        const user = usersMap.get(sig.user_id);
+        
+        allActivities.push({
+          id: `signease-${sig.id}`,
+          type: 'signease',
+          title: `Signature #${sig.id}`,
+          document_type: 'Signature PDF',
+          user_email: user?.email || 'inconnu',
+          user_name: user?.name,
+          date: sig.signed_at
+        });
+      });
+
+      // Trier par date décroissante
+      allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      // Construire les stats par utilisateur
+      const userStatsMap = new Map<string, UserStats>();
+
+      allActivities.forEach(activity => {
+        const email = activity.user_email;
+        const existing = userStatsMap.get(email) || {
+          email,
+          name: activity.user_name,
+          doceaseCount: 0,
+          signaturesCount: 0,
+          lastActivity: activity.date,
+          activities: []
+        };
+
+        if (activity.type === 'docease') {
+          existing.doceaseCount++;
+        } else {
+          existing.signaturesCount++;
+        }
+
+        existing.activities.push(activity);
+        
+        if (!existing.name && activity.user_name) {
+          existing.name = activity.user_name;
+        }
+
+        if (new Date(activity.date) > new Date(existing.lastActivity)) {
+          existing.lastActivity = activity.date;
+        }
+
+        userStatsMap.set(email, existing);
+      });
+
+      setActivities(allActivities);
+      setUsers(Array.from(userStatsMap.values())
+        .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()));
+
+    } catch (error) {
+      console.error('Erreur chargement analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [dateFilter]);
+
+  // Souscription realtime
+  useEffect(() => {
+    const channel = supabase
+      .channel('analytics_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'docease_documents' }, fetchAnalytics)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'signatures' }, fetchAnalytics)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [dateFilter]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchAnalytics();
+    setTimeout(() => setRefreshing(false), 500);
+  };
+
+  // Activités filtrées
+  const filteredActivities = useMemo(() => {
+    let result = activities;
+
+    // Filtre par source
+    if (sourceFilter === 'docease') {
+      result = result.filter(a => a.type === 'docease');
+    } else if (sourceFilter === 'signease') {
+      result = result.filter(a => a.type === 'signease');
+    }
+
+    // Filtre par utilisateur sélectionné
+    if (selectedUser) {
+      result = result.filter(a => a.user_email === selectedUser);
+    }
+
+    // Filtre par recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(a => 
+        a.title?.toLowerCase().includes(term) || 
+        a.document_type?.toLowerCase().includes(term) ||
+        a.user_email?.toLowerCase().includes(term) ||
+        a.user_name?.toLowerCase().includes(term) ||
+        a.metadata?.destinataire?.toLowerCase().includes(term)
+      );
+    }
+
+    return result;
+  }, [activities, sourceFilter, selectedUser, searchTerm]);
+
+  // Utilisateurs filtrés
+  const filteredUsers = useMemo(() => {
+    let result = users;
+
+    // Filtre par source
+    if (sourceFilter === 'docease') {
+      result = result.filter(u => u.doceaseCount > 0);
+    } else if (sourceFilter === 'signease') {
+      result = result.filter(u => u.signaturesCount > 0);
+    }
+
+    // Filtre par recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(u => 
+        u.email.toLowerCase().includes(term) || 
+        u.name?.toLowerCase().includes(term)
+      );
+    }
+
+    return result;
+  }, [users, sourceFilter, searchTerm]);
+
+  // Stats globales
+  const stats = useMemo(() => {
+    const totalDocease = filteredActivities.filter(a => a.type === 'docease').length;
+    const totalSignatures = filteredActivities.filter(a => a.type === 'signease').length;
+    const uniqueUsers = new Set(filteredActivities.map(a => a.user_email)).size;
+
+    return { totalDocease, totalSignatures, uniqueUsers, total: filteredActivities.length };
+  }, [filteredActivities]);
+
+  // Données pour graphique par type de document
+  const documentTypeStats = useMemo(() => {
+    const typeCount: { [key: string]: number } = {};
+    
+    filteredActivities.forEach(activity => {
+      const type = activity.document_type || 'Autre';
+      typeCount[type] = (typeCount[type] || 0) + 1;
+    });
+
+    return Object.entries(typeCount)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6); // Top 6 types
+  }, [filteredActivities]);
+
+  // Données pour graphique d'évolution par jour
+  const dailyStats = useMemo(() => {
+    const dayCount: { [key: string]: { docease: number; signease: number; date: Date } } = {};
+    
+    filteredActivities.forEach(activity => {
+      const date = new Date(activity.date);
+      const dayKey = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+      
+      if (!dayCount[dayKey]) {
+        dayCount[dayKey] = { docease: 0, signease: 0, date };
+      }
+      
+      if (activity.type === 'docease') {
+        dayCount[dayKey].docease++;
+      } else {
+        dayCount[dayKey].signease++;
+      }
+    });
+
+    return Object.entries(dayCount)
+      .sort((a, b) => a[1].date.getTime() - b[1].date.getTime())
+      .slice(-14) // 14 derniers jours
+      .map(([day, data]) => ({ day, ...data }));
+  }, [filteredActivities]);
+
+  // Grouper les activités par jour
+  const activitiesByDay = useMemo(() => {
+    const groups: { [key: string]: ActivityEvent[] } = {};
+    
+    filteredActivities.forEach(activity => {
+      const date = new Date(activity.date);
+      const key = date.toLocaleDateString('fr-FR', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long',
+        year: 'numeric'
+      });
+      
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(activity);
+    });
+
+    return groups;
+  }, [filteredActivities]);
+
+  const formatTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatRelativeTime = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays < 7) return `Il y a ${diffDays}j`;
+    return new Date(dateStr).toLocaleDateString('fr-FR');
+  };
+
+  if (loading && activities.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Barre de filtres */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+            <Filter className="w-4 h-4" />
+            <span className="text-sm font-medium">Filtres</span>
+          </div>
+
+          {/* Filtre date */}
+          <div className="relative">
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+              className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <option value="today">Aujourd'hui</option>
+              <option value="week">7 derniers jours</option>
+              <option value="month">30 derniers jours</option>
+              <option value="quarter">3 derniers mois</option>
+              <option value="year">12 derniers mois</option>
+              <option value="all">Tout</option>
+            </select>
+            <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Filtre source */}
+          <div className="relative">
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value as SourceFilter)}
+              className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <option value="all">Toutes sources</option>
+              <option value="docease">DocEase</option>
+              <option value="signease">SignEase</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Filtre par salarié */}
+          <div className="relative">
+            <select
+              value={selectedUser || ''}
+              onChange={(e) => setSelectedUser(e.target.value || null)}
+              className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors min-w-[180px]"
+            >
+              <option value="">👥 Tous les salariés</option>
+              {users.map(user => (
+                <option key={user.email} value={user.email}>
+                  {user.name || user.email.split('@')[0]} ({user.doceaseCount + user.signaturesCount})
+                </option>
+              ))}
+            </select>
+            <User className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Recherche */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+
+          {/* Boutons de vue */}
+          <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                viewMode === 'timeline' 
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              📋 Timeline
+            </button>
+            <button
+              onClick={() => setViewMode('users')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                viewMode === 'users' 
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              👥 Par salarié
+            </button>
+          </div>
+
+          {/* Refresh */}
+          <button
+            onClick={handleRefresh}
+            className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+            title="Actualiser"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {/* Badges de filtres actifs */}
+        {(selectedUser || searchTerm) && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            {selectedUser && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm">
+                <User className="w-3 h-3" />
+                {users.find(u => u.email === selectedUser)?.name || selectedUser}
+                <button onClick={() => setSelectedUser(null)} className="hover:text-purple-900">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            )}
+            {searchTerm && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm">
+                <Search className="w-3 h-3" />
+                "{searchTerm}"
+                <button onClick={() => setSearchTerm('')} className="hover:text-blue-900">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-5 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <FileText className="w-6 h-6 opacity-80" />
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">DocEase</span>
+          </div>
+          <div className="text-3xl font-bold">{stats.totalDocease}</div>
+          <div className="text-sm opacity-80">Documents générés</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-5 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <FileCheck className="w-6 h-6 opacity-80" />
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">SignEase</span>
+          </div>
+          <div className="text-3xl font-bold">{stats.totalSignatures}</div>
+          <div className="text-sm opacity-80">Signatures</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <Send className="w-6 h-6 opacity-80" />
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Total</span>
+          </div>
+          <div className="text-3xl font-bold">{stats.total}</div>
+          <div className="text-sm opacity-80">Actions totales</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-5 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <Users className="w-6 h-6 opacity-80" />
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Actifs</span>
+          </div>
+          <div className="text-3xl font-bold">{stats.uniqueUsers}</div>
+          <div className="text-sm opacity-80">Salariés actifs</div>
+        </div>
+      </div>
+
+      {/* Graphiques */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Graphique Évolution temporelle */}
+        <Card>
+          <CardHeader 
+            title="Évolution de l'activité" 
+            subtitle="14 derniers jours"
+            action={
+              <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+            }
+          />
+          <div className="p-4">
+            {dailyStats.length === 0 ? (
+              <div className="text-center text-slate-400 py-8">Aucune donnée</div>
+            ) : (
+              <div className="space-y-3">
+                {/* Légende */}
+                <div className="flex justify-center gap-6 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">DocEase</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">SignEase</span>
+                  </div>
+                </div>
+                
+                {/* Barres */}
+                <div className="flex items-end justify-between gap-1 h-40">
+                  {dailyStats.map((day, idx) => {
+                    const maxTotal = Math.max(...dailyStats.map(d => d.docease + d.signease), 1);
+                    const total = day.docease + day.signease;
+                    const heightPercent = (total / maxTotal) * 100;
+                    const doceasePercent = total > 0 ? (day.docease / total) * 100 : 0;
+                    
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                        <div 
+                          className="w-full rounded-t-lg overflow-hidden transition-all hover:opacity-80 cursor-pointer relative group"
+                          style={{ height: `${Math.max(heightPercent, 5)}%` }}
+                          title={`${day.day}: ${day.docease} DocEase, ${day.signease} SignEase`}
+                        >
+                          <div 
+                            className="absolute bottom-0 w-full bg-purple-500"
+                            style={{ height: `${doceasePercent}%` }}
+                          ></div>
+                          <div 
+                            className="absolute top-0 w-full bg-red-500"
+                            style={{ height: `${100 - doceasePercent}%` }}
+                          ></div>
+                          
+                          {/* Tooltip */}
+                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                            {total} action{total > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-400">{day.day}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Graphique Répartition par type */}
+        <Card>
+          <CardHeader 
+            title="Types de documents" 
+            subtitle="Top 6"
+            action={
+              <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+                <PieChart className="w-5 h-5" />
+              </div>
+            }
+          />
+          <div className="p-4">
+            {documentTypeStats.length === 0 ? (
+              <div className="text-center text-slate-400 py-8">Aucune donnée</div>
+            ) : (
+              <div className="space-y-3">
+                {documentTypeStats.map((type, idx) => {
+                  const maxCount = Math.max(...documentTypeStats.map(t => t.count), 1);
+                  const widthPercent = (type.count / maxCount) * 100;
+                  const colors = [
+                    'bg-purple-500',
+                    'bg-red-500',
+                    'bg-indigo-500',
+                    'bg-emerald-500',
+                    'bg-amber-500',
+                    'bg-cyan-500'
+                  ];
+                  
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <div className="w-32 truncate text-sm text-slate-600 dark:text-slate-400 text-right">
+                        {type.name}
+                      </div>
+                      <div className="flex-1 h-6 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
+                        <div 
+                          className={`h-full ${colors[idx % colors.length]} rounded-lg transition-all flex items-center justify-end pr-2`}
+                          style={{ width: `${widthPercent}%` }}
+                        >
+                          <span className="text-[10px] text-white font-bold">{type.count}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Contenu principal */}
+      {viewMode === 'timeline' ? (
+        /* Vue Timeline */
+        <Card className="overflow-hidden">
+          <CardHeader 
+            title="Historique d'activité" 
+            subtitle={`${filteredActivities.length} action${filteredActivities.length > 1 ? 's' : ''}`}
+            action={
+              <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
+                <Clock className="w-5 h-5" />
+              </div>
+            }
+          />
+          
+          <div className="max-h-[600px] overflow-y-auto">
+            {Object.keys(activitiesByDay).length === 0 ? (
+              <div className="text-center text-slate-500 py-12">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>Aucune activité trouvée</p>
+              </div>
+            ) : (
+              Object.entries(activitiesByDay).map(([day, dayActivities]) => (
+                <div key={day} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                  <div className="sticky top-0 bg-slate-50 dark:bg-slate-800/50 px-4 py-2 z-10">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize">
+                      📅 {day}
+                    </h3>
+                  </div>
+                  <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    {dayActivities.map(activity => (
+                      <div 
+                        key={activity.id}
+                        className="flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                        onClick={() => setSelectedUser(activity.user_email)}
+                      >
+                        {/* Icône type */}
+                        <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+                          activity.type === 'docease' 
+                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                        }`}>
+                          {activity.type === 'docease' ? <FileText className="w-5 h-5" /> : <FileCheck className="w-5 h-5" />}
+                        </div>
+
+                        {/* Contenu */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-medium text-slate-800 dark:text-slate-200 text-sm">
+                                {activity.title}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2 mt-1">
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                                  activity.type === 'docease' 
+                                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                                }`}>
+                                  {activity.type === 'docease' ? 'DocEase' : 'SignEase'}
+                                </span>
+                                <span className="text-xs text-slate-500">
+                                  {activity.document_type}
+                                </span>
+                                {activity.metadata?.destinataire && (
+                                  <span className="text-xs text-slate-400">
+                                    → {activity.metadata.destinataire}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs text-slate-400 shrink-0">
+                              {formatTime(activity.date)}
+                            </span>
+                          </div>
+
+                          {/* Utilisateur */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                              {(activity.user_name || activity.user_email).charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-xs text-slate-600 dark:text-slate-400">
+                              {activity.user_name || activity.user_email.split('@')[0]}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      ) : (
+        /* Vue par salarié */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Liste des salariés */}
+          <Card>
+            <CardHeader 
+              title="Salariés" 
+              subtitle={`${filteredUsers.length} actif${filteredUsers.length > 1 ? 's' : ''}`}
+              action={
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400">
+                  <Users className="w-5 h-5" />
+                </div>
+              }
+            />
+            <div className="max-h-[500px] overflow-y-auto space-y-2">
+              {filteredUsers.map(user => (
+                <div 
+                  key={user.email}
+                  onClick={() => setSelectedUser(user.email === selectedUser ? null : user.email)}
+                  className={`p-4 rounded-xl cursor-pointer transition-all ${
+                    selectedUser === user.email 
+                      ? 'bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-300 dark:border-purple-700'
+                      : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border-2 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-bold">
+                        {(user.name || user.email).charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-800 dark:text-slate-200">
+                          {user.name || user.email.split('@')[0]}
+                        </p>
+                        <p className="text-xs text-slate-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                        <FileText className="w-4 h-4" />
+                        <span className="font-bold">{user.doceaseCount}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-red-500">
+                        <FileCheck className="w-4 h-4" />
+                        <span className="font-bold">{user.signaturesCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-slate-400">
+                    <Clock className="w-3 h-3 inline mr-1" />
+                    Dernière activité : {formatRelativeTime(user.lastActivity)}
+                  </div>
+                </div>
+              ))}
+              {filteredUsers.length === 0 && (
+                <div className="text-center text-slate-500 py-8">Aucun salarié trouvé</div>
+              )}
+            </div>
+          </Card>
+
+          {/* Détails du salarié sélectionné */}
+          <Card>
+            <CardHeader 
+              title={selectedUser ? (users.find(u => u.email === selectedUser)?.name || selectedUser) : 'Sélectionnez un salarié'}
+              subtitle={selectedUser ? `${users.find(u => u.email === selectedUser)?.activities.length || 0} actions` : 'Cliquez sur un salarié pour voir son activité'}
+              action={
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
+                  <Eye className="w-5 h-5" />
+                </div>
+              }
+            />
+            <div className="max-h-[500px] overflow-y-auto">
+              {selectedUser ? (
+                <div className="space-y-2">
+                  {users.find(u => u.email === selectedUser)?.activities.map(activity => (
+                    <div 
+                      key={activity.id}
+                      className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl"
+                    >
+                      <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                        activity.type === 'docease' 
+                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-600'
+                      }`}>
+                        {activity.type === 'docease' ? <FileText className="w-4 h-4" /> : <FileCheck className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+                          {activity.title}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {activity.document_type}
+                          {activity.metadata?.destinataire && ` → ${activity.metadata.destinataire}`}
+                        </p>
+                      </div>
+                      <div className="text-xs text-slate-400 shrink-0">
+                        {formatRelativeTime(activity.date)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-slate-400 py-12">
+                  <User className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Sélectionnez un salarié dans la liste</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AnalyticsView;

@@ -14,6 +14,8 @@ const ChatAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [hasUnreadMessage, setHasUnreadMessage] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -35,6 +37,25 @@ const ChatAssistant: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
+
+  // Marquer comme lu quand le chat est ouvert
+  useEffect(() => {
+    if (isOpen) {
+      setHasUnreadMessage(false);
+    }
+  }, [isOpen]);
+
+  // Déclencher l'animation quand un nouveau message bot arrive
+  useEffect(() => {
+    if (!isOpen && messages.length > 1 && messages[messages.length - 1].sender === 'bot') {
+      setHasUnreadMessage(true);
+      setShouldAnimate(true);
+      
+      // Arrêter l'animation après 1 seconde
+      const timer = setTimeout(() => setShouldAnimate(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages, isOpen]);
 
   const handleSendMessage = async (text: string = inputValue) => {
     if (!text.trim()) return;
@@ -266,13 +287,15 @@ const ChatAssistant: React.FC = () => {
       {/* Bouton Flottant */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="pointer-events-auto bg-fo-red hover:bg-red-700 text-white p-4 rounded-full shadow-lg shadow-red-600/30 transition-all hover:scale-110 active:scale-95 group relative"
+        className={`pointer-events-auto bg-fo-red hover:bg-red-700 text-white p-4 rounded-full shadow-lg shadow-red-600/30 transition-all hover:scale-110 active:scale-95 group relative ${
+          shouldAnimate ? 'animate-bounce' : ''
+        }`}
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
 
-        {/* Notification Badge (Fake) */}
-        {!isOpen && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center text-[10px] font-bold">1</span>
+        {/* Notification Badge - disparaît quand le chat est ouvert */}
+        {!isOpen && hasUnreadMessage && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full border-2 border-white dark:border-slate-950 flex items-center justify-center text-[10px] font-bold animate-pulse">1</span>
         )}
       </button>
     </div>

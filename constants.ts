@@ -35,12 +35,12 @@ export const globalStats: GlobalStat[] = [
   },
   {
     label: 'Envois par email',
-    value: '128',
+    value: '0',
     icon: Mail,
     color: 'text-indigo-700',
     bgColor: 'bg-indigo-100',
-    trend: '91% livrés',
-    description: 'Documents envoyés automatiquement'
+    trend: '+0 ce mois',
+    description: 'Documents envoyés automatiquement (DocEase + SignEase)'
   }
 ];
 

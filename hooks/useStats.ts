@@ -30,6 +30,30 @@ export const useStats = () => {
         supabase.from('docease_documents').select('id', { count: 'exact', head: true }),
       ]);
 
+      // Calculer les utilisateurs actifs (avec activité dans les 30 derniers jours)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Utilisateurs qui ont créé des documents DocEase
+      const { data: activeDoceaseUsers } = await supabase
+        .from('docease_documents')
+        .select('user_id')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      // Utilisateurs qui ont signé
+      const { data: activeSignatureUsers } = await supabase
+        .from('signatures')
+        .select('user_id')
+        .gte('signed_at', thirtyDaysAgo.toISOString());
+
+      // Fusionner et dédupliquer les user_id
+      const activeUserIds = new Set([
+        ...(activeDoceaseUsers?.map(d => d.user_id).filter(Boolean) || []),
+        ...(activeSignatureUsers?.map(s => s.user_id).filter(Boolean) || [])
+      ]);
+
+      const activeUsersCount = activeUserIds.size;
+
         // Compter les documents/signatures du mois en cours
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
@@ -70,22 +94,22 @@ export const useStats = () => {
             description: 'PDFs signés via SignEase'
           },
           {
-            label: 'Secrétaires actifs',
-            value: String(usersCount.count || 0),
+            label: 'Salariés actifs',
+            value: String(activeUsersCount),
             icon: User,
             color: 'text-blue-700',
             bgColor: 'bg-blue-100',
-            trend: `${usersCount.count || 0} connectés`,
-            description: 'Utilisateurs avec activité récente'
+            trend: `${activeUsersCount} actifs ce mois`,
+            description: 'Utilisateurs avec activité récente (30 jours)'
           },
           {
             label: 'Envois par email',
-            value: String(documentsCount.count || 0),
+            value: String(doceaseCount.count || 0),
             icon: Mail,
             color: 'text-indigo-700',
             bgColor: 'bg-indigo-100',
-            trend: '91% livrés',
-            description: 'Documents envoyés automatiquement'
+            trend: `+${monthDocease.count || 0} ce mois`,
+            description: 'Documents envoyés automatiquement (DocEase + SignEase)'
           }
         ];
 
@@ -112,44 +136,71 @@ export const useStats = () => {
           role: user.role_level || user.role || 'secretary',
         }));
 
-        // 3. Récupérer les stats par type de document
-        const { data: docTypesData, error: docTypesError } = await supabase
-          .from('document_types')
-          .select(`
-            id,
-            type_name,
-            color,
-            documents:documents(count)
-          `);
+        // 3. Récupérer les stats par type de document depuis docease_documents
+        const { data: doceaseTypesData, error: doceaseTypesError } = await supabase
+          .from('docease_documents')
+          .select('document_type');
 
-        if (docTypesError) throw docTypesError;
+        if (doceaseTypesError) throw doceaseTypesError;
 
-        const totalDocs = documentsCount.count || 1;
-        const documentTypeStats: DocumentTypeStat[] = (docTypesData || []).map((type: any) => {
-          const count = type.documents?.[0]?.count || 0;
-          return {
-            type: type.type_name,
-            count,
-            percentage: Math.round((count / totalDocs) * 100),
-            color: type.color,
-          };
+        // Compter les documents par type
+        const typeCounts: { [key: string]: number } = {};
+        (doceaseTypesData || []).forEach((doc: any) => {
+          const type = doc.document_type || 'Autre';
+          typeCounts[type] = (typeCounts[type] || 0) + 1;
         });
 
-        // 4. Récupérer l'activité hebdomadaire
-        const { data: activityData, error: activityError } = await supabase
-          .from('activities')
-          .select('*')
-          .order('day_of_week', { ascending: true })
-          .limit(7);
+        // Couleurs prédéfinies pour les types de documents
+        const typeColors: { [key: string]: string } = {
+          'designation': 'bg-blue-500 dark:bg-blue-600',
+          'negociation': 'bg-green-500 dark:bg-green-600',
+          'circulaire': 'bg-purple-500 dark:bg-purple-600',
+          'custom': 'bg-orange-500 dark:bg-orange-600',
+          'Autre': 'bg-slate-500 dark:bg-slate-600'
+        };
 
-        if (activityError) throw activityError;
-
-        const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-        const weeklyActivity: WeeklyActivity[] = (activityData || []).map((activity: any) => ({
-          day: dayNames[activity.day_of_week] || 'Lun',
-          letters: activity.letters_count || 0,
-          signatures: activity.signatures_count || 0,
+        const totalDocs = Math.max(doceaseCount.count || 1, 1);
+        const documentTypeStats: DocumentTypeStat[] = Object.entries(typeCounts).map(([type, count]) => ({
+          type: type.charAt(0).toUpperCase() + type.slice(1),
+          count,
+          percentage: Math.round((count / totalDocs) * 100),
+          color: typeColors[type] || 'bg-slate-500 dark:bg-slate-600',
         }));
+
+        // 4. Récupérer l'activité hebdomadaire réelle depuis docease_documents et signatures
+        const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (6 - i));
+          date.setHours(0, 0, 0, 0);
+          return date;
+        });
+
+        const weeklyActivity: WeeklyActivity[] = await Promise.all(
+          last7Days.map(async (date, index) => {
+            const nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            const [doceaseResult, signaturesResult] = await Promise.all([
+              supabase
+                .from('docease_documents')
+                .select('id', { count: 'exact', head: true })
+                .gte('created_at', date.toISOString())
+                .lt('created_at', nextDay.toISOString()),
+              supabase
+                .from('signatures')
+                .select('id', { count: 'exact', head: true })
+                .gte('signed_at', date.toISOString())
+                .lt('signed_at', nextDay.toISOString()),
+            ]);
+
+            return {
+              day: dayNames[index % 7],
+              letters: doceaseResult.count || 0,
+              signatures: signaturesResult.count || 0,
+            };
+          })
+        );
 
         setStats({
           global: globalStats,
@@ -168,18 +219,18 @@ export const useStats = () => {
   useEffect(() => {
     fetchStats();
 
-    // Abonnement Realtime pour détecter les nouveaux documents DocEase
+    // Abonnement Realtime pour détecter les changements sur documents DocEase
     const doceaseChannel = supabase
       .channel('docease_documents_changes')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'docease_documents'
         },
         (payload) => {
-          console.log('🔄 Nouveau document DocEase détecté, rafraîchissement des stats...', payload.new);
+          console.log('🔄 Changement DocEase détecté, rafraîchissement des stats...', payload.eventType);
           fetchStats(); // Recharger les stats automatiquement
         }
       )
@@ -191,12 +242,12 @@ export const useStats = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'signatures'
         },
         (payload) => {
-          console.log('🔄 Nouvelle signature détectée, rafraîchissement des stats...', payload.new);
+          console.log('🔄 Changement signatures détecté, rafraîchissement des stats...', payload.eventType);
           fetchStats();
         }
       )
@@ -208,12 +259,12 @@ export const useStats = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'documents'
         },
         (payload) => {
-          console.log('🔄 Nouveau document détecté, rafraîchissement des stats...', payload.new);
+          console.log('🔄 Changement documents détecté, rafraîchissement des stats...', payload.eventType);
           fetchStats();
         }
       )

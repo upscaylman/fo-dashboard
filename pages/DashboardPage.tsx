@@ -1,14 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import StatsTabs from '../components/dashboard/stats/StatsTabs';
 import MainContent from '../components/dashboard/MainContent';
 import Sidebar from '../components/dashboard/Sidebar';
 import MobileSidebar from '../components/layout/MobileSidebar';
+import ActiveUsersWidget from '../components/dashboard/ActiveUsersWidget';
 import { useStats, useNews, useLinks } from '../hooks/useStats';
+import { usePermissions } from '../hooks/usePermissions';
+import { usePresence } from '../hooks/usePresence';
+
+type StatsTab = 'global' | 'users' | 'types' | 'docease';
 
 const DashboardPage: React.FC = () => {
     const { stats, loading: statsLoading, error: statsError } = useStats();
     const { news, loading: newsLoading, refreshing: newsRefreshing, error: newsError, refetch: refetchNews } = useNews();
     const { links, loading: linksLoading } = useLinks();
+    const { isAdmin, isSuperAdmin } = usePermissions();
+    const { updatePresence } = usePresence();
+    
+    // État pour l'onglet actif - utilisé pour masquer les sections inutiles
+    const [activeTab, setActiveTab] = useState<StatsTab>(
+        (isAdmin || isSuperAdmin) ? 'global' : 'users'
+    );
+
+    // Tracker le changement d'onglet
+    useEffect(() => {
+        const toolMap: { [key: string]: 'docease' | 'signease' | null } = {
+            'global': null,
+            'users': null,
+            'types': null,
+            'docease': 'docease'
+        };
+        updatePresence(activeTab, toolMap[activeTab] || null);
+    }, [activeTab, updatePresence]);
+
+    // Seule la Vue d'ensemble (global) affiche les sections extras
+    // Les autres onglets (Salariés, Analyse, DocEase) ont un affichage dédié
+    const showExtraSections = activeTab === 'global';
 
     // The global loading screen has been removed to allow progressive rendering.
     // Each component will now handle its own loading state.
@@ -27,24 +54,34 @@ const DashboardPage: React.FC = () => {
             {/* Mobile Drawer */}
             <MobileSidebar archiveLinks={links} loading={linksLoading} />
 
-            <StatsTabs stats={stats} loading={statsLoading} />
+            <StatsTabs 
+                stats={stats} 
+                loading={statsLoading} 
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+            />
             
-            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    <MainContent 
-                        news={news} 
-                        loading={newsLoading} 
-                        refreshing={newsRefreshing} 
-                        error={newsError}
-                        onRetry={refetchNews}
-                    />
+            {showExtraSections && (
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Widget utilisateurs actifs - visible uniquement pour admin/super_admin */}
+                        {(isAdmin || isSuperAdmin) && <ActiveUsersWidget />}
+                        
+                        <MainContent 
+                            news={news} 
+                            loading={newsLoading} 
+                            refreshing={newsRefreshing} 
+                            error={newsError}
+                            onRetry={refetchNews}
+                        />
+                    </div>
+                    
+                    {/* Desktop Sidebar (Hidden on Mobile) */}
+                    <div className="hidden lg:block space-y-6">
+                        <Sidebar archiveLinks={links} loading={linksLoading} />
+                    </div>
                 </div>
-                
-                {/* Desktop Sidebar (Hidden on Mobile) */}
-                <div className="hidden lg:block space-y-6">
-                    <Sidebar archiveLinks={links} loading={linksLoading} />
-                </div>
-            </div>
+            )}
         </>
     );
 };

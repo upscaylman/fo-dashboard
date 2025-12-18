@@ -4,6 +4,7 @@ import Footer from './components/layout/Footer';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
 import SplashScreen from './components/layout/SplashScreen';
 import ChatAssistant from './components/dashboard/ChatAssistant';
 import CommandPalette from './components/ui/CommandPalette';
@@ -72,9 +73,9 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#FDF8F6] dark:bg-slate-950 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden transition-colors duration-300 flex flex-col animate-[fadeIn_0.5s_ease-out]">
-      <Header />
+      <Header onNavigate={navigateTo} />
       <main className="flex-1 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
-        <DashboardPage />
+        {currentPath === '/profile' ? <ProfilePage /> : <DashboardPage />}
       </main>
       <Footer />
       <ChatAssistant />

@@ -5,6 +5,7 @@ import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { Skeleton } from '../ui/Skeleton';
 import { useBookmarks } from '../../context/BookmarkContext';
+import { useDoceaseStatus } from '../../hooks/useDoceaseStatus';
 
 interface SidebarProps {
   archiveLinks: ArchiveLink[];
@@ -28,6 +29,7 @@ const LinkItem = ({ href, icon: Icon, title, subtitle, colorClass }: any) => (
 
 const Sidebar: React.FC<SidebarProps> = ({ archiveLinks, loading }) => {
   const { bookmarks, removeBookmark } = useBookmarks();
+  const { isOnline, isChecking } = useDoceaseStatus();
 
   return (
     <div className="space-y-6">
@@ -153,16 +155,50 @@ const Sidebar: React.FC<SidebarProps> = ({ archiveLinks, loading }) => {
         </h3>
         <ul className="space-y-3 text-xs relative z-10">
           <li className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> 
+            <div 
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+                isOnline === null
+                  ? 'bg-gray-500 opacity-50'
+                  : isChecking
+                    ? 'bg-yellow-500 animate-pulse'
+                    : isOnline
+                      ? 'bg-green-500 animate-pulse'
+                      : 'bg-red-500'
+              }`}
+              title={
+                isOnline === null
+                  ? 'Initialisation...'
+                  : isChecking
+                    ? 'Vérification...'
+                    : isOnline
+                      ? 'Serveur en ligne'
+                      : 'Serveur hors ligne'
+              }
+            ></div>
             <strong className="text-white">
                 <a href="https://fo-docease.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">DocEase</a>
-            </strong> : Backend Local n8n
+            </strong> : 
+            <span className="font-mono text-[10px]">
+              {isOnline === null ? (
+                <span className="opacity-50">...</span>
+              ) : isChecking ? (
+                'Vérification...'
+              ) : isOnline ? (
+                <span className="text-green-400">En ligne</span>
+              ) : (
+                <span className="text-red-400">Hors ligne</span>
+              )}
+            </span>
           </li>
           <li className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> 
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div> 
             <strong className="text-white">
                 <a href="https://signeasy.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">SignEase</a>
-            </strong> : Netlify
+            </strong> : <span className="font-mono text-[10px] text-green-400">En ligne</span>
+          </li>
+          <li className="flex items-center gap-2 pt-2 border-t border-white/10">
+            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-[10px]">Backend ngrok · Vérification auto toutes les 30s</span>
           </li>
         </ul>
       </div>

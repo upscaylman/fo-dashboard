@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (provider: 'email' | 'outlook', data?: any) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, role_level, avatar_url')
+        .select('id, name, email, role_level, avatar')
         .eq('id', authUser.id)
         .single();
 
@@ -48,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: authUser.email || '',
           name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Utilisateur',
           role_level: 'secretary',
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.email}`,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.email}`,
         };
 
         await supabase.from('users').insert(newProfile);
@@ -58,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: newProfile.name,
           email: newProfile.email,
           role: newProfile.role_level,
-          avatar: newProfile.avatar_url,
+          avatar: newProfile.avatar,
         };
       }
 
@@ -67,11 +68,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: data.name,
         email: data.email,
         role: data.role_level || 'secretary',
-        avatar: data.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.email}`,
+        avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.email}`,
       };
     } catch (error) {
       console.error('Erreur profil:', error);
       return null;
+    }
+  };
+
+  const refreshUser = async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      const profile = await fetchUserProfile(authUser);
+      if (profile) {
+        setUser(profile);
+      }
     }
   };
 
@@ -239,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
