@@ -432,6 +432,20 @@ export const getEnvelopeByToken = async (
       );
     }
 
+    // Debug : log des champs avec valeurs pré-signées
+    const fieldsWithValues = envelopeData.fields.filter((f) => f.value);
+    if (fieldsWithValues.length > 0) {
+      console.log("📋 getEnvelopeByToken - Champs avec valeurs pré-signées:", 
+        fieldsWithValues.map(f => ({
+          id: f.id,
+          type: f.type,
+          recipientId: f.recipientId,
+          hasValue: !!f.value,
+          valuePreview: typeof f.value === 'string' ? f.value.substring(0, 50) + '...' : f.value
+        }))
+      );
+    }
+
     return { ...envelopeData, currentSignerId: recipientId, isExpired };
   } catch (error) {
     console.error("Erreur getEnvelopeByToken:", error);
@@ -559,11 +573,21 @@ export const createEnvelope = async (
       const finalRecipientId =
         recipientIdMap.get(f.tempRecipientId) || "unknown";
       const { tempRecipientId, ...rest } = f;
-      return {
+      const newField = {
         ...rest,
         id: `f-${newDocId}-${i + 1}`,
         recipientId: finalRecipientId,
       };
+      // Debug : log si le champ a une valeur pré-signée
+      if (newField.value) {
+        console.log(`   📝 Champ ${i + 1} avec valeur pré-signée:`, {
+          type: newField.type,
+          recipientId: newField.recipientId,
+          hasValue: !!newField.value,
+          valueLength: typeof newField.value === 'string' ? newField.value.length : 0
+        });
+      }
+      return newField;
     });
 
     // 5. Créer l'enveloppe

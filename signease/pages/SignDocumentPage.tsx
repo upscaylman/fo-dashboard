@@ -1900,6 +1900,69 @@ const SignDocumentPage: React.FC = () => {
       return null; // Don't render empty fields for other people in read-only mode
     }
 
+    // 🔧 FIX : En mode readOnly avec une valeur, afficher directement l'image (comme pour les autres destinataires)
+    if (readOnly && value && (field.type === FieldType.SIGNATURE || field.type === FieldType.INITIAL)) {
+      return (
+        <div
+          style={baseStyle}
+          className="flex items-center justify-center"
+        >
+          <img
+            src={String(value)}
+            alt={
+              field.type === FieldType.SIGNATURE &&
+              field.signatureSubType === "initial"
+                ? "paraphe"
+                : "signature"
+            }
+            className="object-contain w-full h-full"
+          />
+        </div>
+      );
+    }
+
+    // 🔧 FIX : En mode readOnly avec une valeur DATE, afficher la date
+    if (readOnly && value && field.type === FieldType.DATE) {
+      return (
+        <div
+          style={baseStyle}
+          className="bg-surface rounded-md border border-outlineVariant flex items-center justify-center"
+        >
+          <span className="text-sm font-semibold text-onSurface">
+            {String(value)}
+          </span>
+        </div>
+      );
+    }
+
+    // 🔧 FIX : En mode readOnly avec une valeur TEXT, afficher le texte
+    if (readOnly && value && field.type === FieldType.TEXT) {
+      return (
+        <div
+          style={baseStyle}
+          className="bg-surface rounded-md border border-outlineVariant flex items-center justify-start p-2"
+        >
+          <span className="text-sm text-onSurface whitespace-pre-wrap break-words">
+            {String(value)}
+          </span>
+        </div>
+      );
+    }
+
+    // 🔧 FIX : En mode readOnly avec une valeur CHECKBOX, afficher la coche
+    if (readOnly && field.type === FieldType.CHECKBOX) {
+      return (
+        <div
+          style={baseStyle}
+          className="bg-surface rounded-md border border-outlineVariant flex items-center justify-center"
+        >
+          {value === true && (
+            <CheckSquare className="h-full w-full text-primary" />
+          )}
+        </div>
+      );
+    }
+
     const interactiveClasses =
       readOnly || !isCurrentSignerField
         ? ""

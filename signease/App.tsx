@@ -13,6 +13,7 @@ import Header from "./components/Header";
 import { PresenceTracker } from "./components/PresenceTracker";
 import { ToastProvider } from "./components/Toast";
 import { UserProvider, useUser } from "./components/UserContext";
+import VersionUpdateBanner from "./components/VersionUpdateBanner";
 import DashboardPage from "./pages/DashboardPage";
 import InboxPage from "./pages/InboxPage";
 import PrepareDocumentPage from "./pages/PrepareDocumentPage";
@@ -89,6 +90,7 @@ const App: React.FC = () => {
         <HashRouter>
           <div className="min-h-screen bg-background text-onBackground flex flex-col">
             <AppContent />
+            <VersionUpdateBanner />
           </div>
         </HashRouter>
       </ToastProvider>
