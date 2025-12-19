@@ -24,7 +24,7 @@ const ChatAssistant: React.FC = () => {
       timestamp: new Date(),
       actions: [
         { label: "Générer un courrier", action: () => window.open('https://fo-docease.netlify.app/', '_blank') },
-        { label: "Signer un PDF", action: () => window.open('https://signeasy.netlify.app/', '_blank') }
+        { label: "Signer un PDF", action: () => window.open('https://fde-signease.netlify.app/', '_blank') }
       ]
     }
   ]);
@@ -78,7 +78,7 @@ const ChatAssistant: React.FC = () => {
           
           Tu as connaissance des outils internes suivants :
           1. DocEase (https://fo-docease.netlify.app/) : Pour générer des courriers juridiques et syndicaux automatiquement.
-          2. SignEase (https://signeasy.netlify.app/) : Pour signer électroniquement des documents PDF.
+          2. SignEase (https://fde-signease.netlify.app/) : Pour signer électroniquement des documents PDF.
           3. Site Fédéral (https://www.fo-metaux.fr/) : Pour les actualités et le calculateur de prime d'ancienneté.
           
           Si l'utilisateur pose une question juridique, réponds brièvement en citant la Convention Collective de la Métallurgie si pertinent.
@@ -168,7 +168,7 @@ const ChatAssistant: React.FC = () => {
         sender: 'bot',
         timestamp: new Date(),
         actions: botResponseText.includes('DocEase') ? [{ label: "Ouvrir DocEase", action: () => window.open('https://fo-docease.netlify.app/', '_blank') }]
-          : botResponseText.includes('SignEase') ? [{ label: "Ouvrir SignEase", action: () => window.open('https://signeasy.netlify.app/', '_blank') }]
+          : botResponseText.includes('SignEase') ? [{ label: "Ouvrir SignEase", action: () => window.open('https://fde-signease.netlify.app/', '_blank') }]
             : undefined
       };
 
@@ -198,11 +198,11 @@ const ChatAssistant: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-4 pointer-events-none max-w-[calc(100vw-2rem)]">
 
       {/* Fenêtre de chat */}
       {isOpen && (
-        <div className="pointer-events-auto bg-white dark:bg-slate-900 w-[350px] h-[500px] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden animate-[slideIn_0.2s_ease-out]">
+        <div className="pointer-events-auto bg-white dark:bg-slate-900 w-[calc(100vw-2rem)] sm:w-[350px] max-w-[350px] h-[70vh] sm:h-[500px] max-h-[500px] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden animate-[slideIn_0.2s_ease-out]">
           {/* Header */}
           <div className="p-4 bg-fo-red text-white flex justify-between items-center">
             <div className="flex items-center gap-3">

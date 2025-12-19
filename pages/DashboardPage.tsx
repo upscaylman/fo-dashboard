@@ -8,7 +8,7 @@ import { useStats, useNews, useLinks } from '../hooks/useStats';
 import { usePermissions } from '../hooks/usePermissions';
 import { usePresence } from '../hooks/usePresence';
 
-type StatsTab = 'global' | 'users' | 'types' | 'docease';
+type StatsTab = 'global' | 'users' | 'types' | 'docease' | 'signease';
 
 const DashboardPage: React.FC = () => {
     const { stats, loading: statsLoading, error: statsError } = useStats();
@@ -28,7 +28,8 @@ const DashboardPage: React.FC = () => {
             'global': null,
             'users': null,
             'types': null,
-            'docease': 'docease'
+            'docease': 'docease',
+            'signease': 'signease'
         };
         updatePresence(activeTab, toolMap[activeTab] || null);
     }, [activeTab, updatePresence]);

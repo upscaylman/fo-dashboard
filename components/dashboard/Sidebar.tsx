@@ -193,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ archiveLinks, loading }) => {
           <li className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div> 
             <strong className="text-white">
-                <a href="https://signeasy.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">SignEase</a>
+                <a href="https://fde-signease.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">SignEase</a>
             </strong> : <span className="font-mono text-[10px] text-green-400">En ligne</span>
           </li>
           <li className="flex items-center gap-2 pt-2 border-t border-white/10">
