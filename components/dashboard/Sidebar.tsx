@@ -146,12 +146,12 @@ const Sidebar: React.FC<SidebarProps> = ({ archiveLinks, loading }) => {
         </div>
       </Card>
 
-      <div className="bg-slate-900 dark:bg-slate-800 rounded-[24px] p-6 text-slate-300 relative overflow-hidden shadow-lg">
+      <div className="bg-slate-100 dark:bg-slate-800 rounded-[24px] p-6 text-slate-600 dark:text-slate-300 relative overflow-hidden shadow-lg">
         <div className="absolute top-0 right-0 p-8 opacity-5">
             <Info className="w-24 h-24" />
         </div>
-        <h3 className="font-bold text-white mb-3 text-sm flex items-center gap-2 relative z-10">
-          <Info className="w-4 h-4 text-blue-400" /> Info Technique
+        <h3 className="font-bold text-slate-900 dark:text-white mb-3 text-sm flex items-center gap-2 relative z-10">
+          <Info className="w-4 h-4 text-blue-500 dark:text-blue-400" /> Info Technique
         </h3>
         <ul className="space-y-3 text-xs relative z-10">
           <li className="flex items-center gap-2">
@@ -175,8 +175,8 @@ const Sidebar: React.FC<SidebarProps> = ({ archiveLinks, loading }) => {
                       : 'Serveur hors ligne'
               }
             ></div>
-            <strong className="text-white">
-                <a href="https://fo-docease.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">DocEase</a>
+            <strong className="text-slate-900 dark:text-white">
+                <a href="https://fo-docease.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">DocEase</a>
             </strong> : 
             <span className="font-mono text-[10px]">
               {isOnline === null ? (
@@ -184,19 +184,19 @@ const Sidebar: React.FC<SidebarProps> = ({ archiveLinks, loading }) => {
               ) : isChecking ? (
                 'Vérification...'
               ) : isOnline ? (
-                <span className="text-green-400">En ligne</span>
+                <span className="text-green-600 dark:text-green-400">En ligne</span>
               ) : (
-                <span className="text-red-400">Hors ligne</span>
+                <span className="text-red-600 dark:text-red-400">Hors ligne</span>
               )}
             </span>
           </li>
           <li className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div> 
-            <strong className="text-white">
-                <a href="https://fde-signease.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">SignEase</a>
-            </strong> : <span className="font-mono text-[10px] text-green-400">En ligne</span>
+            <strong className="text-slate-900 dark:text-white">
+                <a href="https://fde-signease.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">SignEase</a>
+            </strong> : <span className="font-mono text-[10px] text-green-600 dark:text-green-400">En ligne</span>
           </li>
-          <li className="flex items-center gap-2 pt-2 border-t border-white/10">
+          <li className="flex items-center gap-2 pt-2 border-t border-slate-300 dark:border-white/10">
             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
             <span className="text-[10px]">Backend ngrok · Vérification auto toutes les 30s</span>
           </li>

@@ -62,27 +62,28 @@ const DashboardPage: React.FC = () => {
                 onTabChange={setActiveTab}
             />
             
-            {showExtraSections && (
-                <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Widget utilisateurs actifs - visible uniquement pour admin/super_admin */}
-                        {(isAdmin || isSuperAdmin) && <ActiveUsersWidget />}
-                        
-                        <MainContent 
-                            news={news} 
-                            loading={newsLoading} 
-                            refreshing={newsRefreshing} 
-                            error={newsError}
-                            onRetry={refetchNews}
-                        />
-                    </div>
+            {/* Section Outils Rapides + Contenu - Toujours visible */}
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Widget utilisateurs actifs - visible uniquement pour admin/super_admin sur onglet global */}
+                    {showExtraSections && (isAdmin || isSuperAdmin) && <ActiveUsersWidget />}
                     
-                    {/* Desktop Sidebar (Hidden on Mobile) */}
+                    <MainContent 
+                        news={news} 
+                        loading={newsLoading} 
+                        refreshing={newsRefreshing} 
+                        error={newsError}
+                        onRetry={refetchNews}
+                    />
+                </div>
+                
+                {/* Desktop Sidebar (Hidden on Mobile) - Seulement sur onglet global */}
+                {showExtraSections && (
                     <div className="hidden lg:block space-y-6">
                         <Sidebar archiveLinks={links} loading={linksLoading} />
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </>
     );
 };
