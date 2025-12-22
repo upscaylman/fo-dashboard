@@ -131,26 +131,27 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
           
           {/* Onglets de navigation */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {/* Filtre de Date - Style original, à gauche */}
+            {/* Filtre de Date - Icône seule sur mobile, complet sur desktop */}
             {internalTab !== 'types' && (
               <div className="relative group shrink-0">
-                 <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-colors cursor-pointer">
-                     <div className="flex items-center gap-2 pointer-events-none">
-                        <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-300" />
-                        <span className="hidden sm:inline text-slate-500 dark:text-slate-300 text-xs">Période :</span>
-                     </div>
+                 <label className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer">
+                     <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                     <span className="hidden sm:inline text-slate-500 dark:text-slate-300 text-xs">Période :</span>
+                     <span className="hidden sm:inline text-sm font-bold text-slate-700 dark:text-slate-200">
+                       {timeRange === 'week' ? '7 jours' : timeRange === 'month' ? '30 jours' : timeRange === 'quarter' ? '3 mois' : '1 an'}
+                     </span>
                      <select
                         value={timeRange}
                         onChange={handleTimeRangeChange}
-                        className="bg-transparent border-none outline-none text-sm font-bold text-slate-700 dark:text-slate-200 appearance-none cursor-pointer pr-5 sm:pr-6 pl-0 sm:pl-1 max-w-[70px] sm:max-w-none"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                      >
-                        <option className="text-slate-900 dark:text-slate-200 dark:bg-slate-900" value="week">7 jours</option>
-                        <option className="text-slate-900 dark:text-slate-200 dark:bg-slate-900" value="month">30 jours</option>
-                        <option className="text-slate-900 dark:text-slate-200 dark:bg-slate-900" value="quarter">3 mois</option>
-                        <option className="text-slate-900 dark:text-slate-200 dark:bg-slate-900" value="year">1 an</option>
+                        <option value="week">7 jours</option>
+                        <option value="month">30 jours</option>
+                        <option value="quarter">3 mois</option>
+                        <option value="year">1 an</option>
                      </select>
-                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 sm:right-4 pointer-events-none group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-                 </div>
+                     <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                 </label>
               </div>
             )}
             
