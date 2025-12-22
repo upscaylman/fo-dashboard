@@ -12,6 +12,9 @@ export interface ActiveUser {
   current_tool?: 'docease' | 'signease' | null;
   last_activity: string;
   started_at: string;
+  // Champs enrichis pour la fusion multi-outils
+  tools?: ('dashboard' | 'docease' | 'signease')[];
+  names?: string[]; // Pseudos différents sur les différents outils
 }
 
 interface UsePresenceReturn {
@@ -125,33 +128,73 @@ export const usePresence = (): UsePresenceReturn => {
     }
   }, []);
 
-  // Récupérer les utilisateurs actifs (dédupliqués par user_id)
+  // Récupérer les utilisateurs actifs (dédupliqués par email, fusion des outils)
   const fetchActiveUsers = useCallback(async () => {
     try {
-      // Nettoyer les sessions inactives (plus de 5 minutes sans activité)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      // Nettoyer les sessions inactives (plus de 2 minutes sans activité pour déconnexion rapide)
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       await supabase
         .from('active_sessions')
         .delete()
-        .lt('last_activity', fiveMinutesAgo);
+        .lt('last_activity', twoMinutesAgo);
 
       const { data, error } = await supabase
         .from('active_sessions')
         .select('*')
-        .gte('last_activity', fiveMinutesAgo)
+        .gte('last_activity', twoMinutesAgo)
         .order('last_activity', { ascending: false });
 
       if (!error && data) {
-        // Dédupliquer par user_id - garder seulement la session la plus récente par utilisateur
-        const userMap = new Map<string, ActiveUser>();
+        // Dédupliquer par email (case-insensitive) - fusionner les outils et pseudos
+        const emailMap = new Map<string, ActiveUser>();
+        
         data.forEach((session: ActiveUser) => {
-          const existing = userMap.get(session.user_id);
-          if (!existing || new Date(session.last_activity) > new Date(existing.last_activity)) {
-            userMap.set(session.user_id, session);
+          const emailKey = session.user_email.toLowerCase().trim();
+          const existing = emailMap.get(emailKey);
+          
+          // Déterminer l'outil de cette session
+          const sessionTool: 'dashboard' | 'docease' | 'signease' = 
+            session.current_tool === 'docease' ? 'docease' :
+            session.current_tool === 'signease' ? 'signease' : 'dashboard';
+          
+          if (!existing) {
+            // Première session pour cet email
+            emailMap.set(emailKey, {
+              ...session,
+              tools: [sessionTool],
+              names: session.user_name ? [session.user_name] : []
+            });
+          } else {
+            // Fusionner avec la session existante
+            // Ajouter l'outil s'il n'est pas déjà présent
+            if (!existing.tools?.includes(sessionTool)) {
+              existing.tools = [...(existing.tools || []), sessionTool];
+            }
+            
+            // Ajouter le pseudo s'il est différent (case-insensitive)
+            if (session.user_name) {
+              const existingNames = existing.names || [];
+              const nameExists = existingNames.some(
+                n => n.toLowerCase().trim() === session.user_name!.toLowerCase().trim()
+              );
+              if (!nameExists) {
+                existing.names = [...existingNames, session.user_name];
+              }
+            }
+            
+            // Garder l'activité la plus récente
+            if (new Date(session.last_activity) > new Date(existing.last_activity)) {
+              existing.last_activity = session.last_activity;
+              existing.current_page = session.current_page;
+              // Garder l'avatar le plus récent si disponible
+              if (session.avatar_url) {
+                existing.avatar_url = session.avatar_url;
+              }
+            }
           }
         });
         
-        setActiveUsers(Array.from(userMap.values()));
+        setActiveUsers(Array.from(emailMap.values()));
       }
     } catch (error) {
       console.error('Erreur chargement utilisateurs actifs:', error);
@@ -162,9 +205,32 @@ export const usePresence = (): UsePresenceReturn => {
 
   // Initialisation
   useEffect(() => {
+    // Toujours charger les utilisateurs actifs, même si l'utilisateur n'est pas connecté
+    fetchActiveUsers();
+    
+    // Rafraîchir la liste toutes les 30 secondes pour détecter les déconnexions
+    const refreshInterval = setInterval(() => {
+      fetchActiveUsers();
+    }, 30000);
+    
+    // Souscription realtime pour les utilisateurs actifs (visible même si non connecté)
+    const publicChannel = supabase
+      .channel('active_sessions_public')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'active_sessions' },
+        () => {
+          fetchActiveUsers();
+        }
+      )
+      .subscribe();
+
     if (!user) {
       setLoading(false);
-      return;
+      return () => {
+        clearInterval(refreshInterval);
+        supabase.removeChannel(publicChannel);
+      };
     }
 
     // Éviter les initialisations multiples
@@ -235,11 +301,19 @@ export const usePresence = (): UsePresenceReturn => {
     // Nettoyage à la fermeture
     const handleBeforeUnload = () => {
       if (sessionIdRef.current) {
-        // Utiliser sendBeacon pour la déconnexion synchrone
-        navigator.sendBeacon(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/active_sessions?id=eq.${sessionIdRef.current}`,
-          ''
-        );
+        // Supprimer la session immédiatement via fetch synchrone
+        // sendBeacon ne peut pas faire de DELETE, donc on utilise un flag
+        try {
+          // Marquer la session comme expirée pour suppression rapide
+          const xhr = new XMLHttpRequest();
+          xhr.open('DELETE', `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/active_sessions?id=eq.${sessionIdRef.current}`, false); // synchrone
+          xhr.setRequestHeader('apikey', import.meta.env.VITE_SUPABASE_ANON_KEY);
+          xhr.setRequestHeader('Authorization', `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`);
+          xhr.send();
+        } catch (e) {
+          // Fallback: marquer comme très ancien pour nettoyage rapide
+          console.warn('Erreur suppression session:', e);
+        }
       }
     };
 
@@ -278,8 +352,10 @@ export const usePresence = (): UsePresenceReturn => {
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
+      clearInterval(refreshInterval);
       removePresence();
       supabase.removeChannel(channel);
+      supabase.removeChannel(publicChannel);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

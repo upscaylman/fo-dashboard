@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { archiveLinks } from '../constants';
 import { GlobalStat, UserStat, DocumentTypeStat, WeeklyActivity, NewsItem, ArchiveLink } from '../types';
@@ -11,15 +11,22 @@ interface DashboardStats {
   activity: WeeklyActivity[];
 }
 
-// Hook pour les stats du dashboard
+// Hook pour les stats du dashboard avec chargement progressif
 export const useStats = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref pour éviter les appels multiples en realtime (debounce)
+  const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (isRealtimeUpdate = false) => {
     try {
-      setLoading(true);
+      // Ne pas montrer le loading pour les mises à jour realtime (UX fluide)
+      if (!isRealtimeUpdate) {
+        setLoading(true);
+      }
       setError(null);
 
       // 1. Récupérer les stats globales
@@ -237,13 +244,28 @@ export const useStats = () => {
         });
       } catch (e: any) {
         console.error('Erreur lors du chargement des statistiques:', e);
-        setError(e.message || "Impossible de charger les statistiques.");
+        if (isMountedRef.current) {
+          setError(e.message || "Impossible de charger les statistiques.");
+        }
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     }, []);
 
+  // Fonction de refresh avec debounce pour éviter les appels multiples
+  const debouncedFetchStats = useCallback(() => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchStats(true); // true = realtime update (pas de loading spinner)
+    }, 300); // 300ms debounce
+  }, [fetchStats]);
+
   useEffect(() => {
+    isMountedRef.current = true;
     fetchStats();
 
     // Abonnement Realtime pour détecter les changements sur documents DocEase
@@ -258,7 +280,7 @@ export const useStats = () => {
         },
         (payload) => {
           console.log('🔄 Changement DocEase détecté, rafraîchissement des stats...', payload.eventType);
-          fetchStats(); // Recharger les stats automatiquement
+          debouncedFetchStats(); // Utiliser la version debounced
         }
       )
       .subscribe();
@@ -275,7 +297,7 @@ export const useStats = () => {
         },
         (payload) => {
           console.log('🔄 Changement signatures détecté, rafraîchissement des stats...', payload.eventType);
-          fetchStats();
+          debouncedFetchStats();
         }
       )
       .subscribe();
@@ -292,19 +314,41 @@ export const useStats = () => {
         },
         (payload) => {
           console.log('🔄 Changement documents détecté, rafraîchissement des stats...', payload.eventType);
-          fetchStats();
+          debouncedFetchStats();
+        }
+      )
+      .subscribe();
+
+    // Abonnement pour signease_activity
+    const signeaseChannel = supabase
+      .channel('signease_activity_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'signease_activity'
+        },
+        (payload) => {
+          console.log('🔄 Changement SignEase détecté, rafraîchissement des stats...', payload.eventType);
+          debouncedFetchStats();
         }
       )
       .subscribe();
 
     return () => {
+      isMountedRef.current = false;
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
       supabase.removeChannel(doceaseChannel);
       supabase.removeChannel(signaturesChannel);
       supabase.removeChannel(documentsChannel);
+      supabase.removeChannel(signeaseChannel);
     };
-  }, [fetchStats]);
+  }, [fetchStats, debouncedFetchStats]);
 
-  return { stats, loading, error };
+  return { stats, loading, error, refetch: fetchStats };
 };
 
 // Hook pour les actualités

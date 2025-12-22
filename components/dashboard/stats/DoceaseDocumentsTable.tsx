@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, Download, Calendar, User, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from 'lucide-react';
+import { FileText, Download, Calendar, User, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, CheckCircle, AlertCircle, Eye, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+
+// URL de production DocEase
+const DOCEASE_URL = 'https://fo-docease.netlify.app';
 
 interface DoceaseDocument {
   id: number;
@@ -10,6 +13,7 @@ interface DoceaseDocument {
   file_url: string | null;
   metadata: {
     format?: string;
+    action?: string;
     [key: string]: any;
   };
   created_at: string;
@@ -26,6 +30,7 @@ const DoceaseDocumentsTable: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterFormat, setFilterFormat] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // desc = plus récent en premier
+  const [showInfoBanner, setShowInfoBanner] = useState(true); // État pour masquer le bandeau
 
   useEffect(() => {
     fetchDocuments();
@@ -78,10 +83,12 @@ const DoceaseDocumentsTable: React.FC = () => {
       // Si le document a une URL de fichier (colonne file_url ou dans métadonnées), on la télécharge directement
       const fileUrl = doc.file_url || doc.metadata?.file_url;
       if (fileUrl) {
+        // Télécharger directement le fichier depuis Supabase Storage
         const link = document.createElement('a');
         link.href = fileUrl;
         link.download = doc.title;
         link.target = '_blank';
+        link.rel = 'noopener noreferrer';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -90,46 +97,14 @@ const DoceaseDocumentsTable: React.FC = () => {
 
       // Si pas d'URL, afficher un message d'information
       const shouldOpenDocease = window.confirm(
-        `⚠️ Le fichier "${doc.title}" n'est pas disponible en téléchargement direct.\n\n` +
-        `Les documents DocEase sont générés à la demande et envoyés par email.\n\n` +
+        `📄 Le fichier "${doc.title}" n'est pas encore stocké sur le serveur.\n\n` +
+        `Ce document a été envoyé par email mais n'a pas été sauvegardé dans le cloud.\n\n` +
         `Voulez-vous ouvrir DocEase pour régénérer ce document ?`
       );
 
       if (shouldOpenDocease) {
         // Ouvrir DocEase dans un nouvel onglet
-        const doceaseUrl = import.meta.env.VITE_DOCEASE_URL || 'http://localhost:3000';
-        window.open(doceaseUrl, '_blank');
-      } else {
-        // Télécharger un fichier JSON avec les informations du document
-        const documentData = {
-          id: doc.id,
-          title: doc.title,
-          type: doc.document_type,
-          format: doc.metadata?.format || 'docx',
-          user: {
-            name: doc.user?.name,
-            email: doc.user?.email
-          },
-          created_at: doc.created_at,
-          metadata: doc.metadata,
-          instructions: [
-            "Ce fichier contient les métadonnées du document DocEase.",
-            "Pour obtenir le fichier Word original :",
-            "1. Ouvrez DocEase (http://localhost:3000)",
-            "2. Régénérez le document avec les mêmes paramètres",
-            "3. Le document sera envoyé par email pour validation"
-          ]
-        };
-
-        const blob = new Blob([JSON.stringify(documentData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${doc.title.replace(/\.(docx|pdf)$/i, '')}_metadata.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        window.open(DOCEASE_URL, '_blank');
       }
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
@@ -137,13 +112,26 @@ const DoceaseDocumentsTable: React.FC = () => {
     }
   };
 
+  // Vérifier si un document a un fichier téléchargeable
+  const hasDownloadableFile = (doc: DoceaseDocument): boolean => {
+    return !!(doc.file_url || doc.metadata?.file_url);
+  };
+
   // Filtrage des documents
   const filteredDocuments = useMemo(() => {
     const filtered = documents.filter(doc => {
+      const searchLower = searchTerm.toLowerCase();
+      // Gérer le cas où user peut être un tableau ou un objet
+      const userName = Array.isArray(doc.user) ? doc.user[0]?.name : doc.user?.name;
+      const userEmail = Array.isArray(doc.user) ? doc.user[0]?.email : doc.user?.email;
+      
       const matchSearch = searchTerm === '' || 
-        doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        doc.title.toLowerCase().includes(searchLower) ||
+        doc.document_type.toLowerCase().includes(searchLower) ||
+        userName?.toLowerCase().includes(searchLower) ||
+        userEmail?.toLowerCase().includes(searchLower) ||
+        doc.metadata?.emailDelegue?.toLowerCase().includes(searchLower) ||
+        doc.metadata?.destinataire?.toLowerCase().includes(searchLower);
 
       const matchType = filterType === 'all' || doc.document_type === filterType;
       const matchFormat = filterFormat === 'all' || doc.metadata?.format === filterFormat;
@@ -158,6 +146,16 @@ const DoceaseDocumentsTable: React.FC = () => {
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
   }, [documents, searchTerm, filterType, filterFormat, sortOrder]);
+
+  // Helper pour obtenir les infos utilisateur (gère le cas tableau/objet)
+  const getUserInfo = (doc: DoceaseDocument) => {
+    const user = Array.isArray(doc.user) ? doc.user[0] : doc.user;
+    return {
+      name: user?.name || 'Utilisateur inconnu',
+      email: user?.email || 'N/A',
+      initial: user?.name?.[0]?.toUpperCase() || '?'
+    };
+  };
 
   // Fonction pour basculer l'ordre de tri
   const toggleSortOrder = () => {
@@ -200,30 +198,29 @@ const DoceaseDocumentsTable: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Bandeau d'information */}
-      <div className="bg-[#ffd8ec] dark:bg-[#a84383]/20 border border-[#dd60b0] dark:border-[#a84383]/50 rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <Download className="w-5 h-5 text-[#a84383] dark:text-[#dd60b0] flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="text-sm font-semibold text-[#a84383] dark:text-[#dd60b0] mb-1">
-              📥 Téléchargement des documents
-            </h4>
-            <p className="text-sm text-[#a64182] dark:text-[#dd60b0]/80">
-              Les documents DocEase sont générés à la demande et envoyés par email. 
-              Cliquez sur <Download className="w-4 h-4 inline-block" /> pour télécharger le fichier s'il est disponible, 
-              ou ouvrir DocEase pour régénérer le document.
-            </p>
-          </div>
-          <a 
-            href="http://localhost:3000" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#dd60b0] to-[#a84383] text-white rounded-full text-sm font-medium hover:shadow-lg hover:shadow-[#a84383]/25 transition-all shrink-0"
+      {showInfoBanner && (
+        <div className="bg-[#ffd8ec] dark:bg-[#a84383]/20 border border-[#dd60b0] dark:border-[#a84383]/50 rounded-xl p-4 relative">
+          <button
+            onClick={() => setShowInfoBanner(false)}
+            className="absolute top-2 right-2 p-1 rounded-full hover:bg-[#dd60b0]/20 transition-colors"
+            aria-label="Fermer"
           >
-            Ouvrir DocEase
-            <ExternalLink className="w-4 h-4" />
-          </a>
+            <X className="w-4 h-4 text-[#a84383] dark:text-[#dd60b0]" />
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <Download className="w-5 h-5 text-[#a84383] dark:text-[#dd60b0] flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-[#a84383] dark:text-[#dd60b0] mb-1">
+                Téléchargement des documents
+              </h4>
+              <p className="text-sm text-[#a64182] dark:text-[#dd60b0]/80">
+                Les documents avec l'icône <CheckCircle className="w-4 h-4 inline-block text-green-500" /> sont disponibles au téléchargement direct.
+                Les documents avec l'icône <AlertCircle className="w-4 h-4 inline-block text-amber-500" /> ont été envoyés par email mais ne sont pas stockés.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Filtres et recherche */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -270,10 +267,19 @@ const DoceaseDocumentsTable: React.FC = () => {
       </div>
 
       {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-xl p-4">
           <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">{filteredDocuments.length}</div>
-          <div className="text-sm text-purple-600 dark:text-purple-500">Documents affichés</div>
+          <div className="text-sm text-purple-600 dark:text-purple-500">Documents total</div>
+        </div>
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/50 rounded-xl p-4">
+          <div className="flex items-center gap-2">
+            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+              {filteredDocuments.filter(d => hasDownloadableFile(d)).length}
+            </div>
+            <CheckCircle className="w-5 h-5 text-green-500" />
+          </div>
+          <div className="text-sm text-green-600 dark:text-green-500">Téléchargeables</div>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-xl p-4">
           <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
@@ -333,7 +339,7 @@ const DoceaseDocumentsTable: React.FC = () => {
                     <p className="font-medium mb-1">Aucun document DocEase</p>
                     <p className="text-sm">Les documents générés apparaîtront ici automatiquement.</p>
                     <a 
-                      href="http://localhost:3000" 
+                      href={DOCEASE_URL}
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#a84383] text-white rounded-full text-sm font-medium hover:bg-[#8f366e] transition-colors"
@@ -352,8 +358,17 @@ const DoceaseDocumentsTable: React.FC = () => {
                           <FileText className="w-4 h-4 text-[#a84383] dark:text-[#dd60b0]" />
                         </div>
                         <div>
-                          <div className="font-medium text-slate-900 dark:text-slate-100 text-sm">
+                          <div className="font-medium text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
                             {doc.title}
+                            {hasDownloadableFile(doc) ? (
+                              <span title="Fichier disponible au téléchargement">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                              </span>
+                            ) : (
+                              <span title="Fichier non stocké - envoyé par email uniquement">
+                                <AlertCircle className="w-4 h-4 text-amber-500" />
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">ID: {doc.id}</div>
                         </div>
@@ -372,14 +387,14 @@ const DoceaseDocumentsTable: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-gradient-to-br from-[#dd60b0] to-[#a84383] rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {doc.user?.name?.[0]?.toUpperCase() || '?'}
+                          {getUserInfo(doc).initial}
                         </div>
                         <div>
                           <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                            {doc.user?.name || 'Utilisateur inconnu'}
+                            {getUserInfo(doc).name}
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">
-                            {doc.user?.email || 'N/A'}
+                            {getUserInfo(doc).email}
                           </div>
                         </div>
                       </div>
@@ -391,17 +406,38 @@ const DoceaseDocumentsTable: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Bouton Télécharger */}
                         <button
                           onClick={() => handleDownloadDocument(doc)}
-                          className="group relative p-2 text-slate-600 dark:text-slate-400 hover:text-[#a84383] dark:hover:text-[#dd60b0] hover:bg-[#ffd8ec] dark:hover:bg-[#a84383]/20 rounded-lg transition-all duration-200"
-                          title="Télécharger le document"
+                          className={`group relative p-2 rounded-lg transition-all duration-200 ${
+                            hasDownloadableFile(doc)
+                              ? 'text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                              : 'text-slate-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                          }`}
+                          title={hasDownloadableFile(doc) ? 'Télécharger le fichier' : 'Fichier non disponible - Ouvrir DocEase'}
                         >
                           <Download className="w-5 h-5" />
-                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 dark:bg-slate-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            Télécharger
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 dark:bg-slate-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                            {hasDownloadableFile(doc) ? 'Télécharger' : 'Régénérer'}
                           </span>
                         </button>
+                        
+                        {/* Bouton Voir le fichier (seulement si disponible) */}
+                        {hasDownloadableFile(doc) && (
+                          <a
+                            href={doc.file_url || doc.metadata?.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200"
+                            title="Voir le fichier"
+                          >
+                            <Eye className="w-5 h-5" />
+                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 dark:bg-slate-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                              Voir
+                            </span>
+                          </a>
+                        )}
                       </div>
                     </td>
                   </tr>

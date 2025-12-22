@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
+import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 interface SigneaseActivity {
@@ -21,6 +21,7 @@ const SigneaseActivityTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [showInfoBanner, setShowInfoBanner] = useState(true); // État pour masquer le bandeau
 
   useEffect(() => {
     fetchActivities();
@@ -68,11 +69,14 @@ const SigneaseActivityTable: React.FC = () => {
   // Filtrage des activités
   const filteredActivities = useMemo(() => {
     const filtered = activities.filter(activity => {
+      const searchLower = searchTerm.toLowerCase();
       const matchSearch = searchTerm === '' || 
-        activity.document_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.recipient_email?.toLowerCase().includes(searchTerm.toLowerCase());
+        activity.document_name?.toLowerCase().includes(searchLower) ||
+        activity.user_name?.toLowerCase().includes(searchLower) ||
+        activity.user_email?.toLowerCase().includes(searchLower) ||
+        activity.recipient_email?.toLowerCase().includes(searchLower) ||
+        activity.recipient_name?.toLowerCase().includes(searchLower) ||
+        activity.envelope_id?.toLowerCase().includes(searchLower);
 
       const matchType = filterType === 'all' || activity.action_type === filterType;
 
@@ -145,29 +149,29 @@ const SigneaseActivityTable: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Bandeau d'information */}
-      <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700/50 rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <Edit3 className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-300 mb-1">
-              ✍️ Suivi des signatures électroniques
-            </h4>
-            <p className="text-sm text-orange-700 dark:text-orange-400">
-              Historique des documents envoyés, signés et rejetés via SignEase.
-              Les activités sont synchronisées en temps réel depuis l'application de signature.
-            </p>
-          </div>
-          <a 
-            href="http://localhost:5000" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-sm font-medium hover:shadow-lg hover:shadow-orange-500/25 transition-all shrink-0"
+      {showInfoBanner && (
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700/50 rounded-xl p-4 relative">
+          <button
+            onClick={() => setShowInfoBanner(false)}
+            className="absolute top-2 right-2 p-1 rounded-full hover:bg-orange-200/50 dark:hover:bg-orange-700/30 transition-colors"
+            aria-label="Fermer"
           >
-            Ouvrir SignEase
-            <ExternalLink className="w-4 h-4" />
-          </a>
+            <X className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <Edit3 className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-300 mb-1">
+                Suivi des signatures électroniques
+              </h4>
+              <p className="text-sm text-orange-700 dark:text-orange-400">
+                Historique des documents envoyés, signés et rejetés via SignEase.
+                Les activités sont synchronisées en temps réel depuis l'application de signature.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Filtres et recherche */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">

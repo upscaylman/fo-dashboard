@@ -37,6 +37,8 @@ const ActiveUsersWidget: React.FC = () => {
         return <FileText className="w-3 h-3 text-purple-500" />;
       case 'signease':
         return <FileSignature className="w-3 h-3 text-red-500" />;
+      case 'dashboard':
+        return <Monitor className="w-3 h-3 text-blue-500" />;
       default:
         return <Monitor className="w-3 h-3 text-slate-400" />;
     }
@@ -48,9 +50,36 @@ const ActiveUsersWidget: React.FC = () => {
         return 'DocEase';
       case 'signease':
         return 'SignEase';
+      case 'dashboard':
+        return 'Dashboard';
       default:
         return 'Dashboard';
     }
+  };
+
+  const getToolBadgeStyle = (tool: string) => {
+    switch (tool) {
+      case 'docease':
+        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300';
+      case 'signease':
+        return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
+      case 'dashboard':
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+      default:
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+    }
+  };
+
+  // Afficher le(s) pseudo(s) de l'utilisateur
+  const getUserDisplayName = (user: ActiveUser) => {
+    if (user.names && user.names.length > 1) {
+      // Plusieurs pseudos différents - les afficher tous
+      return user.names.join(' / ');
+    }
+    if (user.names && user.names.length === 1) {
+      return user.names[0];
+    }
+    return user.user_name || user.user_email.split('@')[0];
   };
 
   const getStatusColor = (user: ActiveUser) => {
@@ -122,8 +151,16 @@ const ActiveUsersWidget: React.FC = () => {
       {isExpanded && (
         <div className="border-t border-slate-100 dark:border-slate-800">
           {activeUsers.length === 0 ? (
-            <div className="p-4 text-center text-slate-400 text-sm">
-              Aucun utilisateur actif
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <Users className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+              </div>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                Aucun utilisateur en ligne
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                Les membres apparaîtront ici lorsqu'ils seront connectés
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-slate-50 dark:divide-slate-800/50 max-h-64 overflow-y-auto">
@@ -144,20 +181,22 @@ const ActiveUsersWidget: React.FC = () => {
 
                   {/* Infos utilisateur */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm text-slate-800 dark:text-slate-200 truncate">
-                        {user.user_name || user.user_email.split('@')[0]}
+                        {getUserDisplayName(user)}
                       </p>
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                        user.current_tool === 'docease' 
-                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                          : user.current_tool === 'signease'
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                      }`}>
-                        {getToolIcon(user.current_tool)}
-                        {getToolLabel(user.current_tool)}
-                      </span>
+                      {/* Afficher tous les badges d'outils */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {(user.tools && user.tools.length > 0 ? user.tools : [user.current_tool || 'dashboard']).map((tool, idx) => (
+                          <span 
+                            key={idx}
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${getToolBadgeStyle(tool as string)}`}
+                          >
+                            {getToolIcon(tool)}
+                            {getToolLabel(tool)}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                     <p className="text-xs text-slate-400 truncate">
                       {user.user_email}
