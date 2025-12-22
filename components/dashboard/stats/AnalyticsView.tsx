@@ -346,11 +346,19 @@ const AnalyticsView: React.FC = () => {
       }
     });
 
+    // Nombre de jours à afficher selon le filtre
+    const maxDays = dateFilter === 'today' ? 1 :
+                    dateFilter === 'week' ? 7 :
+                    dateFilter === 'month' ? 30 :
+                    dateFilter === 'quarter' ? 90 :
+                    dateFilter === 'year' ? 365 :
+                    999; // all
+
     return Object.entries(dayCount)
       .sort((a, b) => a[1].date.getTime() - b[1].date.getTime())
-      .slice(-14) // 14 derniers jours
+      .slice(-Math.min(maxDays, 30)) // Max 30 barres pour lisibilité
       .map(([day, data]) => ({ day, ...data }));
-  }, [filteredActivities]);
+  }, [filteredActivities, dateFilter]);
 
   // Grouper les activités par jour
   const activitiesByDay = useMemo(() => {
@@ -578,7 +586,14 @@ const AnalyticsView: React.FC = () => {
         <Card>
           <CardHeader 
             title="Évolution de l'activité" 
-            subtitle="14 derniers jours"
+            subtitle={
+              dateFilter === 'today' ? "Aujourd'hui" :
+              dateFilter === 'week' ? '7 derniers jours' :
+              dateFilter === 'month' ? '30 derniers jours' :
+              dateFilter === 'quarter' ? '3 derniers mois' :
+              dateFilter === 'year' ? '12 derniers mois' :
+              'Toutes les données'
+            }
             action={
               <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
                 <BarChart3 className="w-5 h-5" />
@@ -587,7 +602,7 @@ const AnalyticsView: React.FC = () => {
           />
           <div className="p-4">
             {dailyStats.length === 0 ? (
-              <div className="text-center text-slate-400 py-8">Aucune donnée</div>
+              <div className="text-center text-slate-400 py-8">Aucune donnée pour cette période</div>
             ) : (
               <div className="space-y-3">
                 {/* Légende */}
@@ -602,50 +617,70 @@ const AnalyticsView: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Barres */}
-                <div className="flex items-end justify-between gap-1 h-40">
+                {/* Barres empilées */}
+                <div className="flex items-end gap-1" style={{ height: '160px' }}>
                   {dailyStats.map((day, idx) => {
                     const maxTotal = Math.max(...dailyStats.map(d => d.docease + d.signease), 1);
                     const total = day.docease + day.signease;
-                    const heightPercent = (total / maxTotal) * 100;
-                    const doceasePercent = total > 0 ? (day.docease / total) * 100 : 0;
+                    const totalHeight = total > 0 ? Math.max((total / maxTotal) * 140, 8) : 0;
+                    const doceaseHeight = total > 0 ? (day.docease / total) * totalHeight : 0;
+                    const signeaseHeight = total > 0 ? (day.signease / total) * totalHeight : 0;
                     
                     return (
-                      <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                        <div 
-                          className="w-full rounded-t-lg overflow-hidden transition-all hover:opacity-80 cursor-pointer relative group"
-                          style={{ height: `${Math.max(heightPercent, 5)}%` }}
-                          title={`${day.day}: ${day.docease} DocEase, ${day.signease} SignEase`}
-                        >
-                          <div 
-                            className="absolute bottom-0 w-full bg-purple-500"
-                            style={{ height: `${doceasePercent}%` }}
-                          ></div>
-                          <div 
-                            className="absolute top-0 w-full bg-red-500"
-                            style={{ height: `${100 - doceasePercent}%` }}
-                          ></div>
-                          
-                          {/* Tooltip */}
-                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
-                            {total} action{total > 1 ? 's' : ''}
-                          </div>
+                      <div key={idx} className="flex-1 flex flex-col items-center group relative">
+                        {/* Tooltip au survol */}
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none">
+                          {total > 0 ? `${day.docease} Doc / ${day.signease} Sign` : '0'}
                         </div>
-                        <span className="text-[10px] text-slate-400">{day.day}</span>
+                        
+                        {/* Conteneur des barres aligné en bas */}
+                        <div className="flex-1 flex flex-col justify-end w-full">
+                          {/* Barre SignEase (rouge) - en haut */}
+                          {day.signease > 0 && (
+                            <div 
+                              className="w-full bg-red-500 rounded-t-sm hover:bg-red-400 transition-colors"
+                              style={{ height: `${signeaseHeight}px` }}
+                            ></div>
+                          )}
+                          
+                          {/* Barre DocEase (violet) - en bas */}
+                          {day.docease > 0 && (
+                            <div 
+                              className={`w-full bg-purple-500 hover:bg-purple-400 transition-colors ${day.signease === 0 ? 'rounded-t-sm' : ''}`}
+                              style={{ height: `${doceaseHeight}px` }}
+                            ></div>
+                          )}
+                          
+                          {/* Barre vide si pas de données */}
+                          {total === 0 && (
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-t-sm" style={{ height: '4px' }}></div>
+                          )}
+                        </div>
+                        
+                        {/* Label du jour */}
+                        <span className="text-[9px] text-slate-400 mt-1 truncate w-full text-center">{day.day}</span>
                       </div>
                     );
                   })}
+                </div>
+                
+                {/* Résumé période */}
+                <div className="flex justify-center gap-4 pt-2 border-t border-slate-100 dark:border-slate-800 mt-4">
+                  <span className="text-xs text-slate-500">
+                    Total période: <span className="font-bold text-purple-600">{dailyStats.reduce((sum, d) => sum + d.docease, 0)}</span> DocEase, 
+                    <span className="font-bold text-red-500 ml-1">{dailyStats.reduce((sum, d) => sum + d.signease, 0)}</span> SignEase
+                  </span>
                 </div>
               </div>
             )}
           </div>
         </Card>
 
-        {/* Graphique Répartition par type */}
+        {/* Graphique Répartition par type - Camembert */}
         <Card>
           <CardHeader 
             title="Types de documents" 
-            subtitle="Top 6"
+            subtitle="Répartition"
             action={
               <div className="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400">
                 <PieChart className="w-5 h-5" />
@@ -654,37 +689,106 @@ const AnalyticsView: React.FC = () => {
           />
           <div className="p-4">
             {documentTypeStats.length === 0 ? (
-              <div className="text-center text-slate-400 py-8">Aucune donnée</div>
+              <div className="text-center text-slate-400 py-8">Aucune donnée pour cette période</div>
             ) : (
-              <div className="space-y-3">
-                {documentTypeStats.map((type, idx) => {
-                  const maxCount = Math.max(...documentTypeStats.map(t => t.count), 1);
-                  const widthPercent = (type.count / maxCount) * 100;
-                  const colors = [
-                    'bg-purple-500',
-                    'bg-red-500',
-                    'bg-indigo-500',
-                    'bg-emerald-500',
-                    'bg-amber-500',
-                    'bg-cyan-500'
-                  ];
-                  
-                  return (
-                    <div key={idx} className="flex items-center gap-3">
-                      <div className="w-32 truncate text-sm text-slate-600 dark:text-slate-400 text-right">
-                        {type.name}
+              <div className="flex items-center gap-6">
+                {/* Camembert SVG */}
+                <div className="relative w-40 h-40 shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    {(() => {
+                      const total = documentTypeStats.reduce((sum, t) => sum + t.count, 0);
+                      let cumulativePercent = 0;
+                      const colors = [
+                        '#8b5cf6', // purple
+                        '#ef4444', // red
+                        '#6366f1', // indigo
+                        '#10b981', // emerald
+                        '#f59e0b', // amber
+                        '#06b6d4', // cyan
+                      ];
+                      
+                      return documentTypeStats.map((type, idx) => {
+                        const percent = (type.count / total) * 100;
+                        const startPercent = cumulativePercent;
+                        cumulativePercent += percent;
+                        
+                        // Calcul du chemin d'arc
+                        const startAngle = (startPercent / 100) * 360;
+                        const endAngle = (cumulativePercent / 100) * 360;
+                        const largeArcFlag = percent > 50 ? 1 : 0;
+                        
+                        const startX = 50 + 40 * Math.cos((startAngle * Math.PI) / 180);
+                        const startY = 50 + 40 * Math.sin((startAngle * Math.PI) / 180);
+                        const endX = 50 + 40 * Math.cos((endAngle * Math.PI) / 180);
+                        const endY = 50 + 40 * Math.sin((endAngle * Math.PI) / 180);
+                        
+                        // Si c'est le seul élément ou 100%, dessiner un cercle complet
+                        if (percent >= 99.9) {
+                          return (
+                            <circle
+                              key={idx}
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill={colors[idx % colors.length]}
+                              className="hover:opacity-80 transition-opacity cursor-pointer"
+                            />
+                          );
+                        }
+                        
+                        const pathData = `
+                          M 50 50
+                          L ${startX} ${startY}
+                          A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY}
+                          Z
+                        `;
+                        
+                        return (
+                          <path
+                            key={idx}
+                            d={pathData}
+                            fill={colors[idx % colors.length]}
+                            className="hover:opacity-80 transition-opacity cursor-pointer"
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
+                  {/* Centre avec total */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-white drop-shadow-lg">
+                        {documentTypeStats.reduce((sum, t) => sum + t.count, 0)}
                       </div>
-                      <div className="flex-1 h-6 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
-                        <div 
-                          className={`h-full ${colors[idx % colors.length]} rounded-lg transition-all flex items-center justify-end pr-2`}
-                          style={{ width: `${widthPercent}%` }}
-                        >
-                          <span className="text-[10px] text-white font-bold">{type.count}</span>
-                        </div>
-                      </div>
+                      <div className="text-xs text-white/90 drop-shadow">total</div>
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
+                
+                {/* Légende */}
+                <div className="flex-1 space-y-2">
+                  {documentTypeStats.map((type, idx) => {
+                    const total = documentTypeStats.reduce((sum, t) => sum + t.count, 0);
+                    const percent = ((type.count / total) * 100).toFixed(1);
+                    const colors = [
+                      'bg-purple-500',
+                      'bg-red-500',
+                      'bg-indigo-500',
+                      'bg-emerald-500',
+                      'bg-amber-500',
+                      'bg-cyan-500',
+                    ];
+                    
+                    return (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        <div className={`w-3 h-3 rounded-sm ${colors[idx % colors.length]} shrink-0`}></div>
+                        <span className="truncate flex-1 text-slate-600 dark:text-slate-400">{type.name}</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">{type.count}</span>
+                        <span className="text-slate-400 text-xs">({percent}%)</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

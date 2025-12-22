@@ -62,28 +62,28 @@ const DashboardPage: React.FC = () => {
                 onTabChange={setActiveTab}
             />
             
-            {/* Section Outils Rapides + Contenu - Toujours visible */}
-            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Widget utilisateurs actifs - visible uniquement pour admin/super_admin sur onglet global */}
-                    {showExtraSections && (isAdmin || isSuperAdmin) && <ActiveUsersWidget />}
+            {/* Section Outils Rapides + Contenu - Uniquement visible sur l'onglet "Vue d'ensemble" */}
+            {showExtraSections && (
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Widget utilisateurs actifs - visible uniquement pour admin/super_admin */}
+                        {(isAdmin || isSuperAdmin) && <ActiveUsersWidget />}
+                        
+                        <MainContent 
+                            news={news} 
+                            loading={newsLoading} 
+                            refreshing={newsRefreshing} 
+                            error={newsError}
+                            onRetry={refetchNews}
+                        />
+                    </div>
                     
-                    <MainContent 
-                        news={news} 
-                        loading={newsLoading} 
-                        refreshing={newsRefreshing} 
-                        error={newsError}
-                        onRetry={refetchNews}
-                    />
-                </div>
-                
-                {/* Desktop Sidebar (Hidden on Mobile) - Seulement sur onglet global */}
-                {showExtraSections && (
+                    {/* Desktop Sidebar (Hidden on Mobile) */}
                     <div className="hidden lg:block space-y-6">
                         <Sidebar archiveLinks={links} loading={linksLoading} />
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </>
     );
 };

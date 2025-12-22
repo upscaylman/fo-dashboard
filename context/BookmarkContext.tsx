@@ -14,6 +14,7 @@ export interface BookmarkedItem {
 interface BookmarkContextType {
   bookmarks: BookmarkedItem[];
   addBookmark: (item: BookmarkedItem) => void;
+  addMultipleBookmarks: (items: BookmarkedItem[]) => void;
   removeBookmark: (id: string | number) => void;
   toggleBookmark: (item: BookmarkedItem) => void;
   isBookmarked: (id: string | number) => boolean;
@@ -59,6 +60,19 @@ export const BookmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     addToast("Ajouté aux favoris", 'success');
   }, [addToast]);
 
+  const addMultipleBookmarks = useCallback((items: BookmarkedItem[]) => {
+    setBookmarks(prev => {
+      const existingIds = new Set(prev.map(b => b.id));
+      const newItems = items.filter(item => !existingIds.has(item.id));
+      if (newItems.length === 0) {
+        addToast("Ces éléments sont déjà dans vos favoris", 'info');
+        return prev;
+      }
+      return [...newItems, ...prev];
+    });
+    addToast(`${items.length} élément(s) ajouté(s) aux favoris`, 'success');
+  }, [addToast]);
+
   const removeBookmark = useCallback((id: string | number) => {
     setBookmarks(prev => prev.filter(b => b.id !== id));
     addToast("Retiré des favoris", 'info');
@@ -77,7 +91,7 @@ export const BookmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [isBookmarked, addBookmark, removeBookmark]);
 
   return (
-    <BookmarkContext.Provider value={{ bookmarks, addBookmark, removeBookmark, toggleBookmark, isBookmarked }}>
+    <BookmarkContext.Provider value={{ bookmarks, addBookmark, addMultipleBookmarks, removeBookmark, toggleBookmark, isBookmarked }}>
       {children}
     </BookmarkContext.Provider>
   );

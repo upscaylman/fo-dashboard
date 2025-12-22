@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Edit3, UserPlus, Trash2, ChevronDown, X } from 'lucide-react';
+import { FileText, Edit3, UserPlus, Trash2, ChevronDown, X, Send } from 'lucide-react';
 import { UserStat } from '../../../types';
 import { Card } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
@@ -107,8 +107,14 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
       return;
     }
 
-    if (newUser.password.length < 6) {
-      addToast('Le mot de passe doit contenir au moins 6 caractères', 'error');
+    if (newUser.password.length < 8) {
+      addToast('Le mot de passe doit contenir au moins 8 caractères', 'error');
+      return;
+    }
+
+    const specialCharRegex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/;
+    if (!specialCharRegex.test(newUser.password)) {
+      addToast('Le mot de passe doit contenir au moins un caractère spécial (!@#$%^&*...)', 'error');
       return;
     }
 
@@ -127,16 +133,24 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
           data: {
             name: newUser.name,
             role: newUser.role_level
-          }
+          },
+          // Rediriger vers la page de connexion après confirmation
+          emailRedirectTo: `${window.location.origin}/login`
         }
       });
 
       if (authError) throw authError;
 
+      // Vérifier si l'utilisateur existe déjà
+      if (authData.user?.identities?.length === 0) {
+        addToast('Cet email est déjà utilisé par un autre compte', 'error');
+        return;
+      }
+
       // 2. Vérifier si l'utilisateur a été créé dans la table users (via trigger)
       if (authData.user) {
         // Attendre un peu pour le trigger
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // 3. Mettre à jour le role_level dans la table users
         const { error: updateError } = await supabase
@@ -147,7 +161,10 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
           })
           .eq('id', authData.user.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.warn('Erreur mise à jour role:', updateError);
+          // Le trigger peut ne pas avoir encore créé l'utilisateur, on continue
+        }
 
         // 4. Ajouter à la liste locale
         const newUserStat: UserStat = {
@@ -159,15 +176,21 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
         };
 
         setLocalUsers(prev => [...prev, newUserStat]);
-        addToast(`Salarié ${newUser.name} ajouté avec succès`, 'success');
         
         // Reset form and close modal
         setNewUser({ name: '', email: '', password: '', role_level: 'secretary' });
         setShowAddModal(false);
+        
+        // Message de succès avec instruction
+        addToast(`Compte créé ! Un email de confirmation a été envoyé à ${newUser.email}. L'utilisateur doit confirmer son email avant de se connecter.`, 'success');
       }
     } catch (error: any) {
       console.error('Erreur ajout utilisateur:', error);
-      addToast(`Erreur: ${error.message}`, 'error');
+      if (error.message?.includes('already registered')) {
+        addToast('Cet email est déjà utilisé par un autre compte', 'error');
+      } else {
+        addToast(`Erreur: ${error.message}`, 'error');
+      }
     }
   };
 
@@ -185,19 +208,21 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
               {isSuperAdmin && (
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm font-bold rounded-full transition-all shadow-lg shadow-blue-200 dark:shadow-none"
+                  className="p-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-full transition-all shadow-lg shadow-blue-200 dark:shadow-none"
+                  title="Ajouter un salarié"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>Ajouter</span>
                 </button>
               )}
-              <button
-                onClick={handleInvite}
-                className="flex items-center gap-2 px-4 py-2 bg-fo-dark hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-sm font-bold rounded-full transition-all shadow-lg shadow-slate-200 dark:shadow-none border border-transparent dark:border-slate-700"
+              <a
+                href="https://fde-saasease.netlify.app/register"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 bg-fo-dark hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-full transition-all shadow-lg shadow-slate-200 dark:shadow-none border border-transparent dark:border-slate-700"
+                title="Inviter un salarié"
               >
-                <UserPlus className="w-4 h-4" />
-                <span>Inviter</span>
-              </button>
+                <Send className="w-4 h-4" />
+              </a>
             </div>
           )}
         </div>
@@ -357,10 +382,10 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
                   type="password"
                   value={newUser.password}
                   onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  placeholder="Minimum 6 caractères"
+                  placeholder="Min. 8 car. + caractère spécial"
                   className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Le mot de passe doit contenir au moins 6 caractères</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">8 caractères minimum + 1 caractère spécial (!@#$%...)</p>
               </div>
 
               <div>
@@ -385,19 +410,28 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 p-6 border-t border-slate-200 dark:border-slate-800">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleAddUser}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-blue-200 dark:shadow-none"
-              >
-                Créer le compte
-              </button>
+            <div className="p-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+              {/* Note d'information */}
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-xs text-blue-700 dark:text-blue-400">
+                  <strong>Note :</strong> Un email de confirmation sera envoyé à l'adresse indiquée. L'utilisateur devra cliquer sur le lien pour activer son compte.
+                </p>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleAddUser}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-blue-200 dark:shadow-none"
+                >
+                  Créer le compte
+                </button>
+              </div>
             </div>
           </div>
         </div>

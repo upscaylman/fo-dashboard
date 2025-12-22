@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Globe, Mail, Lock, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { Globe, Mail, Lock, ArrowRight, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface LoginPageProps {
     onNavigate?: (path: string) => void;
@@ -13,6 +14,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [authMode, setAuthMode] = useState<'email' | 'outlook' | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [resetEmailSent, setResetEmailSent] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
+    const [rememberMe, setRememberMe] = useState(() => {
+        // Charger la préférence sauvegardée
+        return localStorage.getItem('fo-metaux-remember-me') === 'true';
+    });
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,7 +32,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
         setError(null);
 
         try {
+            // Sauvegarder la préférence "Se souvenir de moi"
+            localStorage.setItem('fo-metaux-remember-me', rememberMe.toString());
+            
             await login('email', { email, password });
+            
+            // Si "Se souvenir de moi" n'est pas coché, on programme l'effacement à la fermeture
+            if (!rememberMe) {
+                sessionStorage.setItem('fo-metaux-session-active', 'true');
+            }
         } catch (err: any) {
             console.error('Erreur de connexion:', err);
             setError(err.message || 'Erreur de connexion. Vérifiez vos identifiants.');
@@ -44,6 +61,29 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
             setError(err.message || 'Erreur de connexion avec Outlook.');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!resetEmail) return;
+
+        setResetLoading(true);
+        setError(null);
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+
+            if (error) throw error;
+
+            setResetEmailSent(true);
+        } catch (err: any) {
+            console.error('Erreur réinitialisation:', err);
+            setError(err.message || 'Erreur lors de l\'envoi de l\'email de réinitialisation.');
+        } finally {
+            setResetLoading(false);
         }
     };
 
@@ -176,10 +216,25 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
 
                             <div className="flex items-center justify-between text-sm">
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                                    <input 
+                                        type="checkbox" 
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
+                                    />
                                     <span className="text-slate-600 dark:text-slate-400">Se souvenir de moi</span>
                                 </label>
-                                <a href="#" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">Mot de passe oublié ?</a>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowForgotPassword(true);
+                                        setResetEmail(email);
+                                        setError(null);
+                                    }}
+                                    className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 bg-transparent border-none cursor-pointer"
+                                >
+                                    Mot de passe oublié ?
+                                </button>
                             </div>
 
                             <button
@@ -231,6 +286,105 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
                     </p>
                 </div>
             </div>
+
+            {/* Modal Mot de passe oublié */}
+            {showForgotPassword && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800">
+                        {resetEmailSent ? (
+                            // Confirmation d'envoi
+                            <div className="text-center py-4">
+                                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Email envoyé !</h3>
+                                <p className="text-slate-600 dark:text-slate-400 mb-6">
+                                    Un lien de réinitialisation a été envoyé à <strong>{resetEmail}</strong>. Vérifiez votre boîte de réception (et vos spams).
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        setShowForgotPassword(false);
+                                        setResetEmailSent(false);
+                                        setResetEmail('');
+                                    }}
+                                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+                                >
+                                    Retour à la connexion
+                                </button>
+                            </div>
+                        ) : (
+                            // Formulaire de demande
+                            <>
+                                <div className="flex items-center gap-3 mb-6">
+                                    <button
+                                        onClick={() => {
+                                            setShowForgotPassword(false);
+                                            setError(null);
+                                        }}
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    >
+                                        <ArrowLeft className="w-5 h-5 text-slate-500" />
+                                    </button>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Mot de passe oublié</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">Entrez votre email pour recevoir un lien de réinitialisation</p>
+                                    </div>
+                                </div>
+
+                                {error && (
+                                    <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl mb-4">
+                                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                        <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleForgotPassword} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                            Email
+                                        </label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                            <input
+                                                type="email"
+                                                value={resetEmail}
+                                                onChange={(e) => setResetEmail(e.target.value)}
+                                                placeholder="votre@email.fr"
+                                                className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowForgotPassword(false);
+                                                setError(null);
+                                            }}
+                                            className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition-colors"
+                                        >
+                                            Annuler
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={resetLoading}
+                                            className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            {resetLoading ? (
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            ) : (
+                                                'Envoyer le lien'
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -79,12 +79,12 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 
         {/* Center Search (Trigger for Command Palette) */}
         <div
-          className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 w-96 border border-transparent hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-all group"
+          className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-3 sm:px-4 py-2 flex-1 max-w-[180px] sm:max-w-[280px] md:max-w-[400px] mx-2 sm:mx-4 border border-transparent hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-all group"
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
         >
-          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 group-hover:text-slate-600 dark:group-hover:text-slate-300" />
-          <span className="text-sm text-slate-400 dark:text-slate-500 flex-1">Rechercher...</span>
-          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900">
+          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 mr-2 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0" />
+          <span className="text-sm text-slate-400 dark:text-slate-500 flex-1 truncate">Rechercher...</span>
+          <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 shrink-0">
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Ctrl K</span>
           </div>
         </div>

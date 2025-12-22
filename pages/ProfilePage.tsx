@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Camera, Save, X, LogOut, Sun, Moon, Monitor, Palette, Trash2, AlertTriangle, Database, FileText, Shield } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Camera, Save, X, LogOut, Sun, Moon, Monitor, Palette, Trash2, AlertTriangle, Database, FileText, Shield, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -223,6 +223,13 @@ const ProfilePage: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
+          <button
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Retour</span>
+          </button>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Mon Profil</h1>
           <p className="text-slate-600 dark:text-slate-400">Gérez vos informations personnelles</p>
         </div>
@@ -341,7 +348,7 @@ const ProfilePage: React.FC = () => {
                   Administration
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                  ⚠️ Actions réservées aux Super Administrateurs. Ces actions sont irréversibles.
+                  Actions réservées aux Super Administrateurs. Ces actions sont irréversibles.
                 </p>
                 
                 <div className="space-y-3">
@@ -374,10 +381,10 @@ const ProfilePage: React.FC = () => {
                       ) : (
                         <button
                           onClick={() => setConfirmDelete(section.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors"
+                          className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-full transition-colors"
+                          title="Vider cette section"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Vider
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>

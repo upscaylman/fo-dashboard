@@ -55,16 +55,45 @@ export const useStats = () => {
         .select('user_id')
         .gte('created_at', thirtyDaysAgo.toISOString());
 
-      // Utilisateurs qui ont signé
+      // Utilisateurs qui ont signé des documents
       const { data: activeSignatureUsers } = await supabase
         .from('signatures')
         .select('user_id')
         .gte('signed_at', thirtyDaysAgo.toISOString());
 
-      // Fusionner et dédupliquer les user_id
+      // Utilisateurs qui ont envoyé des documents via SignEase
+      const { data: activeSigneaseUsers } = await supabase
+        .from('signease_activity')
+        .select('user_email')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      // Utilisateurs qui se sont connectés au dashboard (sessions actives récentes)
+      const { data: activeDashboardUsers } = await supabase
+        .from('active_sessions')
+        .select('user_email')
+        .gte('started_at', thirtyDaysAgo.toISOString());
+
+      // Récupérer les user_id depuis les emails pour SignEase et Dashboard
+      const emailsToCheck = new Set([
+        ...(activeSigneaseUsers?.map(s => s.user_email?.toLowerCase()).filter(Boolean) || []),
+        ...(activeDashboardUsers?.map(s => s.user_email?.toLowerCase()).filter(Boolean) || [])
+      ]);
+
+      // Récupérer les user_id correspondant aux emails
+      let emailUserIds: string[] = [];
+      if (emailsToCheck.size > 0) {
+        const { data: usersFromEmails } = await supabase
+          .from('users')
+          .select('id, email')
+          .in('email', Array.from(emailsToCheck));
+        emailUserIds = usersFromEmails?.map(u => u.id).filter(Boolean) || [];
+      }
+
+      // Fusionner et dédupliquer tous les user_id
       const activeUserIds = new Set([
         ...(activeDoceaseUsers?.map(d => d.user_id).filter(Boolean) || []),
-        ...(activeSignatureUsers?.map(s => s.user_id).filter(Boolean) || [])
+        ...(activeSignatureUsers?.map(s => s.user_id).filter(Boolean) || []),
+        ...emailUserIds
       ]);
 
       const activeUsersCount = activeUserIds.size;
