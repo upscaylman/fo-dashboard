@@ -4,14 +4,18 @@ import MainContent from '../components/dashboard/MainContent';
 import Sidebar from '../components/dashboard/Sidebar';
 import MobileSidebar from '../components/layout/MobileSidebar';
 import ActiveUsersWidget from '../components/dashboard/ActiveUsersWidget';
-import { useStats, useNews, useLinks } from '../hooks/useStats';
+import { useStats, useNews, useLinks, TimeRange } from '../hooks/useStats';
 import { usePermissions } from '../hooks/usePermissions';
 import { usePresence } from '../hooks/usePresence';
 
 type StatsTab = 'global' | 'users' | 'types' | 'docease' | 'signease';
 
 const DashboardPage: React.FC = () => {
-    const { stats, loading: statsLoading, error: statsError } = useStats();
+    // État pour la période sélectionnée - partagé entre les composants
+    const [timeRange, setTimeRange] = useState<TimeRange>('month');
+    
+    // Passer timeRange à useStats pour des données dynamiques
+    const { stats, loading: statsLoading, error: statsError } = useStats(timeRange);
     const { news, loading: newsLoading, refreshing: newsRefreshing, error: newsError, refetch: refetchNews } = useNews();
     const { links, loading: linksLoading } = useLinks();
     const { isAdmin, isSuperAdmin } = usePermissions();
@@ -60,6 +64,8 @@ const DashboardPage: React.FC = () => {
                 loading={statsLoading} 
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
+                timeRange={timeRange}
+                onTimeRangeChange={setTimeRange}
             />
             
             {/* Section Outils Rapides + Contenu - Uniquement visible sur l'onglet "Vue d'ensemble" */}

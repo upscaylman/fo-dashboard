@@ -17,6 +17,7 @@ export interface UserStat {
   letters: number;
   signatures: number;
   role: string;
+  avatar_url?: string | null;
 }
 
 export interface DocumentTypeStat {

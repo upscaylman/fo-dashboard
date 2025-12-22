@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Edit3, UserPlus, Trash2, ChevronDown, X, Send } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { FileText, Edit3, UserPlus, Trash2, ChevronDown, X, Send, RefreshCw, Eye } from 'lucide-react';
 import { UserStat } from '../../../types';
 import { Card } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
@@ -8,13 +8,60 @@ import { useAuth } from '../../../context/AuthContext';
 import { supabase } from '../../../lib/supabase';
 import { ROLE_COLORS, ROLE_LABELS, UserRole } from '../../../lib/permissions';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { TimeRange } from '../../../hooks/useStats';
 
 interface UserStatsTableProps {
   users: UserStat[];
+  timeRange?: TimeRange;
 }
 
-const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
+// Helper pour obtenir le label de période
+const getPeriodLabel = (range: TimeRange): string => {
+  switch (range) {
+    case 'week': return 'ces 7 derniers jours';
+    case 'month': return 'ce mois-ci';
+    case 'quarter': return 'ce trimestre';
+    case 'year': return 'cette année';
+    default: return 'ce mois-ci';
+  }
+};
+
+// Helper pour obtenir la date de début selon la période
+const getStartDateFromRange = (range: TimeRange): Date => {
+  const now = new Date();
+  switch (range) {
+    case 'week':
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      weekAgo.setHours(0, 0, 0, 0);
+      return weekAgo;
+    case 'month':
+      const monthAgo = new Date();
+      monthAgo.setDate(now.getDate() - 30);
+      monthAgo.setHours(0, 0, 0, 0);
+      return monthAgo;
+    case 'quarter':
+      const quarterAgo = new Date();
+      quarterAgo.setDate(now.getDate() - 90);
+      quarterAgo.setHours(0, 0, 0, 0);
+      return quarterAgo;
+    case 'year':
+      const yearAgo = new Date();
+      yearAgo.setFullYear(now.getFullYear() - 1);
+      yearAgo.setHours(0, 0, 0, 0);
+      return yearAgo;
+    default:
+      const defaultAgo = new Date();
+      defaultAgo.setDate(now.getDate() - 30);
+      defaultAgo.setHours(0, 0, 0, 0);
+      return defaultAgo;
+  }
+};
+
+const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'month' }) => {
   const [localUsers, setLocalUsers] = useState<UserStat[]>(users);
+  const [userStats, setUserStats] = useState<Map<string, { letters: number; signatures: number }>>(new Map());
+  const [loadingStats, setLoadingStats] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
@@ -23,24 +70,95 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
     role_level: 'secretary' as UserRole
   });
   const { addToast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, impersonate, isImpersonating, realUser } = useAuth();
   const { isSuperAdmin } = usePermissions();
+
+  // Vérifier si le vrai utilisateur (pas celui impersonné) est super admin
+  const isSuperAdminResult = isSuperAdmin();
+  const realIsSuperAdmin = isSuperAdminResult || realUser?.role === 'super_admin' || currentUser?.role === 'super_admin';
+  
+  // Debug: afficher dans la console
+  console.log('🔐 Super Admin Check:', 
+    'isSuperAdmin()=', isSuperAdminResult, 
+    'realUser?.role=', realUser?.role, 
+    'currentUser?.role=', currentUser?.role,
+    'RESULT=', realIsSuperAdmin 
+  );
+
+  // Fonction pour voir en tant que
+  const handleImpersonate = (user: UserStat) => {
+    impersonate({
+      id: user.id,
+      name: user.name,
+      email: '', // On n'a pas l'email dans UserStat, mais c'est OK pour l'affichage
+      role: user.role,
+      avatar: user.avatar_url || undefined,
+    });
+    addToast(`Vous voyez maintenant l'interface en tant que ${user.name}`, 'info');
+  };
+
+  // Charger les stats utilisateurs selon la période
+  const fetchUserStats = useCallback(async () => {
+    setLoadingStats(true);
+    try {
+      const periodStart = getStartDateFromRange(timeRange);
+      const statsMap = new Map<string, { letters: number; signatures: number }>();
+      
+      // Récupérer les documents DocEase par utilisateur
+      const { data: doceaseData } = await supabase
+        .from('docease_documents')
+        .select('user_id')
+        .gte('created_at', periodStart.toISOString());
+      
+      // Récupérer les signatures par utilisateur
+      const { data: signaturesData } = await supabase
+        .from('signatures')
+        .select('user_id')
+        .gte('signed_at', periodStart.toISOString());
+      
+      // Compter par user_id
+      doceaseData?.forEach(doc => {
+        const key = doc.user_id;
+        if (key) {
+          const current = statsMap.get(key) || { letters: 0, signatures: 0 };
+          current.letters++;
+          statsMap.set(key, current);
+        }
+      });
+      
+      signaturesData?.forEach(sig => {
+        if (sig.user_id) {
+          const current = statsMap.get(sig.user_id) || { letters: 0, signatures: 0 };
+          current.signatures++;
+          statsMap.set(sig.user_id, current);
+        }
+      });
+      
+      setUserStats(statsMap);
+    } catch (error) {
+      console.error('Erreur chargement stats utilisateurs:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [timeRange]);
 
   useEffect(() => {
     setLocalUsers(users);
   }, [users]);
 
+  useEffect(() => {
+    fetchUserStats();
+  }, [fetchUserStats]);
+
   // Check permissions
-  const canManage = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
+  const canManage = currentUser?.role === 'secretary_general' || currentUser?.role === 'super_admin';
 
   // Role options from migration
   const availableRoles: { value: UserRole; label: string }[] = [
     { value: 'super_admin', label: 'Super Admin' },
-    { value: 'admin', label: 'Admin' },
     { value: 'secretary_general', label: 'Secrétaire Général' },
+    { value: 'secretary_federal', label: 'Secrétaire Fédéral' },
     { value: 'secretary', label: 'Secrétaire' },
-    { value: 'assistant', label: 'Assistant' },
-    { value: 'guest', label: 'Invité' },
   ];
 
   // [NEW] Handle Role Change
@@ -194,13 +312,30 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
     }
   };
 
+  // Calculer les stats avec les données dynamiques
+  const enrichedUsers = useMemo(() => {
+    return localUsers.map(user => {
+      const stats = userStats.get(user.id);
+      return {
+        ...user,
+        letters: stats?.letters ?? user.letters,
+        signatures: stats?.signatures ?? user.signatures,
+      };
+    });
+  }, [localUsers, userStats]);
+
   return (
     <Card className="!p-0 overflow-hidden">
       <div className="p-6 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-xl text-slate-900 dark:text-slate-100">Activité Salariés</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">Performances de l'équipe ce mois-ci</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h3 className="font-bold text-xl text-slate-900 dark:text-slate-100">Activité Salariés</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">Performances de l'équipe {getPeriodLabel(timeRange)}</p>
+            </div>
+            {loadingStats && (
+              <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+            )}
           </div>
           {/* Show buttons only for admins */}
           {canManage && (
@@ -241,7 +376,7 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-slate-900">
-            {localUsers.map((user, idx) => {
+            {enrichedUsers.map((user, idx) => {
               // Determine styles based on role
               const currentRole = user.role as UserRole;
               const roleStyles = ROLE_COLORS[currentRole] || ROLE_COLORS['secretary'];
@@ -250,7 +385,20 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
                 <tr key={idx} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800 last:border-0">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-200 dark:shadow-none">
+                      {user.avatar_url ? (
+                        <img 
+                          src={user.avatar_url} 
+                          alt={user.name}
+                          className="w-10 h-10 rounded-full object-cover shadow-md shadow-blue-200 dark:shadow-none"
+                          onError={(e) => {
+                            // Fallback to initials if image fails to load
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-200 dark:shadow-none ${user.avatar_url ? 'hidden' : ''}`}>
                         {user.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div>
@@ -303,16 +451,32 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users }) => {
                     <span className="text-lg font-bold text-slate-900 dark:text-white">{user.letters + user.signatures}</span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {/* Show button only for admins */}
-                    {canManage && (
-                      <button
-                        onClick={() => handleDelete(idx, user)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    <div className="flex items-center justify-center gap-1">
+                      {/* Bouton "Voir en tant que" - Super Admin uniquement */}
+                      {realIsSuperAdmin && user.id !== currentUser?.id && (
+                        <button
+                          onClick={() => handleImpersonate(user)}
+                          className="p-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title={`Voir en tant que ${user.name}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      )}
+                      {/* Debug: Afficher toujours pour test */}
+                      {!realIsSuperAdmin && (
+                        <span className="text-xs text-gray-400" title="Non super admin">—</span>
+                      )}
+                      {/* Bouton Supprimer - Admins uniquement */}
+                      {canManage && (
+                        <button
+                          onClick={() => handleDelete(idx, user)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )

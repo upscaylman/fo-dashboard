@@ -18,32 +18,74 @@ interface UserProfile {
   created_at: string;
 }
 
-// Liste des avatars prédéfinis (Dicebear)
+// Liste des avatars prédéfinis (Dicebear - plusieurs styles)
 const AVATARS = [
-  { id: 'avatar-1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', name: 'Felix' },
-  { id: 'avatar-2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka', name: 'Aneka' },
-  { id: 'avatar-3', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marie', name: 'Marie' },
-  { id: 'avatar-4', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John', name: 'John' },
-  { id: 'avatar-5', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie', name: 'Sophie' },
-  { id: 'avatar-6', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas', name: 'Lucas' },
-  { id: 'avatar-7', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma', name: 'Emma' },
-  { id: 'avatar-8', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas', name: 'Thomas' },
-  { id: 'avatar-9', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Julie', name: 'Julie' },
-  { id: 'avatar-10', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex', name: 'Alex' },
-  { id: 'avatar-11', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah', name: 'Sarah' },
-  { id: 'avatar-12', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David', name: 'David' },
-  { id: 'avatar-13', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Laura', name: 'Laura' },
-  { id: 'avatar-14', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marc', name: 'Marc' },
-  { id: 'avatar-15', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Claire', name: 'Claire' },
-  { id: 'avatar-16', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Pierre', name: 'Pierre' },
-  { id: 'avatar-17', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Camille', name: 'Camille' },
-  { id: 'avatar-18', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Maxime', name: 'Maxime' },
+  // Style Avataaars (cartoon humain)
+  { id: 'avataaars-1', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', name: 'Felix', style: 'avataaars' },
+  { id: 'avataaars-2', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka', name: 'Aneka', style: 'avataaars' },
+  { id: 'avataaars-3', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marie', name: 'Marie', style: 'avataaars' },
+  { id: 'avataaars-4', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John', name: 'John', style: 'avataaars' },
+  { id: 'avataaars-5', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie', name: 'Sophie', style: 'avataaars' },
+  { id: 'avataaars-6', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucas', name: 'Lucas', style: 'avataaars' },
+  { id: 'avataaars-7', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma', name: 'Emma', style: 'avataaars' },
+  { id: 'avataaars-8', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Thomas', name: 'Thomas', style: 'avataaars' },
+  // Style Lorelei (visage artistique)
+  { id: 'lorelei-1', url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Julia', name: 'Julia', style: 'lorelei' },
+  { id: 'lorelei-2', url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Martin', name: 'Martin', style: 'lorelei' },
+  { id: 'lorelei-3', url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Lea', name: 'Léa', style: 'lorelei' },
+  { id: 'lorelei-4', url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Hugo', name: 'Hugo', style: 'lorelei' },
+  { id: 'lorelei-5', url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Chloe', name: 'Chloé', style: 'lorelei' },
+  { id: 'lorelei-6', url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Antoine', name: 'Antoine', style: 'lorelei' },
+  // Style Notionists (minimaliste)
+  { id: 'notionists-1', url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Alice', name: 'Alice', style: 'notionists' },
+  { id: 'notionists-2', url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Bob', name: 'Bob', style: 'notionists' },
+  { id: 'notionists-3', url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Clara', name: 'Clara', style: 'notionists' },
+  { id: 'notionists-4', url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Daniel', name: 'Daniel', style: 'notionists' },
+  { id: 'notionists-5', url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Eva', name: 'Eva', style: 'notionists' },
+  { id: 'notionists-6', url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Francois', name: 'François', style: 'notionists' },
+  // Style Personas (moderne)
+  { id: 'personas-1', url: 'https://api.dicebear.com/7.x/personas/svg?seed=Gabriel', name: 'Gabriel', style: 'personas' },
+  { id: 'personas-2', url: 'https://api.dicebear.com/7.x/personas/svg?seed=Helene', name: 'Hélène', style: 'personas' },
+  { id: 'personas-3', url: 'https://api.dicebear.com/7.x/personas/svg?seed=Ivan', name: 'Ivan', style: 'personas' },
+  { id: 'personas-4', url: 'https://api.dicebear.com/7.x/personas/svg?seed=Jeanne', name: 'Jeanne', style: 'personas' },
+  { id: 'personas-5', url: 'https://api.dicebear.com/7.x/personas/svg?seed=Kevin', name: 'Kevin', style: 'personas' },
+  { id: 'personas-6', url: 'https://api.dicebear.com/7.x/personas/svg?seed=Louise', name: 'Louise', style: 'personas' },
+  // Style Fun Emoji
+  { id: 'fun-emoji-1', url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Happy', name: 'Happy', style: 'fun-emoji' },
+  { id: 'fun-emoji-2', url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Cool', name: 'Cool', style: 'fun-emoji' },
+  { id: 'fun-emoji-3', url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Chill', name: 'Chill', style: 'fun-emoji' },
+  { id: 'fun-emoji-4', url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Smile', name: 'Smile', style: 'fun-emoji' },
+  // Style Bottts (robots)
+  { id: 'bottts-1', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=R2D2', name: 'R2D2', style: 'bottts' },
+  { id: 'bottts-2', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=C3PO', name: 'C3PO', style: 'bottts' },
+  { id: 'bottts-3', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Bender', name: 'Bender', style: 'bottts' },
+  { id: 'bottts-4', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Wall-E', name: 'Wall-E', style: 'bottts' },
+  // Style Thumbs (pouces)
+  { id: 'thumbs-1', url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Pro', name: 'Pro', style: 'thumbs' },
+  { id: 'thumbs-2', url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Expert', name: 'Expert', style: 'thumbs' },
+  // Style Initials (pour fallback)
+  { id: 'initials-1', url: 'https://api.dicebear.com/7.x/initials/svg?seed=FO&backgroundColor=3b82f6', name: 'FO', style: 'initials' },
+  { id: 'initials-2', url: 'https://api.dicebear.com/7.x/initials/svg?seed=ME&backgroundColor=10b981', name: 'ME', style: 'initials' },
+];
+
+// Styles disponibles pour le filtre
+const AVATAR_STYLES = [
+  { id: 'all', label: 'Tous' },
+  { id: 'avataaars', label: 'Cartoon' },
+  { id: 'lorelei', label: 'Artistique' },
+  { id: 'notionists', label: 'Minimaliste' },
+  { id: 'personas', label: 'Moderne' },
+  { id: 'fun-emoji', label: 'Emoji' },
+  { id: 'bottts', label: 'Robots' },
+  { id: 'thumbs', label: 'Pouces' },
+  { id: 'initials', label: 'Initiales' },
 ];
 
 const getRoleLabel = (role: string) => {
   const roles: { [key: string]: { label: string; color: string } } = {
     super_admin: { label: 'Super Administrateur', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    admin: { label: 'Administrateur', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    secretary_general: { label: 'Secrétaire Général', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
+    secretary_federal: { label: 'Secrétaire Fédéral', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
     secretary: { label: 'Secrétaire', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
   };
   return roles[role] || roles['secretary'];
@@ -58,6 +100,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarStyleFilter, setAvatarStyleFilter] = useState('all');
   const [deletingSection, setDeletingSection] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -475,38 +518,98 @@ const ProfilePage: React.FC = () => {
         {/* Modal Sélection Avatar */}
         {showAvatarPicker && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Choisir un avatar</h3>
                 <button
                   onClick={() => setShowAvatarPicker(false)}
-                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-slate-500" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-6 gap-3 max-h-96 overflow-y-auto">
-                {AVATARS.map((avatar) => (
+              {/* Filtres par style */}
+              <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_STYLES.map((style) => (
+                    <button
+                      key={style.id}
+                      onClick={() => setAvatarStyleFilter(style.id)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                        avatarStyleFilter === style.id
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                      }`}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Grille d'avatars avec scroll */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                  {/* Option: Pas d'avatar (initiales) */}
                   <button
-                    key={avatar.id}
                     onClick={() => {
-                      setFormData({ ...formData, avatar: avatar.url });
+                      setFormData({ ...formData, avatar: '' });
                       setShowAvatarPicker(false);
                     }}
-                    className={`relative aspect-square rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 p-1 transition-all hover:scale-105 ${
-                      formData.avatar === avatar.url || formData.avatar === avatar.id
+                    className={`relative aspect-square rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-600 dark:to-slate-700 p-1 transition-all hover:scale-105 flex items-center justify-center ${
+                      !formData.avatar || formData.avatar === ''
                         ? 'ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-slate-800'
                         : 'hover:ring-2 ring-slate-300 dark:ring-slate-600'
                     }`}
+                    title="Utiliser les initiales"
                   >
-                    <img
-                      src={avatar.url}
-                      alt={avatar.name}
-                      className="w-full h-full rounded-lg"
-                    />
+                    <div className="flex flex-col items-center gap-1">
+                      <User className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Initiales</span>
+                    </div>
                   </button>
-                ))}
+
+                  {/* Avatars filtrés */}
+                  {AVATARS
+                    .filter(avatar => avatarStyleFilter === 'all' || avatar.style === avatarStyleFilter)
+                    .map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      onClick={() => {
+                        setFormData({ ...formData, avatar: avatar.url });
+                        setShowAvatarPicker(false);
+                      }}
+                      className={`relative aspect-square rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 p-1 transition-all hover:scale-105 group ${
+                        formData.avatar === avatar.url
+                          ? 'ring-4 ring-blue-500 ring-offset-2 dark:ring-offset-slate-800'
+                          : 'hover:ring-2 ring-slate-300 dark:ring-slate-600'
+                      }`}
+                      title={avatar.name}
+                    >
+                      <img
+                        src={avatar.url}
+                        alt={avatar.name}
+                        className="w-full h-full rounded-lg"
+                        loading="lazy"
+                      />
+                      {/* Nom au survol */}
+                      <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] text-center py-0.5 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        {avatar.name}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer avec compteur */}
+              <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
+                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                  {avatarStyleFilter === 'all' 
+                    ? `${AVATARS.length} avatars disponibles` 
+                    : `${AVATARS.filter(a => a.style === avatarStyleFilter).length} avatars dans ce style`}
+                </p>
               </div>
             </div>
           </div>

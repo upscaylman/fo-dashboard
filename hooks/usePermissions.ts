@@ -61,10 +61,10 @@ export const usePermissions = () => {
     };
 
     /**
-     * Vérifie si l'utilisateur est admin (admin ou super_admin)
+     * Vérifie si l'utilisateur est au moins secrétaire général
      */
     const isAdmin = (): boolean => {
-        return hasRole('admin');
+        return hasRole('secretary_general');
     };
 
     return {

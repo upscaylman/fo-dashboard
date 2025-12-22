@@ -11,8 +11,53 @@ interface DashboardStats {
   activity: WeeklyActivity[];
 }
 
+export type TimeRange = 'week' | 'month' | 'quarter' | 'year';
+
+// Helper pour calculer la date de début selon le timeRange
+const getStartDateFromRange = (range: TimeRange): Date => {
+  const now = new Date();
+  switch (range) {
+    case 'week':
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      weekAgo.setHours(0, 0, 0, 0);
+      return weekAgo;
+    case 'month':
+      const monthAgo = new Date();
+      monthAgo.setDate(now.getDate() - 30);
+      monthAgo.setHours(0, 0, 0, 0);
+      return monthAgo;
+    case 'quarter':
+      const quarterAgo = new Date();
+      quarterAgo.setDate(now.getDate() - 90);
+      quarterAgo.setHours(0, 0, 0, 0);
+      return quarterAgo;
+    case 'year':
+      const yearAgo = new Date();
+      yearAgo.setFullYear(now.getFullYear() - 1);
+      yearAgo.setHours(0, 0, 0, 0);
+      return yearAgo;
+    default:
+      const defaultAgo = new Date();
+      defaultAgo.setDate(now.getDate() - 30);
+      defaultAgo.setHours(0, 0, 0, 0);
+      return defaultAgo;
+  }
+};
+
+// Helper pour obtenir le label de période
+const getPeriodLabel = (range: TimeRange): string => {
+  switch (range) {
+    case 'week': return '7 derniers jours';
+    case 'month': return '30 derniers jours';
+    case 'quarter': return '3 derniers mois';
+    case 'year': return 'Cette année';
+    default: return '30 jours';
+  }
+};
+
 // Hook pour les stats du dashboard avec chargement progressif
-export const useStats = () => {
+export const useStats = (timeRange: TimeRange = 'month') => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,125 +90,138 @@ export const useStats = () => {
         supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_rejected'),
       ]);
 
-      // Calculer les utilisateurs actifs (avec activité dans les 30 derniers jours)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Calculer les utilisateurs actifs selon la période sélectionnée
+      const periodStartDate = getStartDateFromRange(timeRange);
+      const periodLabel = getPeriodLabel(timeRange);
 
       // Utilisateurs qui ont créé des documents DocEase
       const { data: activeDoceaseUsers } = await supabase
         .from('docease_documents')
-        .select('user_id')
-        .gte('created_at', thirtyDaysAgo.toISOString());
+        .select('user_id, users:user_id(email)')
+        .gte('created_at', periodStartDate.toISOString());
 
       // Utilisateurs qui ont signé des documents
       const { data: activeSignatureUsers } = await supabase
         .from('signatures')
         .select('user_id')
-        .gte('signed_at', thirtyDaysAgo.toISOString());
+        .gte('signed_at', periodStartDate.toISOString());
 
       // Utilisateurs qui ont envoyé des documents via SignEase
       const { data: activeSigneaseUsers } = await supabase
         .from('signease_activity')
         .select('user_email')
-        .gte('created_at', thirtyDaysAgo.toISOString());
+        .gte('created_at', periodStartDate.toISOString());
 
       // Utilisateurs qui se sont connectés au dashboard (sessions actives récentes)
       const { data: activeDashboardUsers } = await supabase
         .from('active_sessions')
         .select('user_email')
-        .gte('started_at', thirtyDaysAgo.toISOString());
+        .gte('started_at', periodStartDate.toISOString());
 
-      // Récupérer les user_id depuis les emails pour SignEase et Dashboard
-      const emailsToCheck = new Set([
-        ...(activeSigneaseUsers?.map(s => s.user_email?.toLowerCase()).filter(Boolean) || []),
-        ...(activeDashboardUsers?.map(s => s.user_email?.toLowerCase()).filter(Boolean) || [])
-      ]);
+      // Collecter tous les emails uniques (méthode principale)
+      const allActiveEmails = new Set<string>();
+      
+      // Emails des documents DocEase (via la relation users)
+      activeDoceaseUsers?.forEach(d => {
+        const email = (d.users as any)?.email;
+        if (email) allActiveEmails.add(email.toLowerCase());
+      });
+      
+      // Emails des activités SignEase
+      activeSigneaseUsers?.forEach(s => {
+        if (s.user_email) allActiveEmails.add(s.user_email.toLowerCase());
+      });
+      
+      // Emails des sessions actives
+      activeDashboardUsers?.forEach(s => {
+        if (s.user_email) allActiveEmails.add(s.user_email.toLowerCase());
+      });
 
-      // Récupérer les user_id correspondant aux emails
-      let emailUserIds: string[] = [];
-      if (emailsToCheck.size > 0) {
-        const { data: usersFromEmails } = await supabase
+      // Collecter aussi les user_id pour les signatures (qui n'ont pas d'email direct)
+      const activeUserIds = new Set<string>();
+      activeDoceaseUsers?.forEach(d => {
+        if (d.user_id) activeUserIds.add(d.user_id);
+      });
+      activeSignatureUsers?.forEach(s => {
+        if (s.user_id) activeUserIds.add(s.user_id);
+      });
+
+      // Récupérer les emails des user_id trouvés pour les ajouter à la liste
+      if (activeUserIds.size > 0) {
+        const { data: usersFromIds } = await supabase
           .from('users')
           .select('id, email')
-          .in('email', Array.from(emailsToCheck));
-        emailUserIds = usersFromEmails?.map(u => u.id).filter(Boolean) || [];
+          .in('id', Array.from(activeUserIds));
+        usersFromIds?.forEach(u => {
+          if (u.email) allActiveEmails.add(u.email.toLowerCase());
+        });
       }
 
-      // Fusionner et dédupliquer tous les user_id
-      const activeUserIds = new Set([
-        ...(activeDoceaseUsers?.map(d => d.user_id).filter(Boolean) || []),
-        ...(activeSignatureUsers?.map(s => s.user_id).filter(Boolean) || []),
-        ...emailUserIds
-      ]);
+      // Le nombre d'utilisateurs actifs = nombre d'emails uniques
+      const activeUsersCount = allActiveEmails.size;
 
-      const activeUsersCount = activeUserIds.size;
-
-        // Compter les documents/signatures du mois en cours
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const [monthDocuments, monthSignatures, monthDocease, monthSigneaseSent, monthSigneaseSigned] = await Promise.all([
+        // Compter les documents/signatures selon la période sélectionnée
+        const [periodDocuments, periodSignatures, periodDocease, periodSigneaseSent, periodSigneaseSigned] = await Promise.all([
           supabase
             .from('documents')
             .select('id', { count: 'exact', head: true })
-            .gte('created_at', startOfMonth.toISOString()),
+            .gte('created_at', periodStartDate.toISOString()),
           supabase
             .from('signatures')
             .select('id', { count: 'exact', head: true })
-            .gte('signed_at', startOfMonth.toISOString()),
+            .gte('signed_at', periodStartDate.toISOString()),
           supabase
             .from('docease_documents')
             .select('id', { count: 'exact', head: true })
-            .gte('created_at', startOfMonth.toISOString()),
+            .gte('created_at', periodStartDate.toISOString()),
           supabase
             .from('signease_activity')
             .select('id', { count: 'exact', head: true })
             .eq('action_type', 'document_sent')
-            .gte('created_at', startOfMonth.toISOString()),
+            .gte('created_at', periodStartDate.toISOString()),
           supabase
             .from('signease_activity')
             .select('id', { count: 'exact', head: true })
             .eq('action_type', 'document_signed')
-            .gte('created_at', startOfMonth.toISOString()),
+            .gte('created_at', periodStartDate.toISOString()),
         ]);
 
         const globalStats: GlobalStat[] = [
           {
             label: 'Documents DocEase',
-            value: String(doceaseCount.count || 0),
+            value: String(periodDocease.count || 0),
             icon: FileText,
             color: 'text-purple-700',
             bgColor: 'bg-purple-100',
-            trend: `+${monthDocease.count || 0} ce mois`,
-            description: 'Générés via DocEase'
+            trend: `${periodDocease.count || 0} sur la période`,
+            description: `Générés via DocEase (${periodLabel})`
           },
           {
             label: 'Documents SignEase',
-            value: String(signeaseSent.count || 0),
+            value: String(periodSigneaseSent.count || 0),
             icon: Edit3,
             color: 'text-orange-700',
             bgColor: 'bg-orange-100',
-            trend: `+${monthSigneaseSent.count || 0} ce mois`,
-            description: 'Documents envoyés pour signature'
+            trend: `${periodSigneaseSent.count || 0} sur la période`,
+            description: `Documents envoyés (${periodLabel})`
           },
           {
             label: 'Signatures réalisées',
-            value: String(signeaseSigned.count || 0),
+            value: String(periodSigneaseSigned.count || 0),
             icon: Edit3,
             color: 'text-green-700',
             bgColor: 'bg-green-100',
-            trend: `+${monthSigneaseSigned.count || 0} ce mois`,
-            description: 'PDFs signés via SignEase'
+            trend: `${periodSigneaseSigned.count || 0} sur la période`,
+            description: `PDFs signés via SignEase (${periodLabel})`
           },
           {
             label: 'Envois par email',
-            value: String((doceaseCount.count || 0) + (signeaseSent.count || 0)),
+            value: String((periodDocease.count || 0) + (periodSigneaseSent.count || 0)),
             icon: Mail,
             color: 'text-indigo-700',
             bgColor: 'bg-indigo-100',
-            trend: `+${(monthDocease.count || 0) + (monthSigneaseSent.count || 0)} ce mois`,
-            description: 'Documents envoyés (DocEase + SignEase)'
+            trend: `${(periodDocease.count || 0) + (periodSigneaseSent.count || 0)} sur la période`,
+            description: `Documents envoyés (${periodLabel})`
           },
           {
             label: 'Salariés actifs',
@@ -171,8 +229,8 @@ export const useStats = () => {
             icon: User,
             color: 'text-blue-700',
             bgColor: 'bg-blue-100',
-            trend: `${activeUsersCount} actifs ce mois`,
-            description: 'Utilisateurs avec activité récente (30 jours)'
+            trend: `${activeUsersCount} actifs`,
+            description: `Utilisateurs avec activité (${periodLabel})`
           }
         ];
 
@@ -183,6 +241,9 @@ export const useStats = () => {
             id,
             name,
             role,
+            role_level,
+            avatar_url,
+            avatar,
             documents:documents(count),
             signatures:signatures(count),
             docease_docs:docease_documents(count)
@@ -197,6 +258,7 @@ export const useStats = () => {
           letters: (user.documents?.[0]?.count || 0) + (user.docease_docs?.[0]?.count || 0), // Cumul documents + docease
           signatures: user.signatures?.[0]?.count || 0,
           role: user.role_level || user.role || 'secretary',
+          avatar_url: user.avatar_url || user.avatar || null,
         }));
 
         // 3. Récupérer les stats par type de document depuis docease_documents
@@ -281,7 +343,7 @@ export const useStats = () => {
           setLoading(false);
         }
       }
-    }, []);
+    }, [timeRange]);
 
   // Fonction de refresh avec debounce pour éviter les appels multiples
   const debouncedFetchStats = useCallback(() => {
@@ -296,6 +358,9 @@ export const useStats = () => {
   useEffect(() => {
     isMountedRef.current = true;
     fetchStats();
+  }, [fetchStats]); // Se déclenche quand fetchStats change (qui dépend de timeRange)
+
+  useEffect(() => {
 
     // Abonnement Realtime pour détecter les changements sur documents DocEase
     const doceaseChannel = supabase

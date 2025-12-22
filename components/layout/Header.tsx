@@ -12,9 +12,11 @@ const getRoleBorderColor = (role?: string) => {
   switch (role) {
     case 'super_admin':
       return 'ring-purple-500 ring-2';
-    case 'admin':
+    case 'secretary_general':
+      return 'ring-indigo-500 ring-2';
+    case 'secretary_federal':
       return 'ring-blue-500 ring-2';
-    case 'editor':
+    case 'secretary':
       return 'ring-emerald-500 ring-2';
     default:
       return 'ring-slate-300 dark:ring-slate-600 ring-1';
@@ -26,10 +28,12 @@ const getRoleTooltip = (role?: string) => {
   switch (role) {
     case 'super_admin':
       return 'Super Administrateur';
-    case 'admin':
-      return 'Administrateur';
-    case 'editor':
-      return 'Éditeur';
+    case 'secretary_general':
+      return 'Secrétaire Général';
+    case 'secretary_federal':
+      return 'Secrétaire Fédéral';
+    case 'secretary':
+      return 'Secrétaire';
     default:
       return 'Utilisateur';
   }

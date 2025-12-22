@@ -175,7 +175,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const fetchSharedDocuments = async () => {
     const { data, error } = await supabase
       .from('shared_documents')
-      .select('*, users:uploaded_by(pseudo, email)')
+      .select('*, users:uploaded_by(name, email)')
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -184,7 +184,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
       // Mapper les données pour inclure le nom du créateur
       const docsWithCreator = (data || []).map(doc => ({
         ...doc,
-        created_by_name: doc.users?.pseudo || doc.users?.email?.split('@')[0] || 'Inconnu'
+        created_by_name: doc.users?.name || doc.users?.email?.split('@')[0] || 'Inconnu'
       }));
       setSharedDocuments(docsWithCreator);
     }

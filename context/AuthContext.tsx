@@ -12,12 +12,16 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  realUser: User | null; // L'utilisateur réel (super admin) lors de l'impersonation
   isAuthenticated: boolean;
   isLoading: boolean;
+  isImpersonating: boolean;
   login: (provider: 'email' | 'outlook', data?: any) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  impersonate: (targetUser: User) => void;
+  stopImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,8 +36,27 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [realUser, setRealUser] = useState<User | null>(null); // Super admin réel
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+
+  // Fonction pour "voir en tant que" un utilisateur
+  const impersonate = (targetUser: User) => {
+    if (!user || user.role !== 'super_admin') return;
+    setRealUser(user); // Sauvegarder le super admin
+    setUser(targetUser); // Afficher comme l'utilisateur cible
+    setIsImpersonating(true);
+  };
+
+  // Fonction pour revenir à l'utilisateur réel
+  const stopImpersonation = () => {
+    if (realUser) {
+      setUser(realUser);
+      setRealUser(null);
+      setIsImpersonating(false);
+    }
+  };
 
   const fetchUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
     try {
@@ -89,16 +112,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Gérer "Se souvenir de moi" - si sessionStorage n'a pas le flag, déconnecter
-    const rememberMe = localStorage.getItem('fo-metaux-remember-me') === 'true';
-    const sessionActive = sessionStorage.getItem('fo-metaux-session-active');
-    
-    // Si l'utilisateur n'a pas coché "Se souvenir de moi" et que c'est une nouvelle session de navigateur
-    if (!rememberMe && !sessionActive && localStorage.getItem('fo-metaux-auth')) {
-      console.log('🔒 Session non persistante, déconnexion...');
-      supabase.auth.signOut();
-      localStorage.removeItem('fo-metaux-auth');
-    }
+    // Marquer la session comme active (persistera tant que l'onglet est ouvert)
+    sessionStorage.setItem('fo-metaux-session-active', 'true');
 
     const handleAuth = async () => {
       console.log('🚀 AuthContext: Initialisation');
@@ -261,7 +276,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, realUser, isAuthenticated, isLoading, isImpersonating, login, register, logout, refreshUser, impersonate, stopImpersonation }}>
       {children}
     </AuthContext.Provider>
   );

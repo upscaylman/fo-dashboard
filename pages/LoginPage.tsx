@@ -36,11 +36,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
             localStorage.setItem('fo-metaux-remember-me', rememberMe.toString());
             
             await login('email', { email, password });
-            
-            // Si "Se souvenir de moi" n'est pas coché, on programme l'effacement à la fermeture
-            if (!rememberMe) {
-                sessionStorage.setItem('fo-metaux-session-active', 'true');
-            }
         } catch (err: any) {
             console.error('Erreur de connexion:', err);
             setError(err.message || 'Erreur de connexion. Vérifiez vos identifiants.');
