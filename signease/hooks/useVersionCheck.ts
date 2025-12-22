@@ -69,8 +69,23 @@ export const useVersionCheck = (): UseVersionCheckReturn => {
   }, [newVersion]);
 
   const reloadApp = useCallback(() => {
+    // Vider le cache du Service Worker si présent
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          caches.delete(name);
+        });
+      });
+    }
+    
+    // Supprimer la version ignorée
+    localStorage.removeItem(DISMISSED_VERSION_KEY);
+    
     // Forcer le rechargement complet sans cache
-    window.location.reload();
+    // Utiliser location.href avec un timestamp pour contourner le cache
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', Date.now().toString());
+    window.location.href = url.toString();
   }, []);
 
   useEffect(() => {
