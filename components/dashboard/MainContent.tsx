@@ -8,7 +8,11 @@ import { Tooltip } from '../ui/Tooltip';
 import { Skeleton } from '../ui/Skeleton';
 import { useBookmarks } from '../../context/BookmarkContext';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+
+// Rôles qui ne peuvent PAS ajouter/supprimer de documents
+const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
 
 interface MainContentProps {
   news: NewsItem[];
@@ -117,6 +121,10 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const { addToast } = useToast();
   const { toggleBookmark, isBookmarked, addMultipleBookmarks } = useBookmarks();
   const { isAdmin, isSuperAdmin } = usePermissions();
+  const { user } = useAuth();
+  
+  // Vérification explicite : le rôle actuel peut-il gérer les documents ?
+  const canManageDocuments = isSuperAdmin && !RESTRICTED_ROLES.includes(user?.role || '');
   
   const [sharedDocuments, setSharedDocuments] = useState<SharedDocument[]>([]);
   const [showAddDocModal, setShowAddDocModal] = useState(false);
@@ -583,8 +591,8 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                   <Filter className="w-4 h-4" />
                 </button>
                 
-                {/* Seul super_admin peut ajouter - icône seule */}
-                {isSuperAdmin && (
+                {/* Seul super_admin peut ajouter (pas secretary/secretary_federal) */}
+                {canManageDocuments && (
                   <button
                     onClick={() => {
                       if (storageFull) {
@@ -608,7 +616,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
         />
         
         {/* Alerte stockage */}
-        {isSuperAdmin && (storageWarning || storageFull) && (
+        {canManageDocuments && (storageWarning || storageFull) && (
           <div className={`mb-4 p-3 rounded-lg flex items-center gap-3 ${
             storageFull 
               ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' 
@@ -879,7 +887,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                             >
                               <Star className={`w-4 h-4 transition-transform active:scale-125 ${isStarred ? 'fill-amber-400 text-amber-400' : ''}`} />
                             </button>
-                            {isSuperAdmin && (
+                            {canManageDocuments && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

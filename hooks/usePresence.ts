@@ -28,7 +28,7 @@ interface UsePresenceReturn {
 const SESSION_STORAGE_KEY = 'dashboard_session_id';
 
 export const usePresence = (): UsePresenceReturn => {
-  const { user } = useAuth();
+  const { user, isImpersonating } = useAuth();
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -60,7 +60,9 @@ export const usePresence = (): UsePresenceReturn => {
     page: string = 'dashboard',
     tool: 'docease' | 'signease' | null = null
   ) => {
-    if (!user) return;
+    // Ne pas créer de session de présence en mode impersonation
+    // Le super_admin observe, mais l'utilisateur ne doit pas apparaître en ligne
+    if (!user || isImpersonating) return;
 
     try {
       // Récupérer le nom et l'avatar de l'utilisateur depuis la table users
@@ -112,7 +114,7 @@ export const usePresence = (): UsePresenceReturn => {
     } catch (error) {
       console.error('Erreur mise à jour présence:', error);
     }
-  }, [user, cleanupOldSessions]);
+  }, [user, isImpersonating, cleanupOldSessions]);
 
   // Supprimer la session
   const removePresence = useCallback(async () => {
@@ -226,6 +228,16 @@ export const usePresence = (): UsePresenceReturn => {
       .subscribe();
 
     if (!user) {
+      setLoading(false);
+      return () => {
+        clearInterval(refreshInterval);
+        supabase.removeChannel(publicChannel);
+      };
+    }
+
+    // En mode impersonation, ne pas créer de session de présence
+    // Le super_admin observe mais l'utilisateur ne doit pas apparaître en ligne
+    if (isImpersonating) {
       setLoading(false);
       return () => {
         clearInterval(refreshInterval);
@@ -359,7 +371,7 @@ export const usePresence = (): UsePresenceReturn => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, updatePresence, fetchActiveUsers, removePresence]);
+  }, [user, isImpersonating, updatePresence, fetchActiveUsers, removePresence]);
 
   return {
     activeUsers,

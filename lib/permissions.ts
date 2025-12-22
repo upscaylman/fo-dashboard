@@ -76,16 +76,15 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
 
     secretary_federal: [
         'documents.create',
-        'documents.read.all',
-        'documents.update.all',
+        'documents.read.own',
+        'documents.update.own',
         'documents.delete.own',
         'users.read',
-        'stats.view.all',
-        'stats.export',
+        'stats.view.own',
         'templates.read',
         'templates.download',
         'signatures.create.own',
-        'signatures.view.all',
+        'signatures.view.own',
         'settings.view',
     ],
 

@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../context/AuthContext';
+
+// URL de production SignEase
+const SIGNEASE_URL = 'https://fde-signease.netlify.app';
+
+// Rôles qui ne voient que leurs propres données
+const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
 
 interface SigneaseActivity {
   id: number;
@@ -22,6 +29,11 @@ const SigneaseActivityTable: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showInfoBanner, setShowInfoBanner] = useState(true); // État pour masquer le bandeau
+
+  // Récupérer le contexte d'authentification pour filtrer les données
+  const { user } = useAuth();
+  const effectiveRole = user?.role || 'secretary';
+  const isRestrictedView = RESTRICTED_ROLES.includes(effectiveRole);
 
   useEffect(() => {
     fetchActivities();
@@ -46,16 +58,23 @@ const SigneaseActivityTable: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [isRestrictedView, user?.email]);
 
   const fetchActivities = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('signease_activity')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
+
+      // Filtrer par user_email si rôle restreint
+      if (isRestrictedView && user?.email) {
+        query = query.eq('user_email', user.email);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setActivities(data || []);
@@ -270,7 +289,7 @@ const SigneaseActivityTable: React.FC = () => {
                     <p className="font-medium mb-1">Aucune activité SignEase</p>
                     <p className="text-sm">Les signatures apparaîtront ici automatiquement.</p>
                     <a 
-                      href="http://localhost:5000" 
+                      href={SIGNEASE_URL}
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-orange-500 text-white rounded-full text-sm font-medium hover:bg-orange-600 transition-colors"

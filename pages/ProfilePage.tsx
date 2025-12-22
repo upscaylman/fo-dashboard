@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Camera, Save, X, LogOut, Sun, Moon, Monitor, Palette, Trash2, AlertTriangle, Database, FileText, Shield, ArrowLeft } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Camera, Save, X, LogOut, Sun, Moon, Monitor, Palette, Trash2, AlertTriangle, Database, FileText, Shield, ArrowLeft, Eye } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
 import { usePresence } from '../hooks/usePresence';
+import { usePermissions } from '../hooks/usePermissions';
 import { Card } from '../components/ui/Card';
 
 interface UserProfile {
@@ -96,6 +97,7 @@ const ProfilePage: React.FC = () => {
   const { addToast } = useToast();
   const { theme, setTheme } = useTheme();
   const { updatePresence } = usePresence();
+  const { isReadOnly } = usePermissions();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -129,6 +131,12 @@ const ProfilePage: React.FC = () => {
 
   // Fonction pour vider une section
   const handlePurgeSection = async (sectionId: string) => {
+    // Bloquer en mode lecture seule
+    if (isReadOnly) {
+      addToast('Mode observation : aucune action n\'est possible', 'info');
+      return;
+    }
+    
     if (!isSuperAdmin) {
       addToast('Accès refusé: Super Admin uniquement', 'error');
       return;
@@ -215,6 +223,12 @@ const ProfilePage: React.FC = () => {
 
   const handleSave = async () => {
     if (!profile) return;
+    
+    // Bloquer en mode lecture seule
+    if (isReadOnly) {
+      addToast('Mode observation : aucune action n\'est possible', 'info');
+      return;
+    }
 
     setSaving(true);
     const { error } = await supabase
@@ -264,6 +278,15 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Bannière mode lecture seule */}
+        {isReadOnly && (
+          <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <Eye className="w-4 h-4" />
+              <span className="text-sm font-medium">Mode observation — Aucune modification possible</span>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="mb-6">
           <button
@@ -293,12 +316,15 @@ const ProfilePage: React.FC = () => {
                       className="w-full h-full rounded-full bg-white dark:bg-slate-800"
                     />
                   </div>
+                  {/* Bouton changer avatar - masqué en mode lecture seule */}
+                  {!isReadOnly && (
                   <button
                     onClick={() => setShowAvatarPicker(!showAvatarPicker)}
                     className="absolute bottom-0 right-0 p-2 bg-white dark:bg-slate-700 rounded-full shadow-lg border-2 border-slate-100 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
                   >
                     <Camera className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                   </button>
+                  )}
                 </div>
 
                 {/* Info basiques */}
@@ -373,7 +399,8 @@ const ProfilePage: React.FC = () => {
             </div>
           </Card>
 
-          {/* Bouton Déconnexion */}
+          {/* Bouton Déconnexion - masqué en mode lecture seule */}
+          {!isReadOnly && (
           <button
             onClick={logout}
             className="w-full flex items-center justify-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 font-semibold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
@@ -381,9 +408,10 @@ const ProfilePage: React.FC = () => {
             <LogOut className="w-5 h-5" />
             Déconnexion
           </button>
+          )}
 
-          {/* Section Administration - Super Admin uniquement */}
-          {isSuperAdmin && (
+          {/* Section Administration - Super Admin uniquement et pas en mode lecture seule */}
+          {isSuperAdmin && !isReadOnly && (
             <Card className="border-2 border-red-200 dark:border-red-800">
               <div className="p-6">
                 <h3 className="text-lg font-bold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
@@ -464,7 +492,8 @@ const ProfilePage: React.FC = () => {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isReadOnly}
+                    className={`w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                     placeholder="Votre nom complet"
                   />
                 </div>
@@ -494,12 +523,14 @@ const ProfilePage: React.FC = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isReadOnly}
+                    className={`w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                     placeholder="+33 6 12 34 56 78"
                   />
                 </div>
 
-                {/* Bouton Enregistrer */}
+                {/* Bouton Enregistrer - masqué en mode lecture seule */}
+                {!isReadOnly && (
                 <div className="flex justify-end pt-4">
                   <button
                     onClick={handleSave}
@@ -510,6 +541,7 @@ const ProfilePage: React.FC = () => {
                     {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                   </button>
                 </div>
+                )}
               </div>
             </div>
           </Card>

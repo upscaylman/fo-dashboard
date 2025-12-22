@@ -130,10 +130,10 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
           </div>
           
           {/* Onglets de navigation */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1" data-stats-tabs>
             {/* Filtre de Date - Icône seule sur mobile, complet sur desktop */}
             {internalTab !== 'types' && (
-              <div className="relative group shrink-0">
+              <div className="relative group shrink-0" data-period-selector>
                  <label className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer">
                      <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                      <span className="hidden sm:inline text-slate-500 dark:text-slate-300 text-xs">Période :</span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FileText, Edit3, UserPlus, Trash2, ChevronDown, X, Send, RefreshCw, Eye } from 'lucide-react';
+import { FileText, Edit3, UserPlus, Trash2, ChevronDown, X, Send, RefreshCw, Eye, Calendar, Mail, Shield, Activity, BarChart3 } from 'lucide-react';
 import { UserStat } from '../../../types';
 import { Card } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
@@ -58,11 +58,23 @@ const getStartDateFromRange = (range: TimeRange): Date => {
   }
 };
 
+// Interface pour les détails utilisateur
+interface UserDetails {
+  user: UserStat;
+  doceaseDocuments: any[];
+  signeaseActivities: any[];
+  bookmarks: any[];
+  recentActivity: any[];
+}
+
 const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'month' }) => {
   const [localUsers, setLocalUsers] = useState<UserStat[]>(users);
   const [userStats, setUserStats] = useState<Map<string, { letters: number; signatures: number }>>(new Map());
   const [loadingStats, setLoadingStats] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState<UserDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -71,30 +83,101 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
   });
   const { addToast } = useToast();
   const { user: currentUser, impersonate, isImpersonating, realUser } = useAuth();
-  const { isSuperAdmin } = usePermissions();
+  const { isSuperAdmin, isAdmin, isRealSuperAdmin, isReadOnly } = usePermissions();
 
   // Vérifier si le vrai utilisateur (pas celui impersonné) est super admin
-  const isSuperAdminResult = isSuperAdmin();
-  const realIsSuperAdmin = isSuperAdminResult || realUser?.role === 'super_admin' || currentUser?.role === 'super_admin';
+  // Utiliser isRealSuperAdmin qui gère correctement l'impersonation
+  const realIsSuperAdmin = isRealSuperAdmin();
   
-  // Debug: afficher dans la console
-  console.log('🔐 Super Admin Check:', 
-    'isSuperAdmin()=', isSuperAdminResult, 
-    'realUser?.role=', realUser?.role, 
-    'currentUser?.role=', currentUser?.role,
-    'RESULT=', realIsSuperAdmin 
-  );
+  // Pour l'affichage, on utilise le rôle effectif (celui impersonné si applicable)
+  const effectiveIsSuperAdmin = isSuperAdmin();
+  
+  // Le rôle effectif détermine si on peut voir toutes les données
+  const canViewAllUsers = effectiveIsSuperAdmin || currentUser?.role === 'secretary_general';
+  
+  // Le secrétaire fédéral et le secrétaire ne voient que leurs propres données
+  const isRestrictedRole = currentUser?.role === 'secretary_federal' || currentUser?.role === 'secretary';
 
-  // Fonction pour voir en tant que
+  // En mode lecture seule (impersonation), aucune action n'est permise
+  // Le super_admin peut observer mais pas interagir
+
+  // Fonction pour voir en tant que (désactivée en mode lecture seule)
   const handleImpersonate = (user: UserStat) => {
+    if (isReadOnly) {
+      addToast('Mode observation : aucune action n\'est possible', 'info');
+      return;
+    }
     impersonate({
       id: user.id,
       name: user.name,
-      email: '', // On n'a pas l'email dans UserStat, mais c'est OK pour l'affichage
+      email: user.email, // Email nécessaire pour filtrer SignEase correctement
       role: user.role,
       avatar: user.avatar_url || undefined,
     });
     addToast(`Vous voyez maintenant l'interface en tant que ${user.name}`, 'info');
+  };
+
+  // Fonction pour charger les détails d'un utilisateur (Super Admin uniquement)
+  const handleViewUserDetails = async (user: UserStat) => {
+    if (!realIsSuperAdmin) return;
+    
+    setLoadingDetails(true);
+    setShowUserDetailsModal(true);
+    
+    try {
+      // Récupérer les documents DocEase de l'utilisateur
+      const { data: doceaseData } = await supabase
+        .from('docease_documents')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Récupérer les activités SignEase liées à l'email de l'utilisateur
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      const userEmail = userData?.email || '';
+      
+      const { data: signeaseData } = await supabase
+        .from('signease_activity')
+        .select('*')
+        .eq('user_email', userEmail)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Récupérer les favoris de l'utilisateur
+      const { data: bookmarksData } = await supabase
+        .from('bookmarks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Récupérer les sessions actives
+      const { data: sessionsData } = await supabase
+        .from('active_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('last_activity', { ascending: false })
+        .limit(5);
+
+      setSelectedUserDetails({
+        user: { ...user, email: userEmail } as UserStat,
+        doceaseDocuments: doceaseData || [],
+        signeaseActivities: signeaseData || [],
+        bookmarks: bookmarksData || [],
+        recentActivity: sessionsData || [],
+      });
+    } catch (error) {
+      console.error('Erreur chargement détails utilisateur:', error);
+      addToast('Erreur lors du chargement des détails', 'error');
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   // Charger les stats utilisateurs selon la période
@@ -188,7 +271,12 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
 
 
   const handleDelete = async (indexToDelete: number, userStat: UserStat) => {
-    if (!canManage) return;
+    if (!canManage || isReadOnly) {
+      if (isReadOnly) {
+        addToast('Mode observation : aucune action n\'est possible', 'info');
+      }
+      return;
+    }
 
     if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ${userStat.name} ? Cette action est irréversible.`)) {
       return;
@@ -208,12 +296,21 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
   };
 
   const handleInvite = () => {
+    if (isReadOnly) {
+      addToast('Mode observation : aucune action n\'est possible', 'info');
+      return;
+    }
     const inviteUrl = `${window.location.origin}/register`;
     navigator.clipboard.writeText(inviteUrl);
     addToast("Lien d'inscription copié dans le presse-papier !", 'success');
   };
 
   const handleAddUser = async () => {
+    if (isReadOnly) {
+      addToast('Mode observation : aucune action n\'est possible', 'info');
+      return;
+    }
+    
     if (!isSuperAdmin) {
       addToast('Seuls les super admins peuvent ajouter des utilisateurs', 'error');
       return;
@@ -288,6 +385,7 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
         const newUserStat: UserStat = {
           id: authData.user.id,
           name: newUser.name,
+          email: newUser.email,
           letters: 0,
           signatures: 0,
           role: newUser.role_level
@@ -313,8 +411,16 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
   };
 
   // Calculer les stats avec les données dynamiques
+  // IMPORTANT: Le secrétaire fédéral et le secrétaire ne voient que leurs propres données
   const enrichedUsers = useMemo(() => {
-    return localUsers.map(user => {
+    let filteredUsers = localUsers;
+    
+    // Si l'utilisateur est secretary_federal ou secretary, ne montrer que lui-même
+    if (isRestrictedRole && currentUser?.id) {
+      filteredUsers = localUsers.filter(user => user.id === currentUser.id);
+    }
+    
+    return filteredUsers.map(user => {
       const stats = userStats.get(user.id);
       return {
         ...user,
@@ -322,10 +428,19 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
         signatures: stats?.signatures ?? user.signatures,
       };
     });
-  }, [localUsers, userStats]);
+  }, [localUsers, userStats, isRestrictedRole, currentUser?.id]);
 
   return (
     <Card className="!p-0 overflow-hidden">
+      {/* Bannière mode lecture seule */}
+      {isReadOnly && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-6 py-3">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+            <Eye className="w-4 h-4" />
+            <span className="text-sm font-medium">Mode observation — Aucune action n'est possible</span>
+          </div>
+        </div>
+      )}
       <div className="p-6 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -337,8 +452,8 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
               <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
             )}
           </div>
-          {/* Show buttons only for admins */}
-          {canManage && (
+          {/* Show buttons only for admins - hidden in read-only mode */}
+          {canManage && !isReadOnly && (
             <div className="flex gap-2">
               {isSuperAdmin && (
                 <button
@@ -451,20 +566,30 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                     <span className="text-lg font-bold text-slate-900 dark:text-white">{user.letters + user.signatures}</span>
                   </td>
                   <td className="px-6 py-4 text-center">
+                    {/* Actions masquées en mode lecture seule */}
+                    {isReadOnly ? (
+                      <span className="text-slate-400 text-sm italic">Observation</span>
+                    ) : (
                     <div className="flex items-center justify-center gap-1">
-                      {/* Bouton "Voir en tant que" - Super Admin uniquement */}
+                      {/* Bouton "Voir les données" - Super Admin uniquement */}
+                      {realIsSuperAdmin && (
+                        <button
+                          onClick={() => handleViewUserDetails(user)}
+                          className="p-2 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                          title={`Voir les données de ${user.name}`}
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {/* Bouton "Voir en tant que" - Super Admin uniquement (pour les autres utilisateurs) */}
                       {realIsSuperAdmin && user.id !== currentUser?.id && (
                         <button
                           onClick={() => handleImpersonate(user)}
                           className="p-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title={`Voir en tant que ${user.name}`}
+                          title={`Se connecter en tant que ${user.name}`}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                      )}
-                      {/* Debug: Afficher toujours pour test */}
-                      {!realIsSuperAdmin && (
-                        <span className="text-xs text-gray-400" title="Non super admin">—</span>
                       )}
                       {/* Bouton Supprimer - Admins uniquement */}
                       {canManage && (
@@ -477,6 +602,7 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                         </button>
                       )}
                     </div>
+                    )}
                   </td>
                 </tr>
               )
@@ -596,6 +722,218 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                   Créer le compte
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de détails utilisateur - Super Admin uniquement */}
+      {showUserDetailsModal && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-4">
+                {selectedUserDetails?.user.avatar_url ? (
+                  <img 
+                    src={selectedUserDetails.user.avatar_url} 
+                    alt={selectedUserDetails.user.name}
+                    className="w-12 h-12 rounded-full object-cover shadow-md"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md">
+                    {selectedUserDetails?.user.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    {selectedUserDetails?.user.name}
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${ROLE_COLORS[selectedUserDetails?.user.role as UserRole]?.bg} ${ROLE_COLORS[selectedUserDetails?.user.role as UserRole]?.text}`}>
+                      {ROLE_LABELS[selectedUserDetails?.user.role as UserRole]}
+                    </span>
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    {(selectedUserDetails?.user as any)?.email || 'Email non disponible'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowUserDetailsModal(false);
+                  setSelectedUserDetails(null);
+                }}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {loadingDetails ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Statistiques rapides */}
+                  <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-1">
+                        <FileText className="w-4 h-4" />
+                        <span className="text-xs font-semibold uppercase">DocEase</span>
+                      </div>
+                      <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{selectedUserDetails?.doceaseDocuments.length || 0}</p>
+                    </div>
+                    <div className="p-4 bg-pink-50 dark:bg-pink-900/20 rounded-xl border border-pink-200 dark:border-pink-800">
+                      <div className="flex items-center gap-2 text-pink-600 dark:text-pink-400 mb-1">
+                        <Edit3 className="w-4 h-4" />
+                        <span className="text-xs font-semibold uppercase">SignEase</span>
+                      </div>
+                      <p className="text-2xl font-bold text-pink-700 dark:text-pink-300">{selectedUserDetails?.signeaseActivities.length || 0}</p>
+                    </div>
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
+                        <Activity className="w-4 h-4" />
+                        <span className="text-xs font-semibold uppercase">Favoris</span>
+                      </div>
+                      <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{selectedUserDetails?.bookmarks.length || 0}</p>
+                    </div>
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1">
+                        <Shield className="w-4 h-4" />
+                        <span className="text-xs font-semibold uppercase">Sessions</span>
+                      </div>
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{selectedUserDetails?.recentActivity.length || 0}</p>
+                    </div>
+                  </div>
+
+                  {/* Documents DocEase */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-purple-500" />
+                      Documents DocEase récents
+                    </h4>
+                    {selectedUserDetails?.doceaseDocuments.length === 0 ? (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 italic">Aucun document</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedUserDetails?.doceaseDocuments.map((doc: any) => (
+                          <div key={doc.id} className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <p className="font-medium text-slate-900 dark:text-white text-sm truncate">{doc.title}</p>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full">{doc.document_type}</span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Activités SignEase */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                      <Edit3 className="w-5 h-5 text-pink-500" />
+                      Activités SignEase récentes
+                    </h4>
+                    {selectedUserDetails?.signeaseActivities.length === 0 ? (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 italic">Aucune activité</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedUserDetails?.signeaseActivities.map((activity: any) => (
+                          <div key={activity.id} className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <p className="font-medium text-slate-900 dark:text-white text-sm truncate">{activity.document_name || 'Document sans nom'}</p>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                              <span className={`px-2 py-0.5 rounded-full ${
+                                activity.action_type === 'document_signed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                activity.action_type === 'document_sent' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                                activity.action_type === 'document_rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                                'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                              }`}>
+                                {activity.action_type?.replace('document_', '').replace('_', ' ')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(activity.created_at).toLocaleDateString('fr-FR')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Favoris */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-amber-500" />
+                      Favoris
+                    </h4>
+                    {selectedUserDetails?.bookmarks.length === 0 ? (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 italic">Aucun favori</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedUserDetails?.bookmarks.map((bookmark: any) => (
+                          <div key={bookmark.id} className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <p className="font-medium text-slate-900 dark:text-white text-sm truncate">{bookmark.title}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{bookmark.item_type}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sessions récentes */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-emerald-500" />
+                      Sessions récentes
+                    </h4>
+                    {selectedUserDetails?.recentActivity.length === 0 ? (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 italic">Aucune session</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedUserDetails?.recentActivity.map((session: any) => (
+                          <div key={session.id} className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-slate-900 dark:text-white text-sm">{session.current_page || 'Dashboard'}</p>
+                              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                                {session.current_tool || 'Navigation'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(session.last_activity).toLocaleString('fr-FR')}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0 flex justify-between items-center">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                <Shield className="w-3 h-3 inline mr-1" />
+                Données accessibles uniquement par Super Admin
+              </p>
+              <button
+                onClick={() => {
+                  setShowUserDetailsModal(false);
+                  setSelectedUserDetails(null);
+                }}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg transition-colors"
+              >
+                Fermer
+              </button>
             </div>
           </div>
         </div>

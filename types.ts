@@ -14,6 +14,7 @@ export interface GlobalStat {
 export interface UserStat {
   id: string; // [NEW] Added for deletion
   name: string;
+  email: string; // Nécessaire pour l'impersonation et le filtrage SignEase
   letters: number;
   signatures: number;
   role: string;

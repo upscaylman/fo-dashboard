@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FileText, Download, Calendar, User, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, CheckCircle, AlertCircle, Eye, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../context/AuthContext';
+
+// Rôles qui ne voient que leurs propres données
+const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
 
 // URL de production DocEase
 const DOCEASE_URL = 'https://fo-docease.netlify.app';
@@ -32,6 +36,11 @@ const DoceaseDocumentsTable: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // desc = plus récent en premier
   const [showInfoBanner, setShowInfoBanner] = useState(true); // État pour masquer le bandeau
 
+  // Récupérer le contexte d'authentification pour filtrer les données
+  const { user } = useAuth();
+  const effectiveRole = user?.role || 'secretary';
+  const isRestrictedView = RESTRICTED_ROLES.includes(effectiveRole);
+
   useEffect(() => {
     fetchDocuments();
 
@@ -55,12 +64,12 @@ const DoceaseDocumentsTable: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [isRestrictedView, user?.id]);
 
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('docease_documents')
         .select(`
           *,
@@ -68,6 +77,13 @@ const DoceaseDocumentsTable: React.FC = () => {
         `)
         .order('created_at', { ascending: false })
         .limit(100);
+
+      // Filtrer par user_id si rôle restreint
+      if (isRestrictedView && user?.id) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setDocuments(data || []);

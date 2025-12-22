@@ -7,6 +7,10 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader } from '../../ui/Card';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../context/AuthContext';
+
+// Rôles restreints qui ne voient que leurs propres données
+const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
 
 interface ActivityEvent {
   id: string;
@@ -45,6 +49,15 @@ const AnalyticsView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'timeline' | 'users'>('timeline');
+
+  // Récupérer le contexte d'authentification pour filtrer les données
+  const { user, isImpersonating } = useAuth();
+  
+  // Déterminer si on doit filtrer les données (rôle restreint ou impersonation d'un rôle restreint)
+  const effectiveRole = user?.role || 'secretary';
+  const isRestrictedView = RESTRICTED_ROLES.includes(effectiveRole);
+  const effectiveUserId = user?.id;
+  const effectiveUserEmail = user?.email;
 
   const fetchAnalytics = async () => {
     try {
@@ -93,6 +106,11 @@ const AnalyticsView: React.FC = () => {
         doceaseQuery = doceaseQuery.gte('created_at', startDate);
       }
       
+      // Filtrer par utilisateur si vue restreinte
+      if (isRestrictedView && effectiveUserId) {
+        doceaseQuery = doceaseQuery.eq('user_id', effectiveUserId);
+      }
+      
       const { data: doceaseData } = await doceaseQuery;
 
       // Récupérer les signatures
@@ -105,6 +123,11 @@ const AnalyticsView: React.FC = () => {
         signaturesQuery = signaturesQuery.gte('signed_at', startDate);
       }
       
+      // Filtrer par utilisateur si vue restreinte
+      if (isRestrictedView && effectiveUserId) {
+        signaturesQuery = signaturesQuery.eq('user_id', effectiveUserId);
+      }
+      
       const { data: signaturesData } = await signaturesQuery;
 
       // Récupérer les activités SignEase
@@ -115,6 +138,11 @@ const AnalyticsView: React.FC = () => {
       
       if (startDate) {
         signeaseQuery = signeaseQuery.gte('created_at', startDate);
+      }
+      
+      // Filtrer par email utilisateur si vue restreinte
+      if (isRestrictedView && effectiveUserEmail) {
+        signeaseQuery = signeaseQuery.eq('user_email', effectiveUserEmail);
       }
       
       const { data: signeaseData } = await signeaseQuery;
@@ -229,7 +257,7 @@ const AnalyticsView: React.FC = () => {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [dateFilter]);
+  }, [dateFilter, isRestrictedView, effectiveUserId, effectiveUserEmail]);
 
   // Souscription realtime
   useEffect(() => {
@@ -241,7 +269,7 @@ const AnalyticsView: React.FC = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [dateFilter]);
+  }, [dateFilter, isRestrictedView, effectiveUserId, effectiveUserEmail]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -453,22 +481,24 @@ const AnalyticsView: React.FC = () => {
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>
 
-          {/* Filtre par salarié */}
-          <div className="relative">
-            <select
-              value={selectedUser || ''}
-              onChange={(e) => setSelectedUser(e.target.value || null)}
-              className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors min-w-[180px]"
-            >
-              <option value="">👥 Tous les salariés</option>
-              {users.map(user => (
-                <option key={user.email} value={user.email}>
-                  {user.name || user.email.split('@')[0]} ({user.doceaseCount + user.signaturesCount})
-                </option>
-              ))}
-            </select>
-            <User className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
+          {/* Filtre par salarié - masqué pour les rôles restreints */}
+          {!isRestrictedView && (
+            <div className="relative">
+              <select
+                value={selectedUser || ''}
+                onChange={(e) => setSelectedUser(e.target.value || null)}
+                className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors min-w-[180px]"
+              >
+                <option value="">👥 Tous les salariés</option>
+                {users.map(user => (
+                  <option key={user.email} value={user.email}>
+                    {user.name || user.email.split('@')[0]} ({user.doceaseCount + user.signaturesCount})
+                  </option>
+                ))}
+              </select>
+              <User className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+          )}
 
           {/* Recherche */}
           <div className="relative flex-1 min-w-[200px]">
@@ -482,29 +512,31 @@ const AnalyticsView: React.FC = () => {
             />
           </div>
 
-          {/* Boutons de vue */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
-            <button
-              onClick={() => setViewMode('timeline')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                viewMode === 'timeline' 
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              📋 Timeline
-            </button>
-            <button
-              onClick={() => setViewMode('users')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                viewMode === 'users' 
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              👥 Par salarié
-            </button>
-          </div>
+          {/* Boutons de vue - masqués pour les rôles restreints (pas de vue "par salarié") */}
+          {!isRestrictedView && (
+            <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  viewMode === 'timeline' 
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                📋 Timeline
+              </button>
+              <button
+                onClick={() => setViewMode('users')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  viewMode === 'users' 
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                👥 Par salarié
+              </button>
+            </div>
+          )}
 
           {/* Refresh */}
           <button
@@ -570,14 +602,17 @@ const AnalyticsView: React.FC = () => {
           <div className="text-sm opacity-80">Actions totales</div>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-5 rounded-2xl shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <Users className="w-6 h-6 opacity-80" />
-            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Actifs</span>
+        {/* Carte Salariés actifs - masquée pour les rôles restreints */}
+        {!isRestrictedView && (
+          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-5 rounded-2xl shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <Users className="w-6 h-6 opacity-80" />
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Actifs</span>
+            </div>
+            <div className="text-3xl font-bold">{stats.uniqueUsers}</div>
+            <div className="text-sm opacity-80">Salariés actifs</div>
           </div>
-          <div className="text-3xl font-bold">{stats.uniqueUsers}</div>
-          <div className="text-sm opacity-80">Salariés actifs</div>
-        </div>
+        )}
       </div>
 
       {/* Graphiques */}

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { archiveLinks } from '../constants';
 import { GlobalStat, UserStat, DocumentTypeStat, WeeklyActivity, NewsItem, ArchiveLink } from '../types';
 import { FileText, Edit3, User, Mail } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface DashboardStats {
   global: GlobalStat[];
@@ -12,6 +13,9 @@ interface DashboardStats {
 }
 
 export type TimeRange = 'week' | 'month' | 'quarter' | 'year';
+
+// Rôles restreints qui ne voient que leurs propres données
+const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
 
 // Helper pour calculer la date de début selon le timeRange
 const getStartDateFromRange = (range: TimeRange): Date => {
@@ -62,6 +66,15 @@ export const useStats = (timeRange: TimeRange = 'month') => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Récupérer le contexte d'authentification pour l'impersonation
+  const { user, isImpersonating, realUser } = useAuth();
+  
+  // Déterminer si on doit filtrer les données
+  // Vue restreinte si: impersonation d'un rôle restreint OU utilisateur nativement dans un rôle restreint
+  const effectiveRole = user?.role || 'secretary';
+  const isRestrictedView = RESTRICTED_ROLES.includes(effectiveRole);
+  const effectiveUserId = user?.id;
+  
   // Ref pour éviter les appels multiples en realtime (debounce)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
@@ -74,20 +87,38 @@ export const useStats = (timeRange: TimeRange = 'month') => {
       }
       setError(null);
 
-      // 1. Récupérer les stats globales
+      // Helper pour appliquer le filtre utilisateur si on est en vue restreinte
+      const applyUserFilter = (query: any, userIdColumn: string = 'user_id') => {
+        if (isRestrictedView && effectiveUserId) {
+          return query.eq(userIdColumn, effectiveUserId);
+        }
+        return query;
+      };
+
+      // Helper pour filter signease par email si en vue restreinte
+      const applyEmailFilter = (query: any) => {
+        if (isRestrictedView && user?.email) {
+          return query.eq('user_email', user.email);
+        }
+        return query;
+      };
+
+      // 1. Récupérer les stats globales (filtrées si vue restreinte)
       const [documentsCount, signaturesCount, usersCount, doceaseCount, signeaseCount] = await Promise.all([
-        supabase.from('documents').select('id', { count: 'exact', head: true }),
-        supabase.from('signatures').select('id', { count: 'exact', head: true }),
-        supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('docease_documents').select('id', { count: 'exact', head: true }),
-        supabase.from('signease_activity').select('id', { count: 'exact', head: true }),
+        applyUserFilter(supabase.from('documents').select('id', { count: 'exact', head: true })),
+        applyUserFilter(supabase.from('signatures').select('id', { count: 'exact', head: true })),
+        isRestrictedView 
+          ? { count: 1 } // Un utilisateur restreint ne voit que lui-même
+          : supabase.from('users').select('id', { count: 'exact', head: true }),
+        applyUserFilter(supabase.from('docease_documents').select('id', { count: 'exact', head: true })),
+        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true })),
       ]);
 
       // Compter les documents SignEase par type d'action
       const [signeaseSent, signeaseSigned, signeaseRejected] = await Promise.all([
-        supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_sent'),
-        supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_signed'),
-        supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_rejected'),
+        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_sent')),
+        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_signed')),
+        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_rejected')),
       ]);
 
       // Calculer les utilisateurs actifs selon la période sélectionnée
@@ -95,28 +126,40 @@ export const useStats = (timeRange: TimeRange = 'month') => {
       const periodLabel = getPeriodLabel(timeRange);
 
       // Utilisateurs qui ont créé des documents DocEase
-      const { data: activeDoceaseUsers } = await supabase
+      const doceaseQuery = supabase
         .from('docease_documents')
         .select('user_id, users:user_id(email)')
         .gte('created_at', periodStartDate.toISOString());
+      const { data: activeDoceaseUsers } = isRestrictedView && effectiveUserId
+        ? await doceaseQuery.eq('user_id', effectiveUserId)
+        : await doceaseQuery;
 
       // Utilisateurs qui ont signé des documents
-      const { data: activeSignatureUsers } = await supabase
+      const signaturesQuery = supabase
         .from('signatures')
         .select('user_id')
         .gte('signed_at', periodStartDate.toISOString());
+      const { data: activeSignatureUsers } = isRestrictedView && effectiveUserId
+        ? await signaturesQuery.eq('user_id', effectiveUserId)
+        : await signaturesQuery;
 
       // Utilisateurs qui ont envoyé des documents via SignEase
-      const { data: activeSigneaseUsers } = await supabase
+      const signeaseUsersQuery = supabase
         .from('signease_activity')
         .select('user_email')
         .gte('created_at', periodStartDate.toISOString());
+      const { data: activeSigneaseUsers } = isRestrictedView && user?.email
+        ? await signeaseUsersQuery.eq('user_email', user.email)
+        : await signeaseUsersQuery;
 
       // Utilisateurs qui se sont connectés au dashboard (sessions actives récentes)
-      const { data: activeDashboardUsers } = await supabase
+      const sessionsQuery = supabase
         .from('active_sessions')
         .select('user_email')
         .gte('started_at', periodStartDate.toISOString());
+      const { data: activeDashboardUsers } = isRestrictedView && user?.email
+        ? await sessionsQuery.eq('user_email', user.email)
+        : await sessionsQuery;
 
       // Collecter tous les emails uniques (méthode principale)
       const allActiveEmails = new Set<string>();
@@ -157,33 +200,58 @@ export const useStats = (timeRange: TimeRange = 'month') => {
         });
       }
 
-      // Le nombre d'utilisateurs actifs = nombre d'emails uniques
-      const activeUsersCount = allActiveEmails.size;
+      // Le nombre d'utilisateurs actifs = nombre d'emails uniques (1 si vue restreinte)
+      const activeUsersCount = isRestrictedView ? 1 : allActiveEmails.size;
 
-        // Compter les documents/signatures selon la période sélectionnée
+        // Compter les documents/signatures selon la période sélectionnée (filtrés si vue restreinte)
+        let periodDocumentsQuery = supabase
+          .from('documents')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', periodStartDate.toISOString());
+        if (isRestrictedView && effectiveUserId) {
+          periodDocumentsQuery = periodDocumentsQuery.eq('user_id', effectiveUserId);
+        }
+
+        let periodSignaturesQuery = supabase
+          .from('signatures')
+          .select('id', { count: 'exact', head: true })
+          .gte('signed_at', periodStartDate.toISOString());
+        if (isRestrictedView && effectiveUserId) {
+          periodSignaturesQuery = periodSignaturesQuery.eq('user_id', effectiveUserId);
+        }
+
+        let periodDoceaseQuery = supabase
+          .from('docease_documents')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', periodStartDate.toISOString());
+        if (isRestrictedView && effectiveUserId) {
+          periodDoceaseQuery = periodDoceaseQuery.eq('user_id', effectiveUserId);
+        }
+
+        let periodSigneaseSentQuery = supabase
+          .from('signease_activity')
+          .select('id', { count: 'exact', head: true })
+          .eq('action_type', 'document_sent')
+          .gte('created_at', periodStartDate.toISOString());
+        if (isRestrictedView && user?.email) {
+          periodSigneaseSentQuery = periodSigneaseSentQuery.eq('user_email', user.email);
+        }
+
+        let periodSigneaseSignedQuery = supabase
+          .from('signease_activity')
+          .select('id', { count: 'exact', head: true })
+          .eq('action_type', 'document_signed')
+          .gte('created_at', periodStartDate.toISOString());
+        if (isRestrictedView && user?.email) {
+          periodSigneaseSignedQuery = periodSigneaseSignedQuery.eq('user_email', user.email);
+        }
+
         const [periodDocuments, periodSignatures, periodDocease, periodSigneaseSent, periodSigneaseSigned] = await Promise.all([
-          supabase
-            .from('documents')
-            .select('id', { count: 'exact', head: true })
-            .gte('created_at', periodStartDate.toISOString()),
-          supabase
-            .from('signatures')
-            .select('id', { count: 'exact', head: true })
-            .gte('signed_at', periodStartDate.toISOString()),
-          supabase
-            .from('docease_documents')
-            .select('id', { count: 'exact', head: true })
-            .gte('created_at', periodStartDate.toISOString()),
-          supabase
-            .from('signease_activity')
-            .select('id', { count: 'exact', head: true })
-            .eq('action_type', 'document_sent')
-            .gte('created_at', periodStartDate.toISOString()),
-          supabase
-            .from('signease_activity')
-            .select('id', { count: 'exact', head: true })
-            .eq('action_type', 'document_signed')
-            .gte('created_at', periodStartDate.toISOString()),
+          periodDocumentsQuery,
+          periodSignaturesQuery,
+          periodDoceaseQuery,
+          periodSigneaseSentQuery,
+          periodSigneaseSignedQuery,
         ]);
 
         const globalStats: GlobalStat[] = [
@@ -223,7 +291,8 @@ export const useStats = (timeRange: TimeRange = 'month') => {
             trend: `${(periodDocease.count || 0) + (periodSigneaseSent.count || 0)} sur la période`,
             description: `Documents envoyés (${periodLabel})`
           },
-          {
+          // Carte "Salariés actifs" - masquée pour les rôles restreints
+          ...(!isRestrictedView ? [{
             label: 'Salariés actifs',
             value: String(activeUsersCount),
             icon: User,
@@ -231,15 +300,16 @@ export const useStats = (timeRange: TimeRange = 'month') => {
             bgColor: 'bg-blue-100',
             trend: `${activeUsersCount} actifs`,
             description: `Utilisateurs avec activité (${periodLabel})`
-          }
+          }] : [])
         ];
 
-        // 2. Récupérer les stats par utilisateur
-        const { data: usersData, error: usersError } = await supabase
+        // 2. Récupérer les stats par utilisateur (filtré si vue restreinte)
+        let usersQuery = supabase
           .from('users')
           .select(`
             id,
             name,
+            email,
             role,
             role_level,
             avatar_url,
@@ -247,24 +317,39 @@ export const useStats = (timeRange: TimeRange = 'month') => {
             documents:documents(count),
             signatures:signatures(count),
             docease_docs:docease_documents(count)
-          `)
-          .limit(10);
+          `);
+        
+        if (isRestrictedView && effectiveUserId) {
+          // En vue restreinte, ne récupérer que l'utilisateur impersonné
+          usersQuery = usersQuery.eq('id', effectiveUserId);
+        } else {
+          usersQuery = usersQuery.limit(10);
+        }
+        
+        const { data: usersData, error: usersError } = await usersQuery;
 
         if (usersError) throw usersError;
 
-        const userStats: UserStat[] = (usersData || []).map((user: any) => ({
-          id: user.id,
-          name: user.name,
-          letters: (user.documents?.[0]?.count || 0) + (user.docease_docs?.[0]?.count || 0), // Cumul documents + docease
-          signatures: user.signatures?.[0]?.count || 0,
-          role: user.role_level || user.role || 'secretary',
-          avatar_url: user.avatar_url || user.avatar || null,
+        const userStats: UserStat[] = (usersData || []).map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email || '',
+          letters: (u.documents?.[0]?.count || 0) + (u.docease_docs?.[0]?.count || 0), // Cumul documents + docease
+          signatures: u.signatures?.[0]?.count || 0,
+          role: u.role_level || u.role || 'secretary',
+          avatar_url: u.avatar_url || u.avatar || null,
         }));
 
-        // 3. Récupérer les stats par type de document depuis docease_documents
-        const { data: doceaseTypesData, error: doceaseTypesError } = await supabase
+        // 3. Récupérer les stats par type de document depuis docease_documents (filtré si vue restreinte)
+        let doceaseTypesQuery = supabase
           .from('docease_documents')
           .select('document_type');
+        
+        if (isRestrictedView && effectiveUserId) {
+          doceaseTypesQuery = doceaseTypesQuery.eq('user_id', effectiveUserId);
+        }
+        
+        const { data: doceaseTypesData, error: doceaseTypesError } = await doceaseTypesQuery;
 
         if (doceaseTypesError) throw doceaseTypesError;
 
@@ -306,17 +391,27 @@ export const useStats = (timeRange: TimeRange = 'month') => {
             const nextDay = new Date(date);
             nextDay.setDate(nextDay.getDate() + 1);
 
+            // Construire les requêtes avec filtre utilisateur si vue restreinte
+            let doceaseActivityQuery = supabase
+              .from('docease_documents')
+              .select('id', { count: 'exact', head: true })
+              .gte('created_at', date.toISOString())
+              .lt('created_at', nextDay.toISOString());
+            
+            let signaturesActivityQuery = supabase
+              .from('signatures')
+              .select('id', { count: 'exact', head: true })
+              .gte('signed_at', date.toISOString())
+              .lt('signed_at', nextDay.toISOString());
+            
+            if (isRestrictedView && effectiveUserId) {
+              doceaseActivityQuery = doceaseActivityQuery.eq('user_id', effectiveUserId);
+              signaturesActivityQuery = signaturesActivityQuery.eq('user_id', effectiveUserId);
+            }
+
             const [doceaseResult, signaturesResult] = await Promise.all([
-              supabase
-                .from('docease_documents')
-                .select('id', { count: 'exact', head: true })
-                .gte('created_at', date.toISOString())
-                .lt('created_at', nextDay.toISOString()),
-              supabase
-                .from('signatures')
-                .select('id', { count: 'exact', head: true })
-                .gte('signed_at', date.toISOString())
-                .lt('signed_at', nextDay.toISOString()),
+              doceaseActivityQuery,
+              signaturesActivityQuery,
             ]);
 
             return {
@@ -343,7 +438,7 @@ export const useStats = (timeRange: TimeRange = 'month') => {
           setLoading(false);
         }
       }
-    }, [timeRange]);
+    }, [timeRange, isRestrictedView, effectiveUserId, user?.email]);
 
   // Fonction de refresh avec debounce pour éviter les appels multiples
   const debouncedFetchStats = useCallback(() => {
