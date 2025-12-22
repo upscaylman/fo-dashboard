@@ -158,7 +158,7 @@ export const UserMenu: React.FC = () => {
           <div className="py-1">
             {/* Lien vers le dashboard */}
             <a
-              href="/"
+              href="https://fde-saasease.netlify.app/"
               className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
