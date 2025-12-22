@@ -12,7 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
 // Rôles qui ne peuvent PAS ajouter/supprimer de documents
-const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
+const RESTRICTED_ROLES = ['secretary_federal'];
 
 interface MainContentProps {
   news: NewsItem[];
@@ -120,11 +120,13 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const { addToast } = useToast();
   const { toggleBookmark, isBookmarked, addMultipleBookmarks } = useBookmarks();
-  const { isAdmin, isSuperAdmin } = usePermissions();
+  const { isSuperAdmin } = usePermissions();
   const { user } = useAuth();
   
   // Vérification explicite : le rôle actuel peut-il gérer les documents ?
-  const canManageDocuments = isSuperAdmin && !RESTRICTED_ROLES.includes(user?.role || '');
+  // super_admin, secretary_general et secretary peuvent gérer les documents
+  // Seul secretary_federal est restreint
+  const canManageDocuments = !RESTRICTED_ROLES.includes(user?.role || '');
   
   const [sharedDocuments, setSharedDocuments] = useState<SharedDocument[]>([]);
   const [showAddDocModal, setShowAddDocModal] = useState(false);

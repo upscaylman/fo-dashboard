@@ -7,12 +7,13 @@ import { useAuth } from '../../../context/AuthContext';
 const SIGNEASE_URL = 'https://fde-signease.netlify.app';
 
 // Rôles qui ne voient que leurs propres données
-const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
+const RESTRICTED_ROLES = ['secretary_federal'];
 
 interface SigneaseActivity {
   id: number;
   user_email: string;
   user_name: string | null;
+  user_avatar?: string;
   action_type: 'document_created' | 'document_sent' | 'document_signed' | 'document_rejected';
   document_name: string | null;
   recipient_email: string | null;
@@ -63,6 +64,8 @@ const SigneaseActivityTable: React.FC = () => {
   const fetchActivities = async () => {
     try {
       setLoading(true);
+      
+      // Récupérer les activités
       let query = supabase
         .from('signease_activity')
         .select('*')
@@ -74,10 +77,27 @@ const SigneaseActivityTable: React.FC = () => {
         query = query.eq('user_email', user.email);
       }
 
-      const { data, error } = await query;
+      const { data: activitiesData, error } = await query;
 
       if (error) throw error;
-      setActivities(data || []);
+      
+      // Récupérer les avatars des utilisateurs
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('email, avatar, avatar_url');
+      
+      const usersMap = new Map((usersData || []).map((u: any) => [u.email, u]));
+      
+      // Enrichir les activités avec les avatars
+      const enrichedActivities = (activitiesData || []).map(activity => {
+        const userInfo = usersMap.get(activity.user_email);
+        return {
+          ...activity,
+          user_avatar: userInfo?.avatar || userInfo?.avatar_url
+        };
+      });
+      
+      setActivities(enrichedActivities);
     } catch (error) {
       console.error('Erreur chargement activités SignEase:', error);
     } finally {
@@ -327,9 +347,17 @@ const SigneaseActivityTable: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {(activity.user_name || activity.user_email || '?')[0].toUpperCase()}
-                        </div>
+                        {activity.user_avatar ? (
+                          <img 
+                            src={activity.user_avatar} 
+                            alt={activity.user_name || activity.user_email}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {(activity.user_name || activity.user_email || '?')[0].toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {activity.user_name || activity.user_email?.split('@')[0]}

@@ -85,9 +85,9 @@ const AVATAR_STYLES = [
 const getRoleLabel = (role: string) => {
   const roles: { [key: string]: { label: string; color: string } } = {
     super_admin: { label: 'Super Administrateur', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    secretary_general: { label: 'Secrétaire Général', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
-    secretary_federal: { label: 'Secrétaire Fédéral', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-    secretary: { label: 'Secrétaire', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    secretary_general: { label: 'Secrétaire Général', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+    secretary_federal: { label: 'Secrétaire Fédéral', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+    secretary: { label: 'Secrétaire', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
   };
   return roles[role] || roles['secretary'];
 };

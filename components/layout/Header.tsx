@@ -11,13 +11,13 @@ import { usePermissions } from '../../hooks/usePermissions';
 const getRoleBorderColor = (role?: string) => {
   switch (role) {
     case 'super_admin':
-      return 'ring-purple-500 ring-2';
+      return 'ring-red-500 ring-2';
     case 'secretary_general':
-      return 'ring-indigo-500 ring-2';
+      return 'ring-orange-500 ring-2';
     case 'secretary_federal':
       return 'ring-blue-500 ring-2';
     case 'secretary':
-      return 'ring-emerald-500 ring-2';
+      return 'ring-yellow-500 ring-2';
     default:
       return 'ring-slate-300 dark:ring-slate-600 ring-1';
   }

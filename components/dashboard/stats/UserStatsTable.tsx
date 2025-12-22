@@ -93,7 +93,7 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
   const effectiveIsSuperAdmin = isSuperAdmin();
   
   // Le rôle effectif détermine si on peut voir toutes les données
-  const canViewAllUsers = effectiveIsSuperAdmin || currentUser?.role === 'secretary_general';
+  const canViewAllUsers = effectiveIsSuperAdmin || currentUser?.role === 'secretary_general' || currentUser?.role === 'secretary';
   
   // Le secrétaire fédéral et le secrétaire ne voient que leurs propres données
   const isRestrictedRole = currentUser?.role === 'secretary_federal' || currentUser?.role === 'secretary';
@@ -233,8 +233,9 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
     fetchUserStats();
   }, [fetchUserStats]);
 
-  // Check permissions
-  const canManage = currentUser?.role === 'secretary_general' || currentUser?.role === 'super_admin';
+  // Check permissions - désactiver en mode lecture seule
+  // secretary et secretary_general ont les mêmes droits de gestion
+  const canManage = !isReadOnly && (currentUser?.role === 'secretary' || currentUser?.role === 'secretary_general' || currentUser?.role === 'super_admin');
 
   // Role options from migration
   const availableRoles: { value: UserRole; label: string }[] = [
@@ -500,7 +501,7 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                 <tr key={idx} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800 last:border-0">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      {user.avatar_url ? (
+                      {user.avatar_url && user.avatar_url.trim() !== '' ? (
                         <img 
                           src={user.avatar_url} 
                           alt={user.name}
@@ -509,12 +510,16 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                             // Fallback to initials if image fails to load
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
                           }}
                         />
                       ) : null}
-                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-200 dark:shadow-none ${user.avatar_url ? 'hidden' : ''}`}>
-                        {user.name.split(' ').map(n => n[0]).join('')}
+                      <div 
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white items-center justify-center font-bold text-sm shadow-md shadow-blue-200 dark:shadow-none"
+                        style={{ display: user.avatar_url && user.avatar_url.trim() !== '' ? 'none' : 'flex' }}
+                      >
+                        {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </div>
                       <div>
                         <span className="font-bold text-slate-700 dark:text-slate-200 block">{user.name}</span>

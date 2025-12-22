@@ -10,7 +10,7 @@ import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
 
 // Rôles restreints qui ne voient que leurs propres données
-const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
+const RESTRICTED_ROLES = ['secretary_federal'];
 
 interface ActivityEvent {
   id: string;
@@ -19,6 +19,7 @@ interface ActivityEvent {
   document_type: string;
   user_email: string;
   user_name?: string;
+  user_avatar?: string;
   date: string;
   metadata?: {
     format?: string;
@@ -30,6 +31,7 @@ interface ActivityEvent {
 interface UserStats {
   email: string;
   name?: string;
+  avatar?: string;
   doceaseCount: number;
   signaturesCount: number;
   lastActivity: string;
@@ -89,12 +91,14 @@ const AnalyticsView: React.FC = () => {
 
       const startDate = getStartDate();
 
-      // Récupérer les utilisateurs
+      // Récupérer les utilisateurs avec leurs avatars
       const { data: usersData } = await supabase
         .from('users')
-        .select('id, email, name');
+        .select('id, email, name, avatar, avatar_url');
 
+      // Créer une map par id ET par email pour la correspondance
       const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]));
+      const usersMapByEmail = new Map((usersData || []).map((u: any) => [u.email, u]));
 
       // Récupérer les documents DocEase
       let doceaseQuery = supabase
@@ -154,6 +158,8 @@ const AnalyticsView: React.FC = () => {
       (doceaseData || []).forEach((doc: any) => {
         const user = usersMap.get(doc.user_id);
         const userEmail = doc.metadata?.email_envoi || user?.email || 'inconnu';
+        // Récupérer l'avatar depuis la map par email si pas trouvé par id
+        const avatarUser = user || usersMapByEmail.get(userEmail);
         
         allActivities.push({
           id: `docease-${doc.id}`,
@@ -162,6 +168,7 @@ const AnalyticsView: React.FC = () => {
           document_type: doc.document_type || 'Document',
           user_email: userEmail,
           user_name: user?.name,
+          user_avatar: avatarUser?.avatar || avatarUser?.avatar_url,
           date: doc.created_at,
           metadata: doc.metadata
         });
@@ -178,6 +185,7 @@ const AnalyticsView: React.FC = () => {
           document_type: 'Signature PDF',
           user_email: user?.email || 'inconnu',
           user_name: user?.name,
+          user_avatar: user?.avatar || user?.avatar_url,
           date: sig.signed_at
         });
       });
@@ -191,6 +199,9 @@ const AnalyticsView: React.FC = () => {
           'document_created': 'Brouillon créé'
         };
         
+        // Récupérer l'avatar depuis la map par email
+        const avatarUser = usersMapByEmail.get(activity.user_email);
+        
         allActivities.push({
           id: `signease-activity-${activity.id}`,
           type: 'signease',
@@ -198,6 +209,7 @@ const AnalyticsView: React.FC = () => {
           document_type: actionLabels[activity.action_type] || activity.action_type,
           user_email: activity.user_email,
           user_name: activity.user_name,
+          user_avatar: avatarUser?.avatar || avatarUser?.avatar_url,
           date: activity.created_at,
           metadata: {
             ...activity.metadata,
@@ -219,11 +231,17 @@ const AnalyticsView: React.FC = () => {
         const existing = userStatsMap.get(email) || {
           email,
           name: activity.user_name,
+          avatar: activity.user_avatar,
           doceaseCount: 0,
           signaturesCount: 0,
           lastActivity: activity.date,
           activities: []
         };
+        
+        // Mettre à jour l'avatar si pas encore défini
+        if (!existing.avatar && activity.user_avatar) {
+          existing.avatar = activity.user_avatar;
+        }
 
         if (activity.type === 'docease') {
           existing.doceaseCount++;
@@ -573,8 +591,8 @@ const AnalyticsView: React.FC = () => {
         )}
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPIs - 4 cartes pour les rôles normaux, 3 pour secretary_federal */}
+      <div className={`grid gap-4 ${isRestrictedView ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-5 rounded-2xl shadow-lg">
           <div className="flex items-center justify-between mb-2">
             <FileText className="w-6 h-6 opacity-80" />
@@ -906,9 +924,17 @@ const AnalyticsView: React.FC = () => {
 
                           {/* Utilisateur */}
                           <div className="flex items-center gap-2 mt-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
-                              {(activity.user_name || activity.user_email).charAt(0).toUpperCase()}
-                            </div>
+                            {activity.user_avatar ? (
+                              <img 
+                                src={activity.user_avatar} 
+                                alt={activity.user_name || activity.user_email}
+                                className="w-6 h-6 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                                {(activity.user_name || activity.user_email).charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <span className="text-xs text-slate-600 dark:text-slate-400">
                               {activity.user_name || activity.user_email.split('@')[0]}
                             </span>
@@ -949,9 +975,17 @@ const AnalyticsView: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-bold">
-                        {(user.name || user.email).charAt(0).toUpperCase()}
-                      </div>
+                      {user.avatar ? (
+                        <img 
+                          src={user.avatar} 
+                          alt={user.name || user.email}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-bold">
+                          {(user.name || user.email).charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div>
                         <p className="font-medium text-slate-800 dark:text-slate-200">
                           {user.name || user.email.split('@')[0]}

@@ -4,7 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
 
 // Rôles qui ne voient que leurs propres données
-const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
+const RESTRICTED_ROLES = ['secretary_federal'];
 
 // URL de production DocEase
 const DOCEASE_URL = 'https://fo-docease.netlify.app';
@@ -24,6 +24,8 @@ interface DoceaseDocument {
   user?: {
     name: string;
     email: string;
+    avatar?: string;
+    avatar_url?: string;
   };
 }
 
@@ -73,7 +75,7 @@ const DoceaseDocumentsTable: React.FC = () => {
         .from('docease_documents')
         .select(`
           *,
-          user:users(name, email)
+          user:users(name, email, avatar, avatar_url)
         `)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -169,7 +171,8 @@ const DoceaseDocumentsTable: React.FC = () => {
     return {
       name: user?.name || 'Utilisateur inconnu',
       email: user?.email || 'N/A',
-      initial: user?.name?.[0]?.toUpperCase() || '?'
+      initial: user?.name?.[0]?.toUpperCase() || '?',
+      avatar: user?.avatar || user?.avatar_url
     };
   };
 
@@ -402,9 +405,17 @@ const DoceaseDocumentsTable: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-[#dd60b0] to-[#a84383] rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {getUserInfo(doc).initial}
-                        </div>
+                        {getUserInfo(doc).avatar ? (
+                          <img 
+                            src={getUserInfo(doc).avatar} 
+                            alt={getUserInfo(doc).name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-gradient-to-br from-[#dd60b0] to-[#a84383] rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {getUserInfo(doc).initial}
+                          </div>
+                        )}
                         <div>
                           <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {getUserInfo(doc).name}

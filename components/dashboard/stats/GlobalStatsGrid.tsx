@@ -39,8 +39,14 @@ const GlobalStatsGrid: React.FC<GlobalStatsGridProps> = ({ stats }) => {
 
   return (
     <div className="space-y-4">
-      {/* Version Desktop: Grille normale */}
-      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      {/* Version Desktop: Grille normale - adapte le nombre de colonnes selon le nombre de cartes */}
+      <div className={`hidden md:grid gap-6 ${
+        stats.length === 5 
+          ? 'md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5' 
+          : stats.length === 4 
+            ? 'md:grid-cols-2 lg:grid-cols-4' 
+            : 'md:grid-cols-2 lg:grid-cols-3'
+      }`}>
         {stats.map((stat, index) => (
           <Card key={index} className="relative overflow-hidden group hover:border-blue-200 dark:hover:border-slate-700 transition-colors">
               {/* Background Decoration */}

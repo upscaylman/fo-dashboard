@@ -34,8 +34,8 @@ export interface Permission {
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
     super_admin: 4,
     secretary_general: 3,
+    secretary: 3, // Même niveau que secretary_general
     secretary_federal: 2,
-    secretary: 1,
 };
 
 // ================================================
@@ -89,16 +89,22 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     ],
 
     secretary: [
+        // Mêmes permissions que secretary_general
         'documents.create',
-        'documents.read.own',
-        'documents.update.own',
-        'documents.delete.own',
+        'documents.read.all',
+        'documents.update.all',
+        'documents.delete.all',
         'users.read',
-        'stats.view.own',
+        'stats.view.all',
+        'stats.export',
         'templates.read',
         'templates.download',
-        'signatures.create.own',
-        'signatures.view.own',
+        'templates.create',
+        'templates.update',
+        'templates.delete',
+        'signatures.create.all',
+        'signatures.view.all',
+        'settings.view',
     ],
 };
 
@@ -113,19 +119,19 @@ export const ROLE_COLORS: Record<UserRole, { bg: string; text: string; border: s
         border: 'border-red-200 dark:border-red-800',
     },
     secretary_general: {
-        bg: 'bg-indigo-100 dark:bg-indigo-900/30',
-        text: 'text-indigo-700 dark:text-indigo-400',
-        border: 'border-indigo-200 dark:border-indigo-800',
+        bg: 'bg-orange-100 dark:bg-orange-900/30',
+        text: 'text-orange-700 dark:text-orange-400',
+        border: 'border-orange-200 dark:border-orange-800',
     },
     secretary_federal: {
-        bg: 'bg-purple-100 dark:bg-purple-900/30',
-        text: 'text-purple-700 dark:text-purple-400',
-        border: 'border-purple-200 dark:border-purple-800',
-    },
-    secretary: {
         bg: 'bg-blue-100 dark:bg-blue-900/30',
         text: 'text-blue-700 dark:text-blue-400',
         border: 'border-blue-200 dark:border-blue-800',
+    },
+    secretary: {
+        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+        text: 'text-yellow-700 dark:text-yellow-400',
+        border: 'border-yellow-200 dark:border-yellow-800',
     },
 };
 

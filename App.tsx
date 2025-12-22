@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Eye, X, AlertCircle } from 'lucide-react';
+import { Eye, X, AlertCircle, Shield } from 'lucide-react';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import DashboardPage from './pages/DashboardPage';
@@ -14,6 +14,23 @@ import { ThemeProvider } from './context/ThemeContext';
 import { BookmarkProvider } from './context/BookmarkContext';
 import { MobileMenuProvider } from './context/MobileMenuContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
+// Composant qui écoute les changements de rôle et affiche un toast
+const RoleChangeListener: React.FC = () => {
+  const { addToast } = useToast();
+  
+  useEffect(() => {
+    const handleRoleChange = (event: CustomEvent<{ oldRole: string; newRole: string; message: string }>) => {
+      console.log('📢 Notification de changement de rôle:', event.detail);
+      addToast(event.detail.message, 'info');
+    };
+    
+    window.addEventListener('role-changed', handleRoleChange as EventListener);
+    return () => window.removeEventListener('role-changed', handleRoleChange as EventListener);
+  }, [addToast]);
+  
+  return null;
+};
 
 // Composant bandeau d'impersonation avec mode observation
 const ImpersonationBanner: React.FC = () => {
@@ -249,6 +266,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <ToastProvider>
+        <RoleChangeListener />
         <AuthProvider>
           <BookmarkProvider>
             <MobileMenuProvider>

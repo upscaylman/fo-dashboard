@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { ROLE_LABELS } from '../lib/permissions';
+
+// Fonction pour émettre un événement de notification
+const emitRoleChangeNotification = (oldRole: string, newRole: string) => {
+  const event = new CustomEvent('role-changed', { 
+    detail: { oldRole, newRole, message: `Votre rôle a été modifié : ${ROLE_LABELS[newRole as keyof typeof ROLE_LABELS] || newRole}` }
+  });
+  window.dispatchEvent(event);
+};
 
 interface User {
   id?: string;
@@ -108,6 +117,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
   };
+
+  // Écouter les changements de rôle en temps réel
+  useEffect(() => {
+    if (!user?.id || isImpersonating) return;
+
+    const currentRole = user.role;
+    
+    const channel = supabase
+      .channel(`user-role-changes-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('🔄 Changement détecté sur le profil utilisateur:', payload);
+          const newRole = payload.new.role_level;
+          const newName = payload.new.name;
+          const newAvatar = payload.new.avatar;
+          
+          // Mettre à jour le profil utilisateur si le rôle a changé
+          if (newRole && newRole !== currentRole) {
+            console.log(`📋 Rôle mis à jour: ${currentRole} → ${newRole}`);
+            // Émettre un événement pour notifier le changement de rôle
+            emitRoleChangeNotification(currentRole, newRole);
+            setUser(prev => prev ? { ...prev, role: newRole, name: newName || prev.name, avatar: newAvatar || prev.avatar } : null);
+          } else if (newName !== user.name || newAvatar !== user.avatar) {
+            // Mise à jour d'autres champs (nom, avatar)
+            setUser(prev => prev ? { ...prev, name: newName || prev.name, avatar: newAvatar || prev.avatar } : null);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Subscription status (user role):', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, isImpersonating]);
 
   useEffect(() => {
     let mounted = true;

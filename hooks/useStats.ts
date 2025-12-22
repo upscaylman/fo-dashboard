@@ -15,7 +15,7 @@ interface DashboardStats {
 export type TimeRange = 'week' | 'month' | 'quarter' | 'year';
 
 // Rôles restreints qui ne voient que leurs propres données
-const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
+const RESTRICTED_ROLES = ['secretary_federal'];
 
 // Helper pour calculer la date de début selon le timeRange
 const getStartDateFromRange = (range: TimeRange): Date => {
