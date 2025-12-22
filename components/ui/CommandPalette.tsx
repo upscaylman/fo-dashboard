@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, FileText, Edit3, Globe, Moon, Sun, Monitor, Calculator, Mail, ExternalLink } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
 
 interface CommandItem {
   id: string;
@@ -18,8 +19,8 @@ const CommandPalette: React.FC = () => {
   const { setTheme } = useTheme();
 
   const commands: CommandItem[] = [
-    { id: 'docease', label: 'Ouvrir DocEase (Générateur de courriers)', icon: FileText, category: 'Applications', action: () => window.open('https://fo-docease.netlify.app/', '_blank') },
-    { id: 'signease', label: 'Ouvrir SignEase (Signature électronique)', icon: Edit3, category: 'Applications', action: () => window.open('https://fde-signease.netlify.app/', '_blank') },
+    { id: 'docease', label: 'Ouvrir DocEase (Générateur de courriers)', icon: FileText, category: 'Applications', action: () => window.open(DOCEASE_URL, '_blank') },
+    { id: 'signease', label: 'Ouvrir SignEase (Signature électronique)', icon: Edit3, category: 'Applications', action: () => window.open(SIGNEASE_URL, '_blank') },
     { id: 'website', label: 'Site officiel FO Métaux', icon: Globe, category: 'Ressources', action: () => window.open('https://www.fo-metaux.fr/', '_blank') },
     { id: 'convention', label: 'Convention Collective', icon: FileText, category: 'Ressources', action: () => window.open('https://conventioncollectivemetallurgie.fr/', '_blank') },
     { id: 'calc', label: "Calculateur prime d'ancienneté", icon: Calculator, category: 'Ressources', action: () => window.open('https://www.fo-metaux.fr/calculateur-de-prime-danciennet', '_blank') },

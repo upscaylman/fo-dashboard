@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, ChevronRight, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
 
 interface Message {
   id: string;
@@ -23,8 +24,8 @@ const ChatAssistant: React.FC = () => {
       sender: 'bot',
       timestamp: new Date(),
       actions: [
-        { label: "Générer un courrier", action: () => window.open('https://fo-docease.netlify.app/', '_blank') },
-        { label: "Signer un PDF", action: () => window.open('https://fde-signease.netlify.app/', '_blank') }
+        { label: "Générer un courrier", action: () => window.open(DOCEASE_URL, '_blank') },
+        { label: "Signer un PDF", action: () => window.open(SIGNEASE_URL, '_blank') }
       ]
     }
   ]);
@@ -78,7 +79,7 @@ const ChatAssistant: React.FC = () => {
           
           Tu as connaissance des outils internes suivants :
           1. DocEase (https://fo-docease.netlify.app/) : Pour générer des courriers juridiques et syndicaux automatiquement.
-          2. SignEase (https://fde-signease.netlify.app/) : Pour signer électroniquement des documents PDF.
+          2. SignEase (https://signeasy.netlify.app/) : Pour signer électroniquement des documents PDF.
           3. Site Fédéral (https://www.fo-metaux.fr/) : Pour les actualités et le calculateur de prime d'ancienneté.
           
           Si l'utilisateur pose une question juridique, réponds brièvement en citant la Convention Collective de la Métallurgie si pertinent.
@@ -167,8 +168,8 @@ const ChatAssistant: React.FC = () => {
         text: botResponseText,
         sender: 'bot',
         timestamp: new Date(),
-        actions: botResponseText.includes('DocEase') ? [{ label: "Ouvrir DocEase", action: () => window.open('https://fo-docease.netlify.app/', '_blank') }]
-          : botResponseText.includes('SignEase') ? [{ label: "Ouvrir SignEase", action: () => window.open('https://fde-signease.netlify.app/', '_blank') }]
+        actions: botResponseText.includes('DocEase') ? [{ label: "Ouvrir DocEase", action: () => window.open(DOCEASE_URL, '_blank') }]
+          : botResponseText.includes('SignEase') ? [{ label: "Ouvrir SignEase", action: () => window.open(SIGNEASE_URL, '_blank') }]
             : undefined
       };
 
@@ -183,7 +184,7 @@ const ChatAssistant: React.FC = () => {
         sender: 'bot',
         timestamp: new Date(),
         actions: [
-          { label: "Ouvrir DocEase", action: () => window.open('https://fo-docease.netlify.app/', '_blank') },
+          { label: "Ouvrir DocEase", action: () => window.open(DOCEASE_URL, '_blank') },
           { label: "Contacter le support", action: () => window.location.href = 'mailto:contact@fo-metaux.fr' }
         ]
       };

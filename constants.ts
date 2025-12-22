@@ -3,6 +3,10 @@ import {
 } from 'lucide-react';
 import { ArchiveLink } from './types';
 
+// URLs des applications FO Metaux
+export const DOCEASE_URL = 'https://fo-docease.netlify.app';
+export const SIGNEASE_URL = 'https://signeasy.netlify.app';
+
 // Liens utiles de l'écosystème FO Metaux
 export const archiveLinks: ArchiveLink[] = [
   { name: "Actualités sociales et juridiques", url: "https://www.fo-metaux.org/articles?type=5", icon: Newspaper },

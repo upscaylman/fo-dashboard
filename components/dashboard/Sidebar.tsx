@@ -6,6 +6,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { Skeleton } from '../ui/Skeleton';
 import { useBookmarks } from '../../context/BookmarkContext';
 import { useDoceaseStatus } from '../../hooks/useDoceaseStatus';
+import { SIGNEASE_URL } from '../../constants';
 
 interface SidebarProps {
   archiveLinks: ArchiveLink[];
@@ -193,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({ archiveLinks, loading }) => {
           <li className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div> 
             <strong className="text-slate-900 dark:text-white">
-                <a href="https://fde-signease.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">SignEase</a>
+                <a href={SIGNEASE_URL} target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">SignEase</a>
             </strong> : <span className="font-mono text-[10px] text-green-600 dark:text-green-400">En ligne</span>
           </li>
           <li className="flex items-center gap-2 pt-2 border-t border-slate-300 dark:border-white/10">

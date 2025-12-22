@@ -10,6 +10,7 @@ import { useBookmarks } from '../../context/BookmarkContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { SIGNEASE_URL } from '../../constants';
 
 // Rôles qui ne peuvent PAS ajouter/supprimer de documents
 const RESTRICTED_ROLES = ['secretary_federal'];
@@ -520,7 +521,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
             </a>
 
              {/* Action 2 */}
-            <a href="https://fde-signease.netlify.app/#/dashboard" target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden bg-gradient-to-br from-rose-500 to-orange-600 rounded-[24px] p-6 text-white hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-300 transform hover:-translate-y-1">
+            <a href={`${SIGNEASE_URL}/#/dashboard`} target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden bg-gradient-to-br from-rose-500 to-orange-600 rounded-[24px] p-6 text-white hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-300 transform hover:-translate-y-1">
                  <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:scale-125 transition-transform duration-500">
                     <Edit3 className="w-32 h-32 -rotate-12" />
                 </div>

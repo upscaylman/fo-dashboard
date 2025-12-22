@@ -2,9 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
-
-// URL de production SignEase
-const SIGNEASE_URL = 'https://fde-signease.netlify.app';
+import { SIGNEASE_URL } from '../../../constants';
 
 // Rôles qui ne voient que leurs propres données
 const RESTRICTED_ROLES = ['secretary_federal'];
