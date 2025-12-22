@@ -2,12 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FileText, Download, Calendar, User, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, CheckCircle, AlertCircle, Eye, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
+import { DOCEASE_URL } from '../../../constants';
 
 // Rôles qui ne voient que leurs propres données
 const RESTRICTED_ROLES = ['secretary_federal'];
-
-// URL de production DocEase
-const DOCEASE_URL = 'https://fo-docease.netlify.app';
 
 interface DoceaseDocument {
   id: number;

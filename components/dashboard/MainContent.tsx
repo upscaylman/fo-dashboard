@@ -10,7 +10,7 @@ import { useBookmarks } from '../../context/BookmarkContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { SIGNEASE_URL } from '../../constants';
+import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
 
 // Rôles qui ne peuvent PAS ajouter/supprimer de documents
 const RESTRICTED_ROLES = ['secretary_federal'];
@@ -505,7 +505,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              {/* Action 1 */}
-            <a href="https://fo-docease.netlify.app/" target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600 rounded-[24px] p-6 text-white hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 transform hover:-translate-y-1">
+            <a href={DOCEASE_URL} target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600 rounded-[24px] p-6 text-white hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 transform hover:-translate-y-1">
                 <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:scale-125 transition-transform duration-500">
                     <FileText className="w-32 h-32 rotate-12" />
                 </div>
