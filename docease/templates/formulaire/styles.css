@@ -218,3 +218,51 @@ body {
   opacity: 1;
   transition: 0s;
 }
+
+/* ============================================
+   LOGIN PAGE - ANIMATIONS & EFFECTS
+   ============================================ */
+
+/* Float animation for decorative elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+/* Shake animation for error messages */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Button shine effect - DocEase version */
+.btn-docease-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-docease-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shine 3s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
