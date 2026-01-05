@@ -286,10 +286,72 @@ ${appContext.holiday ? `- 🎉 FÊTE DU JOUR : ${appContext.holiday.name} ${appC
 4. Secrétaire Fédéral (secretary_federal) : Accès limité à ses propres documents et statistiques
 
 === OUTILS INTERNES FO METAUX ===
-1. **DocEase** (${DOCEASE_URL}) : Génération automatique de courriers professionnels (convocation, mise en demeure, réclamation, etc.)
-2. **SignEase** (${SIGNEASE_URL}) : Signature électronique de documents PDF
-3. **Site Fédéral** (https://www.fo-metaux.fr/) : Actualités, calculateur de prime d'ancienneté
-4. **Convention Collective de la Métallurgie** : Pour les questions juridiques
+
+**📝 DOCEASE - Génération Automatique de Documents** (${DOCEASE_URL})
+DocEase permet de créer des courriers professionnels automatiquement avec l'aide de l'IA.
+
+Comment ça marche :
+1. **Remplir le formulaire** : L'utilisateur saisit 4 champs simples :
+   - Nom du destinataire (obligatoire)
+   - Contexte du document (obligatoire) - ex: "Discussion sur le nouveau projet"
+   - Points importants à mentionner (optionnel) - peut avoir plusieurs lignes
+   - Email(s) du/des destinataire(s) (obligatoire)
+2. **Génération IA** : Le système utilise Ollama/Gemma2 pour rédiger le contenu
+3. **Validation** : L'utilisateur reçoit un email avec le document Word en pièce jointe
+4. **Deux boutons dans l'email** :
+   - ✅ "Approuver et envoyer" → Le document est envoyé au destinataire
+   - ❌ "Refuser" → Le document n'est pas envoyé
+5. **Tracking** : Chaque document apparaît en temps réel dans le dashboard
+
+Types de documents :
+- Convocation
+- Mise en demeure
+- Réclamation
+- Désignation
+- Négociation
+- Circulaire
+- Documents personnalisés
+
+**✍️ SIGNEASE - Signature Électronique** (${SIGNEASE_URL})
+SignEase permet de signer électroniquement des documents PDF.
+
+Comment ça marche :
+1. **Connexion** : Entrer son adresse email (pas de mot de passe requis)
+2. **Ajouter un document** : 
+   - Cliquer sur "Ajouter un fichier" ou glisser-déposer
+   - Formats acceptés : PDF et Word
+3. **Ajouter les destinataires** :
+   - Cliquer sur "Ajouter un destinataire"
+   - Remplir nom complet et email
+   - Possibilité d'ajouter plusieurs destinataires
+4. **Placer les champs de signature** :
+   - Sélectionner un destinataire
+   - Choisir le type de champ : Signature ✍️, Initiales 🔤, Texte 📝, Case à cocher ✅, Date 📅
+   - Cliquer sur le document pour placer le champ
+   - Repositionner et redimensionner au besoin
+5. **Envoyer** : Cliquer sur "Envoyer" - les destinataires reçoivent un email
+
+Pour signer un document reçu :
+1. Ouvrir l'email et cliquer sur "Signer le document"
+2. Cliquer sur le champ de signature
+3. Choisir la méthode : Dessiner ✏️, Taper ⌨️, ou Importer une image 📤
+4. Ajuster la taille et cliquer sur "Appliquer la signature"
+5. Cliquer sur "Soumettre la signature"
+
+Statuts des documents :
+- 📨 Envoyé : En attente de signature
+- ✅ Signé : Signé par tous les destinataires
+- ❌ Rejeté : Refusé par un destinataire
+- 📝 Brouillon : En cours de préparation
+
+Vérifier une signature :
+- Aller dans "Vérifier" dans le menu
+- Téléverser le PDF signé
+- L'application affiche : statut de validation, liste des signataires, dates, empreinte cryptographique
+
+**🌐 AUTRES RESSOURCES :**
+- Site Fédéral (https://www.fo-metaux.fr/) : Actualités, calculateur de prime d'ancienneté
+- Convention Collective de la Métallurgie : Pour les questions juridiques
 
 === FONCTIONNALITÉS DU DASHBOARD (Description PRÉCISE de l'interface) ===
 
