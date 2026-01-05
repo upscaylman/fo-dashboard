@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Users, FileStack, LayoutDashboard, Calendar, ChevronDown, FileText, BarChart3, Edit3 } from 'lucide-react';
+import { LayoutGrid, Users, FileStack, LayoutDashboard, Calendar, ChevronDown, FileText, BarChart3, PenTool } from 'lucide-react';
 import GlobalStatsGrid from './GlobalStatsGrid';
 import UserStatsTable from './UserStatsTable';
 import AnalyticsView from './AnalyticsView';
@@ -105,7 +105,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
     { id: 'users', label: 'Salariés', icon: Users, color: 'text-emerald-600', bgColor: 'bg-emerald-500', group: 'stats' as const },
     { id: 'types', label: 'Analyse', icon: BarChart3, color: 'text-violet-600', bgColor: 'bg-violet-500', group: 'stats' as const },
     ...(isAdmin || isSuperAdmin ? [{ id: 'docease', label: 'DocEase', icon: FileText, color: 'text-[#a84383]', bgColor: 'bg-[#a84383]', group: 'tools' as const }] : []),
-    ...(isAdmin || isSuperAdmin ? [{ id: 'signease', label: 'SignEase', icon: Edit3, color: 'text-orange-500', bgColor: 'bg-orange-500', group: 'tools' as const }] : []),
+    ...(isAdmin || isSuperAdmin ? [{ id: 'signease', label: 'SignEase', icon: PenTool, color: 'text-orange-500', bgColor: 'bg-orange-500', group: 'tools' as const }] : []),
   ];
 
   // Séparer les onglets par groupe

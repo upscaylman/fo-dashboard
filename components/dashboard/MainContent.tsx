@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Edit3, ChevronRight, Newspaper, Clock, Zap, ArrowDown, ArrowUp, FileSpreadsheet, Download, AlertCircle, RefreshCw, ExternalLink, Star, Plus, Trash2, X, Search, File, ChevronDown, Image, Film, Grid, List, HardDrive, Calendar, User, Filter, Upload, Settings } from 'lucide-react';
+import { FileText, Edit3, ChevronRight, Newspaper, Clock, Zap, ArrowDown, ArrowUp, FileSpreadsheet, Download, AlertCircle, RefreshCw, ExternalLink, Star, Plus, Trash2, X, Search, File, ChevronDown, Image, Film, Grid, List, HardDrive, Calendar, User, Filter, Upload, Settings, PenTool } from 'lucide-react';
 import { NewsItem } from '../../types';
 import { Card, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -564,11 +564,11 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
              {/* Action 2 */}
             <a href={`${SIGNEASE_URL}/#/dashboard`} target="_blank" rel="noopener noreferrer" className="group relative overflow-hidden bg-gradient-to-br from-rose-500 to-orange-600 rounded-[24px] p-6 text-white hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-300 transform hover:-translate-y-1">
                  <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:scale-125 transition-transform duration-500">
-                    <Edit3 className="w-32 h-32 -rotate-12" />
+                    <PenTool className="w-32 h-32 -rotate-12" />
                 </div>
                 <div className="relative z-10 flex flex-col h-full justify-between min-h-[140px]">
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4">
-                         <Edit3 className="w-6 h-6 text-white" />
+                         <PenTool className="w-6 h-6 text-white" />
                     </div>
                     <div>
                         <h3 className="text-xl font-bold mb-1">SignEase : Signature Électronique</h3>

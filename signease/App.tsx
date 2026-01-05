@@ -7,7 +7,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import CookieBanner from "./components/CookieBanner";
-import EmailLoginModal from "./components/EmailLoginModal";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import { PresenceTracker } from "./components/PresenceTracker";
@@ -18,6 +17,7 @@ import CookiePolicyPage from "./pages/CookiePolicyPage";
 import DashboardPage from "./pages/DashboardPage";
 import DeleteUserDataPage from "./pages/DeleteUserDataPage";
 import InboxPage from "./pages/InboxPage";
+import LoginPage from "./pages/LoginPage";
 import PrepareDocumentPage from "./pages/PrepareDocumentPage";
 import QuickSignPage from "./pages/QuickSignPage";
 import SignDocumentPage from "./pages/SignDocumentPage";
@@ -45,11 +45,10 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Afficher le modal SEULEMENT si pas d'utilisateur ET pas sur une route /sign/:token
+  // Afficher la page de connexion SEULEMENT si pas d'utilisateur ET pas sur une route /sign/:token
   if (!currentUser && !isSigningRoute) {
     return (
-      <EmailLoginModal
-        isOpen={true}
+      <LoginPage
         onSubmit={(email) => setCurrentUser({ email })}
       />
     );
