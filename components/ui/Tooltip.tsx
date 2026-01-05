@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 
 interface TooltipProps {
-  content: string;
+  content: React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
   delay?: number;
   className?: string;
+  maxWidth?: string;
 }
 
 export const Tooltip: React.FC<TooltipProps> = ({ 
@@ -13,7 +14,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
   children, 
   position = 'top',
   delay = 200,
-  className = ''
+  className = '',
+  maxWidth
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -43,7 +45,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
     >
       {children}
       {isVisible && (
-        <div className={`absolute z-50 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded shadow-lg whitespace-nowrap transition-opacity duration-200 ${positions[position]}`}>
+        <div 
+          className={`absolute z-50 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded shadow-lg transition-opacity duration-200 ${positions[position]} ${maxWidth ? '' : 'whitespace-nowrap'}`}
+          style={maxWidth ? { maxWidth, whiteSpace: 'normal' } : undefined}
+        >
           {content}
           {/* Petite flèche */}
           <div className={`absolute w-2 h-2 bg-slate-800 rotate-45 

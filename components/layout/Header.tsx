@@ -100,8 +100,38 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
         {/* User Profile & Notifications */}
         <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
           {/* Indicateur utilisateurs en ligne - visible pour tous */}
-          <Tooltip content={`${activeUsers.length} utilisateur${activeUsers.length > 1 ? 's' : ''} en ligne`} position="bottom">
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-800">
+          <Tooltip 
+            content={
+              <div className="py-1">
+                <div className="font-semibold mb-1.5 pb-1 border-b border-slate-600">
+                  {activeUsers.length} utilisateur{activeUsers.length > 1 ? 's' : ''} en ligne
+                </div>
+                {activeUsers.length > 0 ? (
+                  <ul className="space-y-1">
+                    {activeUsers.slice(0, 5).map((u, i) => (
+                      <li key={u.id || i} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span className="truncate max-w-[120px]">{u.user_name || u.user_email?.split('@')[0]}</span>
+                        {u.current_tool && (
+                          <span className={`text-[10px] px-1.5 rounded ${u.current_tool === 'signease' ? 'bg-orange-600' : u.current_tool === 'docease' ? 'bg-pink-600' : 'bg-slate-600'}`}>
+                            {u.current_tool}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-slate-400 italic">Aucun utilisateur</div>
+                )}
+                {activeUsers.length > 5 && (
+                  <div className="text-slate-400 mt-1 text-[10px]">+{activeUsers.length - 5} autre{activeUsers.length - 5 > 1 ? 's' : ''}</div>
+                )}
+              </div>
+            } 
+            position="bottom"
+            maxWidth="200px"
+          >
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{activeUsers.length}</span>

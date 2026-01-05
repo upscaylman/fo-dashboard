@@ -130,11 +130,11 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
           </div>
           
           {/* Onglets de navigation */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto" data-stats-tabs>
+          <div className="flex flex-col items-stretch gap-2 w-full xl:w-auto xl:flex-row xl:items-center" data-stats-tabs>
             {/* Filtre de Date */}
             {internalTab !== 'types' && (
-              <div className="relative group w-full sm:w-auto" data-period-selector>
-                 <label className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer w-full sm:w-auto">
+              <div className="relative group w-full xl:w-auto" data-period-selector>
+                 <label className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer w-full xl:w-auto">
                      <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                      <span className="text-slate-500 dark:text-slate-300 text-xs">Période :</span>
                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
@@ -156,9 +156,9 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
             )}
             
             {/* Conteneur des onglets - scrollable horizontalement sur mobile */}
-            <div className="flex gap-2 overflow-x-auto pb-1 w-full sm:w-auto">
+            <div className="flex gap-2 overflow-x-auto pb-1 w-full xl:w-auto">
               {/* Onglets Statistiques */}
-              <div className="inline-flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex-1 sm:flex-none min-w-0">
+              <div className="inline-flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex-1 xl:flex-none min-w-0">
                 {statsTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = internalTab === tab.id;
@@ -167,7 +167,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
                       key={tab.id}
                       onClick={() => handleTabChange(tab.id as StatsTab)}
                       className={`
-                        flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap min-w-0
+                        flex-1 xl:flex-none flex items-center justify-center gap-1 xl:gap-1.5 px-2 xl:px-3 py-2 rounded-xl text-xs xl:text-sm font-medium transition-all duration-200 whitespace-nowrap min-w-0
                         ${isActive 
                           ? `${tab.bgColor} text-white shadow-lg` 
                           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}
@@ -182,7 +182,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
               
               {/* Onglets Outils (DocEase, SignEase) */}
               {toolsTabs.length > 0 && (
-                <div className="inline-flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex-1 sm:flex-none min-w-0">
+                <div className="inline-flex p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex-1 xl:flex-none min-w-0">
                   {toolsTabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = internalTab === tab.id;
@@ -191,7 +191,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
                         key={tab.id}
                         onClick={() => handleTabChange(tab.id as StatsTab)}
                         className={`
-                          flex-1 sm:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap min-w-0
+                          flex-1 xl:flex-none flex items-center justify-center gap-1 xl:gap-1.5 px-2 xl:px-3 py-2 rounded-xl text-xs xl:text-sm font-medium transition-all duration-200 whitespace-nowrap min-w-0
                           ${isActive 
                             ? `${tab.bgColor} text-white shadow-lg` 
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}
