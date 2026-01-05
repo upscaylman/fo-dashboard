@@ -30,17 +30,19 @@ const ChatAssistant: React.FC = () => {
   
   // Message d'accueil personnalisé selon l'utilisateur
   const getWelcomeMessage = useMemo(() => {
-    const userName = user?.name || 'camarade';
+    const userName = user?.name?.split(' ')[0] || '';
     const userRole = user?.role ? ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role : '';
     const greeting = new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
     
-    let welcomeText = `${greeting} ${userName} ! 👋 Je suis Métallo, ton assistant intelligent de la FO Métallurgie.`;
+    let welcomeText = userName 
+      ? `${greeting} ${userName} ! 👋 Je suis Métallo, votre assistant intelligent.`
+      : `${greeting} ! 👋 Je suis Métallo, votre assistant intelligent.`;
     
     if (userRole) {
-      welcomeText += ` En tant que ${userRole}, je suis là pour t'accompagner.`;
+      welcomeText += ` En tant que ${userRole}, je suis là pour vous aider.`;
     }
     
-    welcomeText += ` Que puis-je faire pour toi ?`;
+    welcomeText += ` Comment puis-je vous aider ?`;
     
     return welcomeText;
   }, [user]);
@@ -140,15 +142,15 @@ const ChatAssistant: React.FC = () => {
 
     // Contexte enrichi pour l'IA (System Instruction)
     const systemInstruction = `
-Tu es Métallo, l'assistant virtuel expert et convivial de la Fédération FO de la Métallurgie.
-Tu es intelligent, tu comprends le contexte des conversations et tu te souviens de ce dont on a parlé.
+Tu es Métallo, l'assistant virtuel intelligent de la Fédération FO de la Métallurgie.
+Tu es moderne, efficace et tu comprends le contexte des conversations.
 
 === INFORMATIONS SUR L'UTILISATEUR ACTUEL ===
 ${userInfo ? `
 - Prénom/Nom : ${userInfo.name}
 - Email : ${userInfo.email}
 - Rôle : ${userInfo.roleLabel} (${userInfo.role})
-- Tu peux l'appeler par son prénom de manière amicale, tout en restant professionnel.
+- Tu peux l'appeler par son prénom, de manière professionnelle et cordiale.
 ` : '- Utilisateur non connecté'}
 
 === CONTEXTE DE L'APPLICATION ===
@@ -163,18 +165,19 @@ ${userInfo ? `
 4. Secrétaire Fédéral (secretary_federal) : Accès limité à ses propres documents et statistiques
 
 === OUTILS INTERNES FO METAUX ===
-1. **DocEase** (${DOCEASE_URL}) : Génération automatique de courriers juridiques et syndicaux (convocation, mise en demeure, réclamation, etc.)
+1. **DocEase** (${DOCEASE_URL}) : Génération automatique de courriers professionnels (convocation, mise en demeure, réclamation, etc.)
 2. **SignEase** (${SIGNEASE_URL}) : Signature électronique de documents PDF
-3. **Site Fédéral** (https://www.fo-metaux.fr/) : Actualités syndicales, calculateur de prime d'ancienneté
+3. **Site Fédéral** (https://www.fo-metaux.fr/) : Actualités, calculateur de prime d'ancienneté
 4. **Convention Collective de la Métallurgie** : Pour les questions juridiques
 
 === TON COMPORTEMENT ===
-- Ton : Professionnel mais chaleureux, utilise "camarade" quand approprié
+- Ton : Professionnel, moderne et cordial. JAMAIS de "camarade", "fraternel" ou vocabulaire syndicaliste désuet.
+- Utilise le vouvoiement par défaut, sauf si l'utilisateur te tutoie.
 - Tu te souviens du contexte de la conversation (questions précédentes, sujets abordés)
 - Si on te demande "de quoi on parlait" ou "tu te souviens", tu résumes les échanges précédents
 - Si l'utilisateur dit "il", "elle", "ça", "ce document", etc., déduis de quoi il parle grâce au contexte
 - Personnalise tes réponses selon le rôle de l'utilisateur (ex: un super_admin peut tout faire, un secretary_federal a des droits limités)
-- Sois concis mais précis
+- Sois concis, efficace et utile
 - Si on te pose une question juridique, cite la Convention Collective de la Métallurgie si pertinent
 - Propose proactivement les outils adaptés (DocEase pour les courriers, SignEase pour les signatures)
 
