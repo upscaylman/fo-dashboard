@@ -79,6 +79,20 @@ const NewsSkeleton: React.FC = () => (
     </div>
 );
 
+// Catégories prédéfinies pour les documents
+const DOCUMENT_CATEGORIES = [
+  'Modèles courrier',
+  'Tableurs et listes',
+  'Procédures',
+  'Formulaires',
+  'Documentation',
+  'Ressources RH',
+  'Juridique',
+  'Communication',
+  'Archives',
+  'Divers'
+];
+
 // Liste des modèles pointant vers le dossier /public/templates/
 const templates = [
     { 
@@ -86,35 +100,35 @@ const templates = [
         name: "Liste Globale Destinataires", 
         type: "excel", 
         size: "Macro XLSM", 
-        url: "/templates/LISTE GLOBALE DESTINATAIRES-REORGANISE.xlsm" 
+        url: "/templates/LISTE GLOBALE DESTINATAIRES-REORGANISE.xlsm"
     },
     { 
         id: 2, 
         name: "Modèle Désignation", 
         type: "word", 
         size: "DOCX", 
-        url: "/templates/template_designation.docx" 
+        url: "/templates/template_designation.docx"
     },
     { 
         id: 3, 
         name: "Modèle Négociation", 
         type: "word", 
         size: "DOCX", 
-        url: "/templates/template_negociation.docx" 
+        url: "/templates/template_negociation.docx"
     },
     { 
         id: 4, 
         name: "Modèle Personnalisé", 
         type: "word", 
         size: "DOCX", 
-        url: "/templates/template_custom.docx" 
+        url: "/templates/template_custom.docx"
     },
     { 
         id: 5, 
         name: "Modèle Circulaire", 
         type: "word", 
         size: "DOCX", 
-        url: "/templates/template_circulaire.docx" 
+        url: "/templates/template_circulaire.docx"
     },
 ];
 
@@ -132,7 +146,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   
   const [sharedDocuments, setSharedDocuments] = useState<SharedDocument[]>([]);
   const [showAddDocModal, setShowAddDocModal] = useState(false);
-  const [newDoc, setNewDoc] = useState({ name: '', file_url: '', file_type: 'word', file_size: '', category: 'Modèles', description: '' });
+  const [newDoc, setNewDoc] = useState({ name: '', file_url: '', file_type: 'word', file_size: '', category: 'Modèles courrier', description: '' });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
   const [uploading, setUploading] = useState(false);
@@ -140,7 +154,6 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'type' | 'size'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -158,30 +171,68 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   useEffect(() => {
     fetchSharedDocuments();
     fetchStorageUsage();
+
+    // Subscription temps réel pour les documents partagés
+    const channel = supabase
+      .channel('shared-documents-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'shared_documents' },
+        (payload) => {
+          console.log('📁 Document change detected:', payload.eventType);
+          // Rafraîchir les documents et le stockage en temps réel
+          fetchSharedDocuments();
+          fetchStorageUsage();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchStorageUsage = async () => {
     try {
-      // Récupérer la taille totale des fichiers depuis le bucket
-      const { data: files, error } = await supabase.storage.from('shared-documents').list('', { limit: 1000 });
-      if (!error && files) {
-        // Calculer la taille approximative depuis les métadonnées des documents
-        const { data: docs } = await supabase.from('shared_documents').select('file_size');
-        if (docs) {
-          let totalBytes = 0;
-          docs.forEach(doc => {
-            const sizeStr = doc.file_size?.toLowerCase() || '';
-            const match = sizeStr.match(/([\\d.]+)\\s*(kb|mb|gb|ko|mo|go)/i);
-            if (match) {
-              const value = parseFloat(match[1]);
-              const unit = match[2].toLowerCase();
-              if (unit === 'kb' || unit === 'ko') totalBytes += value * 1024;
-              else if (unit === 'mb' || unit === 'mo') totalBytes += value * 1024 * 1024;
-              else if (unit === 'gb' || unit === 'go') totalBytes += value * 1024 * 1024 * 1024;
-            }
-          });
+      // Méthode 1: Récupérer les fichiers du bucket avec leurs métadonnées
+      const { data: files, error } = await supabase.storage
+        .from('shared-documents')
+        .list('', { limit: 1000 });
+      
+      if (!error && files && files.length > 0) {
+        // Calculer la taille totale depuis les métadonnées des fichiers du bucket
+        let totalBytes = 0;
+        files.forEach(file => {
+          // Les fichiers Supabase Storage ont une propriété metadata.size
+          if (file.metadata?.size) {
+            totalBytes += file.metadata.size;
+          }
+        });
+        
+        // Si on a trouvé des tailles dans le bucket, utiliser ça
+        if (totalBytes > 0) {
           setStorageUsed(totalBytes);
+          return;
         }
+      }
+      
+      // Méthode 2 (fallback): Calculer depuis les file_size enregistrés dans la BDD
+      const { data: docs } = await supabase.from('shared_documents').select('file_size');
+      if (docs && docs.length > 0) {
+        let totalBytes = 0;
+        docs.forEach(doc => {
+          const sizeStr = doc.file_size?.toLowerCase() || '';
+          const match = sizeStr.match(/([\d.]+)\s*(kb|mb|gb|ko|mo|go|b)/i);
+          if (match) {
+            const value = parseFloat(match[1]);
+            const unit = match[2].toLowerCase();
+            if (unit === 'b') totalBytes += value;
+            else if (unit === 'kb' || unit === 'ko') totalBytes += value * 1024;
+            else if (unit === 'mb' || unit === 'mo') totalBytes += value * 1024 * 1024;
+            else if (unit === 'gb' || unit === 'go') totalBytes += value * 1024 * 1024 * 1024;
+          }
+        });
+        setStorageUsed(totalBytes);
       }
     } catch (e) {
       console.error('Erreur calcul stockage:', e);
@@ -293,7 +344,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
       } else {
         addToast('Document ajouté avec succès', 'success');
         setShowAddDocModal(false);
-        setNewDoc({ name: '', file_url: '', file_type: 'word', file_size: '', category: 'Modèles', description: '' });
+        setNewDoc({ name: '', file_url: '', file_type: 'word', file_size: '', category: 'Modèles courrier', description: '' });
         setSelectedFile(null);
         fetchSharedDocuments();
       }
@@ -357,17 +408,8 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
     { value: 'year', label: 'Cette année' }
   ];
 
-  // Fonction de parsing de taille pour le tri
-  const parseFileSize = (sizeStr: string): number => {
-    const match = sizeStr?.toLowerCase().match(/([\\d.]+)\\s*(kb|mb|gb|ko|mo|go)/i);
-    if (!match) return 0;
-    const value = parseFloat(match[1]);
-    const unit = match[2].toLowerCase();
-    if (unit === 'kb' || unit === 'ko') return value * 1024;
-    if (unit === 'mb' || unit === 'mo') return value * 1024 * 1024;
-    if (unit === 'gb' || unit === 'go') return value * 1024 * 1024 * 1024;
-    return value;
-  };
+  // Catégories disponibles
+  const categories = Array.from(new Set(sharedDocuments.map(d => d.category).filter(Boolean)));
 
   // Filtrer par date
   const isInDateRange = (dateStr: string, filter: string): boolean => {
@@ -400,21 +442,17 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
       return matchSearch && matchCategory && matchType && matchDate;
     })
     .sort((a, b) => {
-      let result = 0;
-      if (sortBy === 'name') result = a.name.localeCompare(b.name);
-      else if (sortBy === 'type') result = a.file_type.localeCompare(b.file_type);
-      else if (sortBy === 'date') result = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      else if (sortBy === 'size') result = parseFileSize(b.file_size) - parseFileSize(a.file_size);
-      return sortDirection === 'asc' ? -result : result;
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
-  // Filtrer les templates statiques par recherche
+  // Filtrer les templates statiques par recherche et type
   const filteredTemplates = templates.filter(template => {
-    if (!searchDoc) return true;
-    const matchSearch = template.name.toLowerCase().includes(searchDoc.toLowerCase()) ||
+    const matchSearch = !searchDoc || 
+                       template.name.toLowerCase().includes(searchDoc.toLowerCase()) ||
                        template.type.toLowerCase().includes(searchDoc.toLowerCase()) ||
                        template.size.toLowerCase().includes(searchDoc.toLowerCase());
-    // Si un filtre de type est actif, vérifier aussi le type
     const matchType = filterType === 'all' || template.type === filterType;
     return matchSearch && matchType;
   });
@@ -466,9 +504,6 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
 
   const documentGroups = groupDocumentsByType();
 
-  // Récupérer les catégories uniques
-  const categories = Array.from(new Set(sharedDocuments.map(d => d.category)));
-
   // Créateurs uniques
   const creators = Array.from(new Set(sharedDocuments.map(d => d.created_by_name).filter(Boolean)));
 
@@ -488,11 +523,12 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
     addToast(`Téléchargement de "${name}" lancé...`, 'success');
   };
 
+  // Trier et limiter à 5 actualités
   const sortedNews = [...news].sort((a, b) => {
     const dateA = parseFrenchDate(a.date);
     const dateB = parseFrenchDate(b.date);
     return sortOrder === 'newest' ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
-  });
+  }).slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -555,9 +591,17 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                   <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
                     <HardDrive className={`w-4 h-4 ${storageFull ? 'text-red-500' : storageWarning ? 'text-amber-500' : 'text-slate-500 dark:text-slate-400'}`} />
                     <div className="flex flex-col">
-                      <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                      {/* Barre de progression avec zone rouge pour les 5% finaux */}
+                      <div className="w-20 h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden relative">
+                        {/* Zone rouge pour les derniers 5% (95-100%) - toujours visible */}
+                        <div className="absolute right-0 top-0 h-full w-[5%] bg-red-400/50 dark:bg-red-500/30" />
+                        {/* Barre de progression principale */}
                         <div 
-                          className={`h-full rounded-full transition-all ${storageFull ? 'bg-red-500' : storageWarning ? 'bg-amber-500' : 'bg-blue-500'}`}
+                          className={`h-full rounded-full transition-all relative z-10 ${
+                            storagePercent >= 95 ? 'bg-red-500' : 
+                            storagePercent >= 80 ? 'bg-amber-500' : 
+                            'bg-blue-500'
+                          }`}
                           style={{ width: `${Math.min(storagePercent, 100)}%` }}
                         />
                       </div>
@@ -585,19 +629,6 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                     <List className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                   </button>
                 </div>
-                
-                {/* Bouton filtres avancés - icône seule */}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`p-2 rounded-full transition-colors ${
-                    showFilters || filterType !== 'all' || filterDate !== 'all'
-                      ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
-                  }`}
-                  title="Filtres avancés"
-                >
-                  <Filter className="w-4 h-4" />
-                </button>
                 
                 {/* Bouton gestion des fichiers - uniquement pour admins */}
                 {isAdminRole && (
@@ -656,121 +687,114 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
           </div>
         )}
         
-        {/* Barre de recherche et filtres */}
+        {/* Barre de recherche */}
         {(templates.length > 0 || sharedDocuments.length > 0) && (
-          <div className="mb-4 space-y-3">
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Recherche */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
-                <input
-                  type="text"
-                  value={searchDoc}
-                  onChange={(e) => setSearchDoc(e.target.value)}
-                  placeholder="Rechercher par nom, description..."
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                />
+          <div className="mb-4 flex items-center gap-2">
+            {/* Recherche */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+              <input
+                type="text"
+                value={searchDoc}
+                onChange={(e) => setSearchDoc(e.target.value)}
+                placeholder="Rechercher par nom, description..."
+                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+            </div>
+            
+            {/* Bouton filtres avancés */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-full transition-colors text-sm ${
+                showFilters || filterType !== 'all' || filterDate !== 'all' || filterCategory !== 'all'
+                  ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
+                  : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
+              title="Filtres avancés"
+            >
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">Filtres</span>
+            </button>
+            
+            {/* Bouton tri par date */}
+            <button
+              onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="p-2.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-400"
+              title={sortDirection === 'asc' ? 'Plus ancien en premier' : 'Plus récent en premier'}
+            >
+              {sortDirection === 'asc' ? (
+                <ArrowUp className="w-4 h-4" />
+              ) : (
+                <ArrowDown className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        )}
+          
+        {/* Panneau filtres avancés */}
+        {showFilters && (
+            <div className="mb-4 flex flex-wrap gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+              {/* Filtre par type */}
+              <div className="flex items-center gap-2">
+                <File className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  {fileTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
               </div>
               
               {/* Filtre par catégorie */}
-              <div className="relative">
+              {categories.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Catégorie:</span>
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value="all">Toutes</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {/* Filtre par date */}
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="appearance-none pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option value="all">Toutes catégories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {dateFilters.map(df => (
+                    <option key={df.value} value={df.value}>{df.label}</option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
               </div>
               
-              {/* Tri */}
-              <div className="flex items-center gap-1">
-                <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'type' | 'size')}
-                    className="appearance-none pl-4 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  >
-                    <option value="date">Date</option>
-                    <option value="name">Nom</option>
-                    <option value="type">Type</option>
-                    <option value="size">Taille</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                </div>
+              {/* Bouton réinitialiser */}
+              {(filterType !== 'all' || filterDate !== 'all' || filterCategory !== 'all') && (
                 <button
-                  onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-                  className="p-2 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                  title={sortDirection === 'asc' ? 'Tri croissant' : 'Tri décroissant'}
+                  onClick={() => {
+                    setFilterType('all');
+                    setFilterDate('all');
+                    setFilterCategory('all');
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
-                  {sortDirection === 'asc' ? (
-                    <ArrowUp className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  ) : (
-                    <ArrowDown className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  )}
+                  <X className="w-3 h-3" />
+                  Réinitialiser
                 </button>
-              </div>
+              )}
             </div>
-            
-            {/* Filtres avancés */}
-            {showFilters && (
-              <div className="flex flex-wrap gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                {/* Filtre par type */}
-                <div className="flex items-center gap-2">
-                  <File className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                  <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  >
-                    {fileTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Filtre par date */}
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                  <select
-                    value={filterDate}
-                    onChange={(e) => setFilterDate(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  >
-                    {dateFilters.map(df => (
-                      <option key={df.value} value={df.value}>{df.label}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Bouton réinitialiser */}
-                {(filterType !== 'all' || filterDate !== 'all' || filterCategory !== 'all' || searchDoc) && (
-                  <button
-                    onClick={() => {
-                      setFilterType('all');
-                      setFilterDate('all');
-                      setFilterCategory('all');
-                      setSearchDoc('');
-                    }}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                    Réinitialiser
-                  </button>
-                )}
-                
-                {/* Compteur de résultats */}
-                <span className="ml-auto text-xs text-slate-500 dark:text-slate-400 self-center">
-                  {filteredAndSortedDocs.length + filteredTemplates.length} résultat(s)
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+          )}
         
         <div className="space-y-6">
           {documentGroups.length === 0 ? (
@@ -1063,13 +1087,9 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                       onChange={(e) => setNewDoc({ ...newDoc, category: e.target.value })}
                       className="appearance-none w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
                     >
-                      <option value="Modèles">Modèles</option>
-                      <option value="Formulaires">Formulaires</option>
-                      <option value="Guides">Guides</option>
-                      <option value="Références">Références</option>
-                      <option value="Juridique">Juridique</option>
-                      <option value="Formation">Formation</option>
-                      <option value="Autre">Autre</option>
+                      {DOCUMENT_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
@@ -1093,7 +1113,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                 onClick={() => {
                   setShowAddDocModal(false);
                   setSelectedFile(null);
-                  setNewDoc({ name: '', file_url: '', file_type: 'word', file_size: '', category: 'Modèles', description: '' });
+                  setNewDoc({ name: '', file_url: '', file_type: 'word', file_size: '', category: 'Modèles courrier', description: '' });
                 }}
                 disabled={uploading}
                 className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

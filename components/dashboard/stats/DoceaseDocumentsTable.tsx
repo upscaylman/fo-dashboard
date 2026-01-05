@@ -264,29 +264,31 @@ const DoceaseDocumentsTable: React.FC = () => {
       )}
 
       {/* Filtres et recherche */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
+      <div className="space-y-3">
+        {/* Barre de recherche - pleine largeur */}
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
             placeholder="Rechercher par titre, utilisateur..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
           />
         </div>
 
-        <div className="flex gap-3 flex-wrap">
+        {/* Filtres - grille responsive */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
           {/* Filtre par utilisateur (uniquement pour les admins) */}
           {!isRestrictedView && (
-            <div className="relative">
+            <div className="relative col-span-2 sm:col-span-1">
               <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
               <select
                 value={filterUser}
                 onChange={(e) => setFilterUser(e.target.value)}
-                className="appearance-none cursor-pointer pl-9 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+                className="w-full appearance-none cursor-pointer pl-9 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
               >
-                <option value="all">Tous les utilisateurs</option>
+                <option value="all">Tous utilisateurs</option>
                 {uniqueUsers.map(u => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
@@ -300,9 +302,9 @@ const DoceaseDocumentsTable: React.FC = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="appearance-none cursor-pointer pl-9 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+              className="w-full appearance-none cursor-pointer pl-9 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
             >
-              <option value="all">Tous les types</option>
+              <option value="all">Tous types</option>
               {documentTypes.map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
@@ -314,9 +316,9 @@ const DoceaseDocumentsTable: React.FC = () => {
             <select
               value={filterFormat}
               onChange={(e) => setFilterFormat(e.target.value)}
-              className="appearance-none cursor-pointer pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+              className="w-full appearance-none cursor-pointer pl-4 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
             >
-              <option value="all">Tous les formats</option>
+              <option value="all">Formats</option>
               {documentFormats.map(format => (
                 <option key={format} value={format}>{format?.toUpperCase()}</option>
               ))}
@@ -333,7 +335,7 @@ const DoceaseDocumentsTable: React.FC = () => {
                 setFilterUser('all');
                 setSearchTerm('');
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-700 dark:text-slate-300 transition-colors"
+              className="col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 transition-colors"
               title="Réinitialiser les filtres"
             >
               <RotateCcw className="w-4 h-4" />

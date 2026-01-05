@@ -104,6 +104,28 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
     }
   }, [isOpen, isAdmin]);
 
+  // Subscription temps réel pour mise à jour automatique
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const channel = supabase
+      .channel('management-panel-documents')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'shared_documents' },
+        (payload) => {
+          console.log('📁 [ManagementPanel] Document change:', payload.eventType);
+          fetchDocuments();
+          fetchStorageUsage();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isOpen]);
+
   const fetchDocuments = async () => {
     try {
       setLoading(true);
@@ -348,14 +370,22 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
         <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <HardDrive className={`w-5 h-5 ${storagePercent > 90 ? 'text-red-500' : storagePercent > 70 ? 'text-amber-500' : 'text-slate-500'}`} />
+              <HardDrive className={`w-5 h-5 ${storagePercent >= 95 ? 'text-red-500' : storagePercent >= 80 ? 'text-amber-500' : 'text-slate-500'}`} />
               <span className="text-sm text-slate-600 dark:text-slate-400">
                 Stockage utilisé : <strong>{formatStorageSize(storageUsed)}</strong> / 1 GB
               </span>
             </div>
-            <div className="w-32 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            {/* Barre de progression avec zone rouge pour les 5% finaux */}
+            <div className="w-32 h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden relative">
+              {/* Zone rouge pour les derniers 5% (95-100%) - toujours visible */}
+              <div className="absolute right-0 top-0 h-full w-[5%] bg-red-400/50 dark:bg-red-500/30" />
+              {/* Barre de progression principale */}
               <div 
-                className={`h-full rounded-full transition-all ${storagePercent > 90 ? 'bg-red-500' : storagePercent > 70 ? 'bg-amber-500' : 'bg-blue-500'}`}
+                className={`h-full rounded-full transition-all relative z-10 ${
+                  storagePercent >= 95 ? 'bg-red-500' : 
+                  storagePercent >= 80 ? 'bg-amber-500' : 
+                  'bg-blue-500'
+                }`}
                 style={{ width: `${Math.min(storagePercent, 100)}%` }}
               />
             </div>
