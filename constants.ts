@@ -6,6 +6,8 @@ import { ArchiveLink } from './types';
 // URLs des applications FO Metaux
 export const DOCEASE_URL = 'https://fo-docease.netlify.app';
 export const SIGNEASE_URL = 'https://signeasy.netlify.app';
+export const DASHBOARD_URL = 'https://fde-saasease.netlify.app';
+export const DASHBOARD_REGISTER_URL = `${DASHBOARD_URL}/register`;
 
 // Liens utiles de l'écosystème FO Metaux
 export const archiveLinks: ArchiveLink[] = [

@@ -960,31 +960,34 @@ export const submitSignature = async (
       console.log("   ✅ Email original du destinataire mis à jour");
     }
 
+    // Créer un token de visualisation pour le tracking (lecture seule)
+    const trackingViewToken = `view-${
+      envelope.document.id
+    }-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+
+    await setDoc(doc(db, "tokens", trackingViewToken), {
+      envelopeId: envelopeId,
+      recipientId: signer.id,
+      isViewOnly: true,
+    });
+
+    // Construire l'URL de visualisation du document signé
+    const documentViewUrl = `${window.location.origin}/#/sign/${trackingViewToken}`;
+
     // 📧 NOTIFICATION : Si le document est complètement signé, envoyer un email externe à l'expéditeur
     if (allSigned) {
       console.log(
         "📧 Document complètement signé - Envoi de notification à l'expéditeur..."
       );
 
-      // Créer un token de lecture seule pour l'email externe
-      const viewToken = `view-${
-        envelope.document.id
-      }-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-
-      await setDoc(doc(db, "tokens", viewToken), {
-        envelopeId: envelopeId,
-        recipientId: envelope.recipients[0].id,
-        isViewOnly: true,
-      });
-
-      // Envoyer l'email de confirmation externe
+      // Envoyer l'email de confirmation externe avec le token de visualisation
       const confirmationResult = await sendSignatureConfirmationEmail(
         envelope.document.id,
         envelope.document.name,
         signer.name,
         signer.email,
         envelope.document.creatorEmail,
-        viewToken
+        trackingViewToken
       );
 
       if (!confirmationResult.success) {
@@ -997,6 +1000,7 @@ export const submitSignature = async (
       signer.email,
       envelope.document.name,
       envelopeId,
+      documentViewUrl,
       { allSigned }
     );
 

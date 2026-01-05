@@ -1,7 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, ChevronRight, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { MessageCircle, X, Send, Bot, ChevronRight, Loader2, User, Sparkles } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
+import { useAuth } from '../../context/AuthContext';
+import { ROLE_LABELS } from '../../lib/permissions';
 
 interface Message {
   id: string;
@@ -11,25 +13,77 @@ interface Message {
   timestamp: Date;
 }
 
+// Contexte de l'application pour l'IA
+interface AppContext {
+  currentPage: string;
+  currentTime: string;
+  dayOfWeek: string;
+}
+
 const ChatAssistant: React.FC = () => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasUnreadMessage, setHasUnreadMessage] = useState(true);
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Bonjour camarade ! Je suis Métallo, ton assistant intelligent. Pose-moi une question sur tes droits, la convention collective ou nos outils !",
-      sender: 'bot',
-      timestamp: new Date(),
-      actions: [
-        { label: "Générer un courrier", action: () => window.open(DOCEASE_URL, '_blank') },
-        { label: "Signer un PDF", action: () => window.open(SIGNEASE_URL, '_blank') }
-      ]
+  
+  // Message d'accueil personnalisé selon l'utilisateur
+  const getWelcomeMessage = useMemo(() => {
+    const userName = user?.name || 'camarade';
+    const userRole = user?.role ? ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role : '';
+    const greeting = new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
+    
+    let welcomeText = `${greeting} ${userName} ! 👋 Je suis Métallo, ton assistant intelligent de la FO Métallurgie.`;
+    
+    if (userRole) {
+      welcomeText += ` En tant que ${userRole}, je suis là pour t'accompagner.`;
     }
-  ]);
+    
+    welcomeText += ` Que puis-je faire pour toi ?`;
+    
+    return welcomeText;
+  }, [user]);
+  
+  const [messages, setMessages] = useState<Message[]>([]);
+  
+  // Initialiser le message de bienvenue quand l'utilisateur change
+  useEffect(() => {
+    setMessages([
+      {
+        id: '1',
+        text: getWelcomeMessage,
+        sender: 'bot',
+        timestamp: new Date(),
+        actions: [
+          { label: "Générer un courrier", action: () => window.open(DOCEASE_URL, '_blank') },
+          { label: "Signer un PDF", action: () => window.open(SIGNEASE_URL, '_blank') }
+        ]
+      }
+    ]);
+  }, [getWelcomeMessage]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Obtenir le contexte actuel de l'application
+  const getAppContext = (): AppContext => {
+    const now = new Date();
+    const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    return {
+      currentPage: 'Dashboard FO Métaux',
+      currentTime: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      dayOfWeek: days[now.getDay()]
+    };
+  };
+  
+  // Construire l'historique de conversation pour le contexte
+  const buildConversationHistory = () => {
+    // Prendre les 10 derniers messages pour le contexte
+    return messages.slice(-10).map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text
+    }));
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -72,20 +126,66 @@ const ChatAssistant: React.FC = () => {
     setInputValue('');
     setIsTyping(true);
 
-    // Contexte pour l'IA (System Instruction)
+    // Récupérer le contexte applicatif
+    const appContext = getAppContext();
+    const conversationHistory = buildConversationHistory();
+    
+    // Informations sur l'utilisateur actuel
+    const userInfo = user ? {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      roleLabel: ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role
+    } : null;
+
+    // Contexte enrichi pour l'IA (System Instruction)
     const systemInstruction = `
-          Tu es Métallo, l'assistant virtuel expert de la Fédération FO de la Métallurgie.
-          Ton ton est professionnel, fraternel (tu utilises "camarade") et engagé.
-          
-          Tu as connaissance des outils internes suivants :
-          1. DocEase (https://fo-docease.netlify.app/) : Pour générer des courriers juridiques et syndicaux automatiquement.
-          2. SignEase (https://signeasy.netlify.app/) : Pour signer électroniquement des documents PDF.
-          3. Site Fédéral (https://www.fo-metaux.fr/) : Pour les actualités et le calculateur de prime d'ancienneté.
-          
-          Si l'utilisateur pose une question juridique, réponds brièvement en citant la Convention Collective de la Métallurgie si pertinent.
-          Si l'utilisateur veut rédiger ou signer, oriente-le vers les outils ci-dessus.
-          Sois concis.
-      `;
+Tu es Métallo, l'assistant virtuel expert et convivial de la Fédération FO de la Métallurgie.
+Tu es intelligent, tu comprends le contexte des conversations et tu te souviens de ce dont on a parlé.
+
+=== INFORMATIONS SUR L'UTILISATEUR ACTUEL ===
+${userInfo ? `
+- Prénom/Nom : ${userInfo.name}
+- Email : ${userInfo.email}
+- Rôle : ${userInfo.roleLabel} (${userInfo.role})
+- Tu peux l'appeler par son prénom de manière amicale, tout en restant professionnel.
+` : '- Utilisateur non connecté'}
+
+=== CONTEXTE DE L'APPLICATION ===
+- Page actuelle : ${appContext.currentPage}
+- Jour : ${appContext.dayOfWeek}
+- Heure : ${appContext.currentTime}
+
+=== HIÉRARCHIE DES RÔLES (du plus élevé au plus bas) ===
+1. Super Administrateur (super_admin) : Accès complet à tout, gestion des utilisateurs, statistiques globales
+2. Secrétaire Général (secretary_general) : Gestion des documents, accès aux statistiques fédérales
+3. Secrétaire (secretary) : Mêmes droits que Secrétaire Général
+4. Secrétaire Fédéral (secretary_federal) : Accès limité à ses propres documents et statistiques
+
+=== OUTILS INTERNES FO METAUX ===
+1. **DocEase** (${DOCEASE_URL}) : Génération automatique de courriers juridiques et syndicaux (convocation, mise en demeure, réclamation, etc.)
+2. **SignEase** (${SIGNEASE_URL}) : Signature électronique de documents PDF
+3. **Site Fédéral** (https://www.fo-metaux.fr/) : Actualités syndicales, calculateur de prime d'ancienneté
+4. **Convention Collective de la Métallurgie** : Pour les questions juridiques
+
+=== TON COMPORTEMENT ===
+- Ton : Professionnel mais chaleureux, utilise "camarade" quand approprié
+- Tu te souviens du contexte de la conversation (questions précédentes, sujets abordés)
+- Si on te demande "de quoi on parlait" ou "tu te souviens", tu résumes les échanges précédents
+- Si l'utilisateur dit "il", "elle", "ça", "ce document", etc., déduis de quoi il parle grâce au contexte
+- Personnalise tes réponses selon le rôle de l'utilisateur (ex: un super_admin peut tout faire, un secretary_federal a des droits limités)
+- Sois concis mais précis
+- Si on te pose une question juridique, cite la Convention Collective de la Métallurgie si pertinent
+- Propose proactivement les outils adaptés (DocEase pour les courriers, SignEase pour les signatures)
+
+=== HISTORIQUE DE LA CONVERSATION ===
+${conversationHistory.length > 1 ? `
+Voici les ${conversationHistory.length - 1} derniers échanges pour contexte :
+${conversationHistory.slice(0, -1).map((msg, i) => `${msg.role === 'user' ? '👤 Utilisateur' : '🤖 Métallo'}: ${msg.content}`).join('\n')}
+` : 'C\'est le début de la conversation.'}
+
+Réponds maintenant au message de l'utilisateur en tenant compte de tout ce contexte.
+    `.trim();
 
     let botResponseText = "";
 
@@ -127,6 +227,18 @@ const ChatAssistant: React.FC = () => {
           throw new Error("Clé API Groq manquante");
         }
 
+        // Construire les messages avec l'historique complet pour Groq
+        const groqMessages = [
+          { role: "system", content: systemInstruction },
+          // Ajouter l'historique de conversation (sans le dernier message système)
+          ...conversationHistory.slice(0, -1).map(msg => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content
+          })),
+          // Ajouter le nouveau message de l'utilisateur
+          { role: "user", content: text }
+        ];
+
         const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -135,11 +247,8 @@ const ChatAssistant: React.FC = () => {
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
-            messages: [
-              { role: "system", content: systemInstruction },
-              { role: "user", content: text }
-            ],
-            max_tokens: 500,
+            messages: groqMessages,
+            max_tokens: 800,
             temperature: 0.7
           })
         });
@@ -161,16 +270,38 @@ const ChatAssistant: React.FC = () => {
       }
     }
 
-    // Création du message du bot
+    // Création du message du bot avec actions contextuelles
     try {
+      // Détection des actions à proposer selon le contenu de la réponse
+      const detectActions = (responseText: string): { label: string; action: () => void }[] | undefined => {
+        const actions: { label: string; action: () => void }[] = [];
+        const lowerText = responseText.toLowerCase();
+        
+        if (lowerText.includes('docease') || lowerText.includes('courrier') || lowerText.includes('document') || lowerText.includes('lettre') || lowerText.includes('convocation')) {
+          actions.push({ label: "📝 Ouvrir DocEase", action: () => window.open(DOCEASE_URL, '_blank') });
+        }
+        if (lowerText.includes('signease') || lowerText.includes('signer') || lowerText.includes('signature') || lowerText.includes('pdf')) {
+          actions.push({ label: "✍️ Ouvrir SignEase", action: () => window.open(SIGNEASE_URL, '_blank') });
+        }
+        if (lowerText.includes('convention collective') || lowerText.includes('métallurgie')) {
+          actions.push({ label: "📖 Convention Collective", action: () => window.open('https://conventioncollectivemetallurgie.fr/', '_blank') });
+        }
+        if (lowerText.includes('prime') || lowerText.includes('ancienneté') || lowerText.includes('calculateur')) {
+          actions.push({ label: "🧮 Calculateur Prime", action: () => window.open('https://www.fo-metaux.fr/calculateur-de-prime-danciennet', '_blank') });
+        }
+        if (lowerText.includes('actualité') || lowerText.includes('fo-metaux') || lowerText.includes('fédéral')) {
+          actions.push({ label: "📰 Site FO Métaux", action: () => window.open('https://www.fo-metaux.fr/', '_blank') });
+        }
+        
+        return actions.length > 0 ? actions.slice(0, 3) : undefined; // Maximum 3 actions
+      };
+      
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         text: botResponseText,
         sender: 'bot',
         timestamp: new Date(),
-        actions: botResponseText.includes('DocEase') ? [{ label: "Ouvrir DocEase", action: () => window.open(DOCEASE_URL, '_blank') }]
-          : botResponseText.includes('SignEase') ? [{ label: "Ouvrir SignEase", action: () => window.open(SIGNEASE_URL, '_blank') }]
-            : undefined
+        actions: detectActions(botResponseText)
       };
 
       setMessages(prev => [...prev, botMsg]);
@@ -203,19 +334,30 @@ const ChatAssistant: React.FC = () => {
 
       {/* Fenêtre de chat */}
       {isOpen && (
-        <div className="pointer-events-auto bg-white dark:bg-slate-900 w-[calc(100vw-2rem)] sm:w-[350px] max-w-[350px] h-[70vh] sm:h-[500px] max-h-[500px] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden animate-[slideIn_0.2s_ease-out]">
+        <div className="pointer-events-auto bg-white dark:bg-slate-900 w-[calc(100vw-2rem)] sm:w-[380px] max-w-[380px] h-[70vh] sm:h-[520px] max-h-[520px] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden animate-[slideIn_0.2s_ease-out]">
           {/* Header */}
-          <div className="p-4 bg-fo-red text-white flex justify-between items-center">
+          <div className="p-4 bg-gradient-to-r from-fo-red to-red-600 text-white flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 bg-white/20 rounded-full">
+              <div className="p-1.5 bg-white/20 rounded-full relative">
                 <Bot className="w-5 h-5" />
+                <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
               </div>
               <div>
-                <h3 className="font-bold text-sm">Métallo</h3>
-                <p className="text-xs text-white/80">IA Fédérale • Gemini 2.5</p>
+                <h3 className="font-bold text-sm flex items-center gap-2">
+                  Métallo
+                  <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-normal">IA+</span>
+                </h3>
+                {user ? (
+                  <p className="text-xs text-white/80 flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    {user.name?.split(' ')[0] || 'Utilisateur'}
+                  </p>
+                ) : (
+                  <p className="text-xs text-white/80">Assistant intelligent</p>
+                )}
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-1 rounded transition">
+            <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-1.5 rounded-lg transition">
               <X className="w-5 h-5" />
             </button>
           </div>

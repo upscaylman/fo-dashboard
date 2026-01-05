@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, Download, Calendar, User, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, CheckCircle, AlertCircle, Eye, X } from 'lucide-react';
+import { FileText, Download, Calendar, User, Users, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, CheckCircle, AlertCircle, Eye, X, RotateCcw, List } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
 import { DOCEASE_URL } from '../../../constants';
 
 // Rôles qui ne voient que leurs propres données
-const RESTRICTED_ROLES = ['secretary_federal'];
+const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
+// Rôles administrateurs avec accès complet et filtrage avancé
+const ADMIN_ROLES = ['secretary_general', 'super_admin'];
 
 interface DoceaseDocument {
   id: number;
@@ -39,7 +41,10 @@ const DoceaseDocumentsTable: React.FC = () => {
   // Récupérer le contexte d'authentification pour filtrer les données
   const { user } = useAuth();
   const effectiveRole = user?.role || 'secretary';
-  const isRestrictedView = RESTRICTED_ROLES.includes(effectiveRole);
+  const isRestrictedView = !ADMIN_ROLES.includes(effectiveRole);
+  
+  // État pour le filtre par utilisateur (uniquement pour les admins)
+  const [filterUser, setFilterUser] = useState<string>('all');
 
   useEffect(() => {
     fetchDocuments();
@@ -151,8 +156,9 @@ const DoceaseDocumentsTable: React.FC = () => {
 
       const matchType = filterType === 'all' || doc.document_type === filterType;
       const matchFormat = filterFormat === 'all' || doc.metadata?.format === filterFormat;
+      const matchUser = filterUser === 'all' || doc.user_id === filterUser;
 
-      return matchSearch && matchType && matchFormat;
+      return matchSearch && matchType && matchFormat && matchUser;
     });
 
     // Tri par date
@@ -161,7 +167,7 @@ const DoceaseDocumentsTable: React.FC = () => {
       const dateB = new Date(b.created_at).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-  }, [documents, searchTerm, filterType, filterFormat, sortOrder]);
+  }, [documents, searchTerm, filterType, filterFormat, filterUser, sortOrder]);
 
   // Helper pour obtenir les infos utilisateur (gère le cas tableau/objet)
   const getUserInfo = (doc: DoceaseDocument) => {
@@ -182,6 +188,24 @@ const DoceaseDocumentsTable: React.FC = () => {
   // Extraction des types et formats uniques
   const documentTypes = Array.from(new Set(documents.map(d => d.document_type)));
   const documentFormats = Array.from(new Set(documents.map(d => d.metadata?.format).filter(Boolean)));
+  
+  // Extraction des utilisateurs uniques pour le filtre admin
+  const uniqueUsers = useMemo(() => {
+    const usersMap = new Map<string, { id: string; name: string; email: string }>();
+    documents.forEach(doc => {
+      if (doc.user_id) {
+        const userInfo = getUserInfo(doc);
+        if (!usersMap.has(doc.user_id)) {
+          usersMap.set(doc.user_id, {
+            id: doc.user_id,
+            name: userInfo.name,
+            email: userInfo.email
+          });
+        }
+      }
+    });
+    return Array.from(usersMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [documents]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -252,12 +276,31 @@ const DoceaseDocumentsTable: React.FC = () => {
           />
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
+          {/* Filtre par utilisateur (uniquement pour les admins) */}
+          {!isRestrictedView && (
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+              <select
+                value={filterUser}
+                onChange={(e) => setFilterUser(e.target.value)}
+                className="appearance-none cursor-pointer pl-9 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+              >
+                <option value="all">Tous les utilisateurs</option>
+                {uniqueUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+            </div>
+          )}
+
           <div className="relative">
+            <List className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="appearance-none cursor-pointer pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+              className="appearance-none cursor-pointer pl-9 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
             >
               <option value="all">Tous les types</option>
               {documentTypes.map(type => (
@@ -280,6 +323,23 @@ const DoceaseDocumentsTable: React.FC = () => {
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
           </div>
+
+          {/* Bouton de réinitialisation des filtres */}
+          {(filterType !== 'all' || filterFormat !== 'all' || filterUser !== 'all' || searchTerm !== '') && (
+            <button
+              onClick={() => {
+                setFilterType('all');
+                setFilterFormat('all');
+                setFilterUser('all');
+                setSearchTerm('');
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-700 dark:text-slate-300 transition-colors"
+              title="Réinitialiser les filtres"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="hidden sm:inline">Réinitialiser</span>
+            </button>
+          )}
         </div>
       </div>
 

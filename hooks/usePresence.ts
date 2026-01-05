@@ -49,9 +49,13 @@ export const usePresence = (): UsePresenceReturn => {
         query = query.neq('id', keepSessionId);
       }
       
-      await query;
+      const { error } = await query;
+      // Ignorer silencieusement les erreurs 406 (table n'existe pas encore)
+      if (error && !error.message?.includes('406') && error.code !== 'PGRST204') {
+        console.warn('Nettoyage sessions:', error.message);
+      }
     } catch (error) {
-      console.error('Erreur nettoyage sessions:', error);
+      // Ignorer les erreurs silencieusement - la table n'existe peut-être pas encore
     }
   }, []);
 
@@ -74,7 +78,7 @@ export const usePresence = (): UsePresenceReturn => {
 
       if (sessionIdRef.current) {
         // Mettre à jour la session existante
-        await supabase
+        const { error } = await supabase
           .from('active_sessions')
           .update({
             current_page: page,
@@ -84,6 +88,11 @@ export const usePresence = (): UsePresenceReturn => {
             avatar_url: userData?.avatar || null
           })
           .eq('id', sessionIdRef.current);
+        
+        // Si erreur 406, la table n'existe pas encore
+        if (error && (error.code === '42P01' || error.message?.includes('406'))) {
+          return; // Silencieux
+        }
       } else {
         // D'abord, supprimer toutes les anciennes sessions de cet utilisateur
         await cleanupOldSessions(user.id);
@@ -104,6 +113,11 @@ export const usePresence = (): UsePresenceReturn => {
           .select()
           .single();
 
+        // Si erreur 406 ou table inexistante, ignorer silencieusement
+        if (error && (error.code === '42P01' || error.message?.includes('406'))) {
+          return;
+        }
+
         if (!error && data) {
           sessionIdRef.current = data.id;
           // Sauvegarder dans localStorage pour persistance
@@ -112,17 +126,21 @@ export const usePresence = (): UsePresenceReturn => {
         }
       }
     } catch (error) {
-      console.error('Erreur mise à jour présence:', error);
+      // Ignorer les erreurs - la table n'existe peut-être pas encore
     }
   }, [user, isImpersonating, cleanupOldSessions]);
 
   // Supprimer la session
   const removePresence = useCallback(async () => {
     if (sessionIdRef.current) {
-      await supabase
-        .from('active_sessions')
-        .delete()
-        .eq('id', sessionIdRef.current);
+      try {
+        await supabase
+          .from('active_sessions')
+          .delete()
+          .eq('id', sessionIdRef.current);
+      } catch {
+        // Ignorer les erreurs
+      }
       
       sessionIdRef.current = null;
       setIsOnline(false);
@@ -135,10 +153,16 @@ export const usePresence = (): UsePresenceReturn => {
     try {
       // Nettoyer les sessions inactives (plus de 2 minutes sans activité pour déconnexion rapide)
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-      await supabase
-        .from('active_sessions')
-        .delete()
-        .lt('last_activity', twoMinutesAgo);
+      
+      // Essayer de nettoyer, ignorer si erreur
+      try {
+        await supabase
+          .from('active_sessions')
+          .delete()
+          .lt('last_activity', twoMinutesAgo);
+      } catch {
+        // Ignorer
+      }
 
       const { data, error } = await supabase
         .from('active_sessions')
@@ -199,7 +223,8 @@ export const usePresence = (): UsePresenceReturn => {
         setActiveUsers(Array.from(emailMap.values()));
       }
     } catch (error) {
-      console.error('Erreur chargement utilisateurs actifs:', error);
+      // Ignorer silencieusement - la table n'existe peut-être pas encore
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -255,26 +280,44 @@ export const usePresence = (): UsePresenceReturn => {
       
       if (storedSessionId) {
         // Vérifier si cette session existe encore en base
-        const { data: existingSession } = await supabase
-          .from('active_sessions')
-          .select('id, user_id')
-          .eq('id', storedSessionId)
-          .eq('user_id', user.id)
-          .single();
-        
-        if (existingSession) {
-          // Réutiliser la session existante
-          sessionIdRef.current = storedSessionId;
-          setIsOnline(true);
-          // Mettre à jour le timestamp
-          await supabase
+        try {
+          const { data: existingSession, error } = await supabase
             .from('active_sessions')
-            .update({ last_activity: new Date().toISOString() })
-            .eq('id', storedSessionId);
-        } else {
-          // La session n'existe plus, en créer une nouvelle
-          localStorage.removeItem(SESSION_STORAGE_KEY);
-          await updatePresence('dashboard');
+            .select('id, user_id')
+            .eq('id', storedSessionId)
+            .eq('user_id', user.id)
+            .single();
+          
+          // Si erreur 406 ou table inexistante, ignorer silencieusement
+          if (error && (error.code === '42P01' || error.message?.includes('406') || error.code === 'PGRST116')) {
+            setIsOnline(false);
+            initializingRef.current = false;
+            return;
+          }
+          
+          if (existingSession) {
+            // Réutiliser la session existante
+            sessionIdRef.current = storedSessionId;
+            setIsOnline(true);
+            // Mettre à jour le timestamp
+            try {
+              await supabase
+                .from('active_sessions')
+                .update({ last_activity: new Date().toISOString() })
+                .eq('id', storedSessionId);
+            } catch {
+              // Ignorer
+            }
+          } else {
+            // La session n'existe plus, en créer une nouvelle
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            await updatePresence('dashboard');
+          }
+        } catch {
+          // Table n'existe pas, ignorer
+          setIsOnline(false);
+          initializingRef.current = false;
+          return;
         }
       } else {
         // Pas de session stockée, en créer une nouvelle
@@ -288,13 +331,16 @@ export const usePresence = (): UsePresenceReturn => {
     initSession();
 
     // Heartbeat toutes les 30 secondes
-    heartbeatIntervalRef.current = setInterval(() => {
+    heartbeatIntervalRef.current = setInterval(async () => {
       if (sessionIdRef.current) {
-        supabase
-          .from('active_sessions')
-          .update({ last_activity: new Date().toISOString() })
-          .eq('id', sessionIdRef.current)
-          .then(() => {});
+        try {
+          await supabase
+            .from('active_sessions')
+            .update({ last_activity: new Date().toISOString() })
+            .eq('id', sessionIdRef.current);
+        } catch {
+          // Ignorer silencieusement
+        }
       }
     }, 30000);
 
@@ -329,30 +375,36 @@ export const usePresence = (): UsePresenceReturn => {
       }
     };
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === 'hidden') {
         // L'utilisateur a quitté l'onglet
         if (sessionIdRef.current) {
-          supabase
-            .from('active_sessions')
-            .update({ 
-              last_activity: new Date().toISOString(),
-              metadata: { status: 'away' }
-            })
-            .eq('id', sessionIdRef.current)
-            .then(() => {});
+          try {
+            await supabase
+              .from('active_sessions')
+              .update({ 
+                last_activity: new Date().toISOString(),
+                metadata: { status: 'away' }
+              })
+              .eq('id', sessionIdRef.current);
+          } catch {
+            // Ignorer silencieusement
+          }
         }
       } else if (document.visibilityState === 'visible') {
         // L'utilisateur est revenu
         if (sessionIdRef.current) {
-          supabase
-            .from('active_sessions')
-            .update({ 
-              last_activity: new Date().toISOString(),
-              metadata: { status: 'active' }
-            })
-            .eq('id', sessionIdRef.current)
-            .then(() => {});
+          try {
+            await supabase
+              .from('active_sessions')
+              .update({ 
+                last_activity: new Date().toISOString(),
+                metadata: { status: 'active' }
+              })
+              .eq('id', sessionIdRef.current);
+          } catch {
+            // Ignorer silencieusement
+          }
         }
       }
     };

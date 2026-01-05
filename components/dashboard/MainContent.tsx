@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Edit3, ChevronRight, Newspaper, Clock, Zap, ArrowDown, ArrowUp, FileSpreadsheet, Download, AlertCircle, RefreshCw, ExternalLink, Star, Plus, Trash2, X, Search, File, ChevronDown, Image, Film, Grid, List, HardDrive, Calendar, User, Filter, Upload } from 'lucide-react';
+import { FileText, Edit3, ChevronRight, Newspaper, Clock, Zap, ArrowDown, ArrowUp, FileSpreadsheet, Download, AlertCircle, RefreshCw, ExternalLink, Star, Plus, Trash2, X, Search, File, ChevronDown, Image, Film, Grid, List, HardDrive, Calendar, User, Filter, Upload, Settings } from 'lucide-react';
 import { NewsItem } from '../../types';
 import { Card, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -11,6 +11,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
+import DocumentsManagementPanel from './DocumentsManagementPanel';
 
 // Rôles qui ne peuvent PAS ajouter/supprimer de documents
 const RESTRICTED_ROLES = ['secretary_federal'];
@@ -143,6 +144,10 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [showManagementPanel, setShowManagementPanel] = useState(false);
+  
+  // Rôles admin pour la gestion des fichiers
+  const isAdminRole = ['secretary_general', 'super_admin'].includes(user?.role || '');
   
   // Stockage
   const [storageUsed, setStorageUsed] = useState(0);
@@ -593,6 +598,17 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                 >
                   <Filter className="w-4 h-4" />
                 </button>
+                
+                {/* Bouton gestion des fichiers - uniquement pour admins */}
+                {isAdminRole && (
+                  <button
+                    onClick={() => setShowManagementPanel(true)}
+                    className="p-2 rounded-full bg-[#a84383] text-white hover:bg-[#8c366c] dark:bg-[#dd60b0] dark:hover:bg-[#c050a0] transition-colors"
+                    title="Gérer les fichiers (suppression)"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                )}
                 
                 {/* Seul super_admin peut ajouter (pas secretary/secretary_federal) */}
                 {canManageDocuments && (
@@ -1213,6 +1229,17 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
             </a>
           )}
       </Card>
+
+      {/* Panel de gestion des documents (pour admins) */}
+      <DocumentsManagementPanel 
+        isOpen={showManagementPanel} 
+        onClose={() => {
+          setShowManagementPanel(false);
+          // Rafraîchir les documents après fermeture du panel
+          fetchSharedDocuments();
+          fetchStorageUsage();
+        }} 
+      />
     </div>
   );
 };

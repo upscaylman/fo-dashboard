@@ -9,6 +9,7 @@ import { supabase } from '../../../lib/supabase';
 import { ROLE_COLORS, ROLE_LABELS, UserRole } from '../../../lib/permissions';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { TimeRange } from '../../../hooks/useStats';
+import { DASHBOARD_REGISTER_URL } from '../../../constants';
 
 interface UserStatsTableProps {
   users: UserStat[];
@@ -466,7 +467,7 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                 </button>
               )}
               <a
-                href="https://fde-saasease.netlify.app/register"
+                href={DASHBOARD_REGISTER_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2.5 bg-fo-dark hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-full transition-all shadow-lg shadow-slate-200 dark:shadow-none border border-transparent dark:border-slate-700"

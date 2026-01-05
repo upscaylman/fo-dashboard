@@ -10,6 +10,7 @@ interface ActivityData {
   userName?: string;
   actionType: ActivityType;
   documentName?: string;
+  documentUrl?: string;
   recipientEmail?: string;
   recipientName?: string;
   envelopeId?: string;
@@ -34,6 +35,7 @@ export const trackActivity = async (data: ActivityData): Promise<boolean> => {
         user_name: data.userName || data.userEmail.split('@')[0],
         action_type: data.actionType,
         document_name: data.documentName,
+        document_url: data.documentUrl,
         recipient_email: data.recipientEmail,
         recipient_name: data.recipientName,
         envelope_id: data.envelopeId,
@@ -92,12 +94,14 @@ export const trackDocumentSigned = (
   signerEmail: string, 
   documentName: string, 
   envelopeId?: string,
+  documentUrl?: string,
   metadata?: Record<string, any>
 ) => {
   return trackActivity({
     userEmail: signerEmail,
     actionType: 'document_signed',
     documentName,
+    documentUrl,
     envelopeId,
     metadata
   });

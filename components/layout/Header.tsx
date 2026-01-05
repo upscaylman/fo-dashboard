@@ -5,7 +5,6 @@ import { NotificationPanel } from '../ui/NotificationPanel';
 import { useMobileMenu } from '../../context/MobileMenuContext';
 import { useAuth } from '../../context/AuthContext';
 import { usePresence } from '../../hooks/usePresence';
-import { usePermissions } from '../../hooks/usePermissions';
 
 // Couleurs de bordure selon le rôle
 const getRoleBorderColor = (role?: string) => {
@@ -47,10 +46,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const { toggleMenu } = useMobileMenu();
   const { user, logout } = useAuth();
   const { activeUsers } = usePresence();
-  const { isAdmin, isSuperAdmin } = usePermissions();
-
-  // Seuls les admins et super_admins peuvent voir les utilisateurs en ligne
-  const canSeeOnlineUsers = isAdmin || isSuperAdmin;
 
   return (
     <header className="sticky top-4 z-40 px-2 sm:px-6 lg:px-8 pointer-events-none">
@@ -104,16 +99,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 
         {/* User Profile & Notifications */}
         <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
-          {/* Indicateur utilisateurs en ligne - visible uniquement pour admin/super_admin */}
-          {canSeeOnlineUsers && (
-            <Tooltip content={`${activeUsers.length} utilisateur${activeUsers.length > 1 ? 's' : ''} en ligne`} position="bottom">
+          {/* Indicateur utilisateurs en ligne - visible pour tous */}
+          <Tooltip content={`${activeUsers.length} utilisateur${activeUsers.length > 1 ? 's' : ''} en ligne`} position="bottom">
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-800">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{activeUsers.length}</span>
               </div>
             </Tooltip>
-          )}
 
           <div className="relative">
             <NotificationPanel />

@@ -81,8 +81,8 @@ export const NotificationPanel: React.FC = () => {
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Panel */}
-          <div className="absolute right-0 top-full mt-2 w-96 max-h-[600px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+          {/* Panel - Responsive: plein écran sur mobile, positionné sur desktop */}
+          <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto sm:right-0 top-16 sm:top-full sm:mt-2 w-auto sm:w-96 max-h-[calc(100vh-5rem)] sm:max-h-[600px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 flex flex-col">
             {/* Header */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between mb-2">

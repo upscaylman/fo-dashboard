@@ -72,8 +72,8 @@ const DashboardPage: React.FC = () => {
             {showExtraSections && (
                 <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Widget utilisateurs actifs - visible uniquement pour admin/super_admin */}
-                        {(isAdmin || isSuperAdmin) && <ActiveUsersWidget />}
+                        {/* Widget utilisateurs actifs - visible pour tous */}
+                        <ActiveUsersWidget />
                         
                         <MainContent 
                             news={news} 

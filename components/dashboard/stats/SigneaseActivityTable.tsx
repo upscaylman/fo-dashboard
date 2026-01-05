@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink, X } from 'lucide-react';
+import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink, X, Download, Eye, Users, List } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
 import { SIGNEASE_URL } from '../../../constants';
 
-// Rôles qui ne voient que leurs propres données
-const RESTRICTED_ROLES = ['secretary_federal'];
+// Rôles qui ne voient que leurs propres données (secrétaire et secrétaire fédéral)
+const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
+
+// Rôles qui voient toutes les données (secrétaire général et super admin)
+const ADMIN_ROLES = ['secretary_general', 'super_admin'];
 
 interface SigneaseActivity {
   id: number;
@@ -14,6 +17,7 @@ interface SigneaseActivity {
   user_avatar?: string;
   action_type: 'document_created' | 'document_sent' | 'document_signed' | 'document_rejected';
   document_name: string | null;
+  document_url: string | null;
   recipient_email: string | null;
   recipient_name: string | null;
   envelope_id: string | null;
@@ -26,13 +30,16 @@ const SigneaseActivityTable: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterUser, setFilterUser] = useState<string>('all'); // Filtre par utilisateur (admin uniquement)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showInfoBanner, setShowInfoBanner] = useState(true); // État pour masquer le bandeau
 
   // Récupérer le contexte d'authentification pour filtrer les données
   const { user } = useAuth();
   const effectiveRole = user?.role || 'secretary';
-  const isRestrictedView = RESTRICTED_ROLES.includes(effectiveRole);
+  // Les rôles admin (secretary_general, super_admin) voient tout
+  // Les autres rôles (secretary, secretary_federal) ne voient que leurs propres documents
+  const isRestrictedView = !ADMIN_ROLES.includes(effectiveRole);
 
   useEffect(() => {
     fetchActivities();
@@ -103,6 +110,22 @@ const SigneaseActivityTable: React.FC = () => {
     }
   };
 
+  // Liste des utilisateurs uniques pour le filtre admin
+  const uniqueUsers = useMemo(() => {
+    const users = new Map<string, { email: string; name: string | null }>();
+    activities.forEach(activity => {
+      if (!users.has(activity.user_email)) {
+        users.set(activity.user_email, {
+          email: activity.user_email,
+          name: activity.user_name
+        });
+      }
+    });
+    return Array.from(users.values()).sort((a, b) => 
+      (a.name || a.email).localeCompare(b.name || b.email)
+    );
+  }, [activities]);
+
   // Filtrage des activités
   const filteredActivities = useMemo(() => {
     const filtered = activities.filter(activity => {
@@ -116,8 +139,11 @@ const SigneaseActivityTable: React.FC = () => {
         activity.envelope_id?.toLowerCase().includes(searchLower);
 
       const matchType = filterType === 'all' || activity.action_type === filterType;
+      
+      // Filtre par utilisateur (uniquement pour les admins)
+      const matchUser = filterUser === 'all' || activity.user_email === filterUser;
 
-      return matchSearch && matchType;
+      return matchSearch && matchType && matchUser;
     });
 
     // Tri par date
@@ -126,7 +152,7 @@ const SigneaseActivityTable: React.FC = () => {
       const dateB = new Date(b.created_at).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-  }, [activities, searchTerm, filterType, sortOrder]);
+  }, [activities, searchTerm, filterType, filterUser, sortOrder]);
 
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
@@ -223,7 +249,27 @@ const SigneaseActivityTable: React.FC = () => {
           />
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          {/* Filtre par utilisateur - uniquement pour admin */}
+          {!isRestrictedView && uniqueUsers.length > 1 && (
+            <div className="relative">
+              <select
+                value={filterUser}
+                onChange={(e) => setFilterUser(e.target.value)}
+                className="appearance-none cursor-pointer pl-4 pr-10 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-600"
+              >
+                <option value="all">Tous les utilisateurs</option>
+                {uniqueUsers.map(u => (
+                  <option key={u.email} value={u.email}>
+                    {u.name || u.email.split('@')[0]}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+            </div>
+          )}
+          
+          {/* Filtre par type d'action */}
           <div className="relative">
             <select
               value={filterType}
@@ -237,6 +283,21 @@ const SigneaseActivityTable: React.FC = () => {
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
           </div>
+          
+          {/* Bouton reset filtres (si filtres actifs) */}
+          {(filterType !== 'all' || filterUser !== 'all' || searchTerm !== '') && (
+            <button
+              onClick={() => {
+                setFilterType('all');
+                setFilterUser('all');
+                setSearchTerm('');
+              }}
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-2"
+            >
+              <X className="w-3 h-3" />
+              Réinitialiser
+            </button>
+          )}
         </div>
       </div>
 
@@ -297,12 +358,15 @@ const SigneaseActivityTable: React.FC = () => {
                     )}
                   </div>
                 </th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  Fichier
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredActivities.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     <Edit3 className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
                     <p className="font-medium mb-1">Aucune activité SignEase</p>
                     <p className="text-sm">Les signatures apparaîtront ici automatiquement.</p>
@@ -389,6 +453,35 @@ const SigneaseActivityTable: React.FC = () => {
                       <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                         <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                         {formatDate(activity.created_at)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-1">
+                        {activity.document_url ? (
+                          <>
+                            <a
+                              href={activity.document_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Visualiser le document"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </a>
+                            <a
+                              href={activity.document_url}
+                              download={activity.document_name || 'document.pdf'}
+                              className="p-2 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                              title="Télécharger le document"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </>
+                        ) : activity.action_type === 'document_signed' ? (
+                          <span className="text-xs text-amber-500 dark:text-amber-400 italic">En attente</span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500">—</span>
+                        )}
                       </div>
                     </td>
                   </tr>
