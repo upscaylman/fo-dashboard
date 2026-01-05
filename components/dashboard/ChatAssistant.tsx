@@ -355,6 +355,52 @@ Vérifier une signature :
 
 === FONCTIONNALITÉS DU DASHBOARD (Description PRÉCISE de l'interface) ===
 
+**�️ SYSTÈME D'ONGLETS PRINCIPAL (En haut du dashboard) :**
+Le dashboard utilise un système d'onglets pour organiser le contenu. Il y a 2 groupes d'onglets :
+
+GROUPE 1 - STATISTIQUES :
+- 📊 **Vue d'ensemble** (icône grille bleue) : Réservé aux admins (super_admin, secretary_general, secretary)
+  - Affiche les 4 cartes de statistiques globales (courriers, signatures, salariés actifs, documents)
+  - Section "Utilisateurs actifs" en temps réel
+  - Actualités FO Métaux
+  - Modèles et documents partagés
+  - Sidebar avec favoris et liens utiles
+  
+- 👥 **Salariés** (icône users verte) : Visible par tous
+  - Liste de tous les utilisateurs inscrits
+  - Pour chaque utilisateur : nom, email, rôle, date d'inscription, dernière activité
+  - Statistiques par utilisateur : nombre de courriers et signatures sur la période
+  - Super Admin peut voir les détails (documents, signatures, favoris, sessions)
+  - Super Admin peut "Voir en tant que" un utilisateur (mode observation)
+  - Admin peut modifier le rôle d'un utilisateur via un dropdown
+  - Admin peut supprimer un utilisateur (bouton corbeille)
+  - Admin peut inviter un nouveau salarié (bouton "Inviter")
+  - Filtres : par rôle (Super Admin, Secrétaire Général, Secrétaire Fédéral, Secrétaire)
+  - Les secrétaires fédéraux ne voient que leurs propres données
+
+- 📈 **Analyse** (icône graphique violette) : Visible par tous
+  - Graphiques et analyses détaillées
+  - Répartition par type de document
+  - Tendances sur la période sélectionnée
+
+GROUPE 2 - OUTILS (Réservé aux admins) :
+- 📝 **DocEase** (icône document rose/magenta) : Suivi des documents générés via DocEase
+  - Liste des 10 derniers documents créés
+  - Statut du backend (🟢 en ligne / 🔴 hors ligne)
+  - Badge avec nombre de documents des 7 derniers jours
+  - Tri par date, type, utilisateur
+  
+- ✍️ **SignEase** (icône crayon orange) : Suivi des signatures électroniques
+  - Liste des dernières signatures
+  - Statut de chaque document (envoyé, signé, rejeté)
+  - Filtrable par période et utilisateur
+
+**📅 SÉLECTEUR DE PÉRIODE (À côté des onglets) :**
+- Icône calendrier avec dropdown
+- Options : 7 jours, 30 jours, 3 mois, 1 an
+- Affecte toutes les statistiques affichées
+- Sur mobile : uniquement l'icône, sur desktop : "Période : X jours"
+
 **🔍 RECHERCHE :**
 - Barre de recherche en haut au centre du header
 - Raccourci clavier : Ctrl+K pour ouvrir la palette de commandes
@@ -367,7 +413,7 @@ Vérifier une signature :
 - L'étoile est JAUNE/DORÉE quand l'élément est en favori
 - Pour retirer un favori : recliquer sur l'étoile
 
-**📂 MODÈLES ET DOCUMENTS :**
+**📂 MODÈLES ET DOCUMENTS (Visible sur Vue d'ensemble) :**
 - Section centrale du dashboard
 - 5 modèles intégrés : Liste Globale Destinataires (Excel), Modèle Désignation, Négociation, Personnalisé, Circulaire (Word)
 - Documents partagés par les utilisateurs visibles dans la même section
@@ -376,16 +422,11 @@ Vérifier une signature :
 - Upload de fichiers : bouton "Ajouter" (icône +) - réservé aux rôles autorisés
 - Bouton "Gérer les fichiers" (icône engrenage rose) pour super_admin et secretary_general
 
-**📰 ACTUALITÉS :**
+**📰 ACTUALITÉS (Visible sur Vue d'ensemble) :**
 - Section avec les dernières actualités FO Métallurgie
 - Badge "Nouveau" pour les articles < 48h
 - Tri par date (récent/ancien)
 - Étoile à côté de chaque actualité pour l'ajouter aux favoris
-
-**📊 STATISTIQUES :**
-- Onglets : Général, DocEase, SignEase
-- Affiche le nombre de courriers, signatures, documents générés
-- Filtrable par période et par utilisateur (pour les admins)
 
 **👤 PROFIL UTILISATEUR :**
 - Avatar en haut à droite avec bordure colorée selon le rôle
