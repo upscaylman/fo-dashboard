@@ -18,7 +18,117 @@ interface AppContext {
   currentPage: string;
   currentTime: string;
   dayOfWeek: string;
+  holiday?: { name: string; emoji: string; message: string };
 }
+
+// Détection des fêtes françaises importantes
+const getFrenchHoliday = (date: Date): { name: string; emoji: string; message: string } | null => {
+  const day = date.getDate();
+  const month = date.getMonth() + 1; // 0-indexed
+  const year = date.getFullYear();
+  
+  // Fêtes fixes
+  const fixedHolidays: Record<string, { name: string; emoji: string; message: string }> = {
+    '1-1': { name: 'Jour de l\'An', emoji: '🎉', message: 'Bonne année ! Que cette nouvelle année vous apporte succès et réussite.' },
+    '6-1': { name: 'Épiphanie', emoji: '👑', message: 'Joyeuse Épiphanie ! Avez-vous tiré les rois ?' },
+    '14-2': { name: 'Saint-Valentin', emoji: '❤️', message: 'Joyeuse Saint-Valentin !' },
+    '1-5': { name: 'Fête du Travail', emoji: '💪', message: 'Bonne fête du Travail ! Une journée pour célébrer les droits des travailleurs.' },
+    '8-5': { name: 'Victoire 1945', emoji: '🕊️', message: 'En ce jour de commémoration, n\'oublions pas.' },
+    '21-6': { name: 'Fête de la Musique', emoji: '🎵', message: 'Bonne fête de la musique !' },
+    '14-7': { name: 'Fête Nationale', emoji: '🇫🇷', message: 'Bonne fête nationale ! Vive la République !' },
+    '15-8': { name: 'Assomption', emoji: '✨', message: 'Bonne fête de l\'Assomption.' },
+    '1-11': { name: 'Toussaint', emoji: '🕯️', message: 'En ce jour de Toussaint, une pensée pour ceux qui nous ont quittés.' },
+    '11-11': { name: 'Armistice 1918', emoji: '🎖️', message: 'Jour du souvenir. Honneur à ceux qui ont combattu.' },
+    '25-12': { name: 'Noël', emoji: '🎄', message: 'Joyeux Noël ! Passez de belles fêtes.' },
+    '31-12': { name: 'Saint-Sylvestre', emoji: '🥂', message: 'Bonne Saint-Sylvestre ! Profitez bien de cette dernière journée de l\'année.' },
+  };
+  
+  // Vérifier les fêtes autour de la date (veille, jour J, lendemain pour certaines)
+  const key = `${day}-${month}`;
+  if (fixedHolidays[key]) {
+    return fixedHolidays[key];
+  }
+  
+  // Pâques (calcul algorithmique) et fêtes mobiles associées
+  const getEasterDate = (year: number): Date => {
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const easterMonth = Math.floor((h + l - 7 * m + 114) / 31);
+    const easterDay = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, easterMonth - 1, easterDay);
+  };
+  
+  const easter = getEasterDate(year);
+  const dateStr = `${day}-${month}`;
+  
+  // Lundi de Pâques (lendemain de Pâques)
+  const easterMonday = new Date(easter);
+  easterMonday.setDate(easter.getDate() + 1);
+  if (day === easterMonday.getDate() && month === easterMonday.getMonth() + 1) {
+    return { name: 'Lundi de Pâques', emoji: '🐰', message: 'Joyeux lundi de Pâques !' };
+  }
+  
+  // Dimanche de Pâques
+  if (day === easter.getDate() && month === easter.getMonth() + 1) {
+    return { name: 'Pâques', emoji: '🐣', message: 'Joyeuses Pâques !' };
+  }
+  
+  // Ascension (39 jours après Pâques)
+  const ascension = new Date(easter);
+  ascension.setDate(easter.getDate() + 39);
+  if (day === ascension.getDate() && month === ascension.getMonth() + 1) {
+    return { name: 'Ascension', emoji: '☁️', message: 'Bonne fête de l\'Ascension.' };
+  }
+  
+  // Pentecôte (49 jours après Pâques)
+  const pentecost = new Date(easter);
+  pentecost.setDate(easter.getDate() + 49);
+  if (day === pentecost.getDate() && month === pentecost.getMonth() + 1) {
+    return { name: 'Pentecôte', emoji: '🕊️', message: 'Bonne Pentecôte !' };
+  }
+  
+  // Lundi de Pentecôte (50 jours après Pâques)
+  const pentecostMonday = new Date(easter);
+  pentecostMonday.setDate(easter.getDate() + 50);
+  if (day === pentecostMonday.getDate() && month === pentecostMonday.getMonth() + 1) {
+    return { name: 'Lundi de Pentecôte', emoji: '🌿', message: 'Bon lundi de Pentecôte !' };
+  }
+  
+  // Fête des mères (dernier dimanche de mai ou premier de juin)
+  if (month === 5 || month === 6) {
+    // Approximation: vérifier si c'est le dernier dimanche de mai
+    const lastSundayMay = new Date(year, 4, 31);
+    while (lastSundayMay.getDay() !== 0) lastSundayMay.setDate(lastSundayMay.getDate() - 1);
+    if (day === lastSundayMay.getDate() && month === 5) {
+      return { name: 'Fête des Mères', emoji: '💐', message: 'Bonne fête à toutes les mamans !' };
+    }
+  }
+  
+  // Fête des pères (3ème dimanche de juin)
+  if (month === 6) {
+    let thirdSunday = new Date(year, 5, 1);
+    let count = 0;
+    while (count < 3) {
+      if (thirdSunday.getDay() === 0) count++;
+      if (count < 3) thirdSunday.setDate(thirdSunday.getDate() + 1);
+    }
+    if (day === thirdSunday.getDate()) {
+      return { name: 'Fête des Pères', emoji: '👔', message: 'Bonne fête à tous les papas !' };
+    }
+  }
+  
+  return null;
+};
 
 const ChatAssistant: React.FC = () => {
   const { user } = useAuth();
@@ -28,15 +138,22 @@ const ChatAssistant: React.FC = () => {
   const [hasUnreadMessage, setHasUnreadMessage] = useState(true);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   
-  // Message d'accueil personnalisé selon l'utilisateur
+  // Message d'accueil personnalisé selon l'utilisateur et les fêtes
   const getWelcomeMessage = useMemo(() => {
     const userName = user?.name?.split(' ')[0] || '';
     const userRole = user?.role ? ROLE_LABELS[user.role as keyof typeof ROLE_LABELS] || user.role : '';
-    const greeting = new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
+    const now = new Date();
+    const greeting = now.getHours() < 12 ? 'Bonjour' : now.getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
+    const holiday = getFrenchHoliday(now);
     
     let welcomeText = userName 
       ? `${greeting} ${userName} ! 👋 Je suis Métallo, votre assistant intelligent.`
       : `${greeting} ! 👋 Je suis Métallo, votre assistant intelligent.`;
+    
+    // Ajouter le message de fête si applicable
+    if (holiday) {
+      welcomeText += ` ${holiday.emoji} ${holiday.message}`;
+    }
     
     if (userRole) {
       welcomeText += ` En tant que ${userRole}, je suis là pour vous aider.`;
@@ -71,10 +188,12 @@ const ChatAssistant: React.FC = () => {
   const getAppContext = (): AppContext => {
     const now = new Date();
     const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const holiday = getFrenchHoliday(now);
     return {
       currentPage: 'Dashboard FO Métaux',
       currentTime: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-      dayOfWeek: days[now.getDay()]
+      dayOfWeek: days[now.getDay()],
+      holiday: holiday || undefined
     };
   };
   
@@ -157,6 +276,8 @@ ${userInfo ? `
 - Page actuelle : ${appContext.currentPage}
 - Jour : ${appContext.dayOfWeek}
 - Heure : ${appContext.currentTime}
+${appContext.holiday ? `- 🎉 FÊTE DU JOUR : ${appContext.holiday.name} ${appContext.holiday.emoji}
+  Tu peux mentionner cette fête de manière naturelle si approprié dans la conversation.` : ''}
 
 === HIÉRARCHIE DES RÔLES (du plus élevé au plus bas) ===
 1. Super Administrateur (super_admin) : Accès complet à tout, gestion des utilisateurs, statistiques globales
