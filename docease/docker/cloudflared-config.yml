@@ -1,0 +1,44 @@
+# Configuration Cloudflare Tunnel pour n8n
+# 
+# Instructions :
+# 1. Remplacez [UUID] par l'UUID de votre tunnel (obtenu avec : cloudflared tunnel list)
+# 2. Remplacez n8n.votre-domaine.com par votre domaine réel
+# 3. Placez ce fichier dans docker/cloudflared-config.yml
+#
+# Pour créer un tunnel : cloudflared tunnel create n8n-tunnel
+# Pour lister vos tunnels : cloudflared tunnel list
+
+tunnel: [UUID]  # Remplacez par l'UUID de votre tunnel
+credentials-file: /etc/cloudflared/[UUID].json  # Chemin vers les credentials dans Docker
+
+# Configuration des routes (ingress)
+ingress:
+  # Route principale pour n8n
+  - hostname: n8n.votre-domaine.com
+    service: http://n8n:5678
+    originRequest:
+      # Headers à transmettre
+      httpHostHeader: n8n.votre-domaine.com
+      # Timeout pour les requêtes longues (webhooks, workflows)
+      connectTimeout: 30s
+      tcpKeepAlive: 30s
+      # Désactiver la compression pour les webhooks binaires
+      disableChunkedEncoding: false
+      # Headers personnalisés
+      noHappyEyeballs: false
+      # Permettre les requêtes WebSocket (pour l'éditeur n8n)
+      http2Origin: true
+
+  # Route catch-all (doit être en dernier)
+  - service: http_status:404
+
+# Configuration des métriques (optionnel)
+metrics: 0.0.0.0:8080
+
+# Configuration des logs
+loglevel: info
+
+# Configuration de la récupération automatique
+retries: 5
+grace-period: 30s
+

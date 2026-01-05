@@ -1,0 +1,220 @@
+/* Global Base Styles */
+html {
+  /* Support pour tous les navigateurs mobiles */
+  height: 100vh;
+  height: 100dvh; /* Dynamic Viewport Height - s'adapte au clavier virtuel et barre d'adresse */
+  height: 100svh; /* Small Viewport Height - fallback pour certains navigateurs */
+  width: 100vw;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #2f2f2f;
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Hauteur proportionnelle au device */
+  height: 100vh;
+  height: 100dvh;
+  height: 100svh;
+  width: 100vw;
+}
+
+/* Dark mode body background */
+.dark body {
+  background: rgb(18 18 18 / var(--tw-bg-opacity, 1));
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Mobile - Hauteur adaptative pour gérer le clavier virtuel et la barre d'adresse */
+@media (max-width: 767px) {
+  html {
+    /* Utiliser dvh pour s'adapter dynamiquement au clavier virtuel */
+    height: 100vh;
+    height: 100dvh; /* Dynamic Viewport Height - s'adapte au clavier */
+    height: 100svh; /* Small Viewport Height - fallback */
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  body {
+    height: 100vh;
+    height: 100dvh;
+    height: 100svh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Assurer que le conteneur principal prend toute la hauteur */
+  #root {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Le conteneur flex principal doit prendre toute la hauteur */
+  #root > div {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Scrollbar MD3 Expressive - Style mobile discret */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling iOS */
+}
+
+/* Scrollbar visible uniquement au hover/scroll - Style MD3 */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background 0.3s ease;
+}
+
+/* Afficher la scrollbar au hover ou pendant le scroll */
+.scrollbar-thin:hover::-webkit-scrollbar-thumb,
+.scrollbar-thin:active::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.scrollbar-thin:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Firefox - scrollbar discrète */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scrollbar-thin:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+/* Custom classes for sidebar scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #be8bac;
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a84383;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Hide scrollbar on mobile - only show when actually scrolling */
+@media (max-width: 768px) {
+  .scrollbar-mobile-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-mobile-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Animations Helpers */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(50px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* MD3 Ripple Effect helpers */
+.ripple {
+  position: relative;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0);
+}
+.ripple::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 10.01%);
+  background-size: 1000% 1000%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s, opacity 1s;
+  opacity: 0;
+  pointer-events: none;
+}
+.ripple:active::after {
+  transform: translate(-50%, -50%) scale(10);
+  opacity: 1;
+  transition: 0s;
+}

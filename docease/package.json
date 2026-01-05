@@ -1,0 +1,19 @@
+{
+  "name": "signease-fo-metaux",
+  "version": "1.2.0",
+  "description": "Projet d'automatisation n8n",
+  "scripts": {
+    "build": "npm run build:form && npm run build:react",
+    "build:form": "cd templates/form && npm install && npm run build",
+    "build:react": "cd templates/formulaire && npm install && npm run build",
+    "build:mcp": "cd mcp-server && npm run build",
+    "build:all": "npm run build:mcp && npm run build:form && npm run build:react"
+  },
+  "keywords": [
+    "n8n",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+

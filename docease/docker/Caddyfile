@@ -1,0 +1,76 @@
+# Configuration Caddy pour reverse proxy HTTPS automatique
+# Caddy gère automatiquement les certificats Let's Encrypt
+
+# Remplacez votre-domaine.com par votre domaine réel
+votre-domaine.com {
+    # Rate limiting - Protection contre les abus (spam, DoS)
+    # Limite à 10 requêtes par minute par IP
+    # Module: http.handlers.rate_limit (github.com/mholt/caddy-ratelimit)
+    route {
+        rate_limit {
+            zone webhook {
+                key {remote_ip}
+                events 10
+                window 1m
+            }
+        }
+        
+        # Reverse proxy vers n8n
+        reverse_proxy n8n:5678 {
+            # Headers pour le proxy
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Headers de sécurité
+    header {
+        # Prévention XSS
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        
+        # HTTPS Strict Transport Security
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        
+        # Référent Policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        
+        # Permissions Policy
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        
+        # Configuration CORS (ajustez selon vos besoins)
+        # Pour autoriser toutes les origines (développement), utilisez "*" et désactivez credentials
+        # Pour la production, remplacez par des origines spécifiques, ex: "https://votre-domaine.com"
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+        # Note: Access-Control-Allow-Credentials ne peut pas être "true" si Access-Control-Allow-Origin est "*"
+        # Si vous avez besoin de credentials, spécifiez des origines exactes au lieu de "*"
+    }
+
+    # Compression
+    encode gzip zstd
+
+    # Logs
+    log {
+        output file /data/caddy.log {
+            roll_size 50mb
+            roll_keep 10
+        }
+        format json
+        level INFO
+    }
+}
+
+# Redirection HTTP vers HTTPS
+http://votre-domaine.com {
+    redir https://{host}{uri} permanent
+}
+
+# Email pour notifications Let's Encrypt (optionnel mais recommandé)
+# Décommentez et remplissez si vous voulez recevoir des notifications
+# email votre-email@exemple.com
+

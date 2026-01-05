@@ -1,0 +1,11 @@
+{
+  "parameters": {
+    "jsCode": "// Récupérer les données de base\nconst baseData = {...$('Préparer Données').item.json};\n\n// Vérifier si on vient du chemin IA\ntry {\n  const iaNode = $('Extraire Texte IA');\n  if (iaNode && iaNode.item && iaNode.item.json && iaNode.item.json.texteIa) {\n    baseData.texteIa = iaNode.item.json.texteIa;\n    console.log('✅ Texte IA utilisé:', baseData.texteIa.substring(0, 50));\n  } else {\n    console.log('ℹ️ Pas d\\'IA, texte original utilisé');\n  }\n} catch (e) {\n  console.log('ℹ️ Chemin sans IA');\n}\n\nreturn {\n  json: baseData,\n  binary: items[0].binary\n};"
+  },
+  "id": "fusionner-donnees-node",
+  "name": "Fusionner Données",
+  "type": "n8n-nodes-base.code",
+  "typeVersion": 2,
+  "position": [-192, 336]
+}
+

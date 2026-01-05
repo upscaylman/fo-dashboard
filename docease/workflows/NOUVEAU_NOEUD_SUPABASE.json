@@ -1,0 +1,37 @@
+{
+  "name": "Stocker dans Supabase",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.2,
+  "position": [-64, 280],
+  "parameters": {
+    "method": "POST",
+    "url": "https://geljwonckfmdkaywaxly.supabase.co/functions/v1/docease-webhook",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth",
+    "sendHeaders": true,
+    "headerParameters": {
+      "parameters": [
+        {
+          "name": "x-api-key",
+          "value": "fo-metaux-docease-2025"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={\n  \"user_email\": \"{{ $('Preparer Donnees').item.json.emailDelegue || 'admin@fo-metaux.fr' }}\",\n  \"document_type\": \"{{ $('Preparer Donnees').item.json.typeDocument }}\",\n  \"title\": \"{{ $json.fileName }}\",\n  \"metadata\": {\n    \"format\": \"docx\",\n    \"objet\": \"{{ $('Preparer Donnees').item.json.objet }}\",\n    \"destinataire\": \"{{ $('Preparer Donnees').item.json.nomDestinataire }}\",\n    \"date_generation\": \"{{ $now.toISO() }}\"\n  },\n  \"file_base64\": \"{{ $json.data }}\"\n}",
+    "options": {
+      "timeout": 30000
+    }
+  },
+  "credentials": {
+    "httpHeaderAuth": {
+      "id": "VOTRE_CREDENTIAL_ID",
+      "name": "Supabase Auth"
+    }
+  }
+}

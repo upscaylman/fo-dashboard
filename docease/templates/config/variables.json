@@ -1,0 +1,189 @@
+{
+  "variables_communes": {
+    "codeDocument": {
+      "label": "Numéro du document",
+      "type": "text",
+      "required": true,
+      "placeholder": "Ex : DOC-2024-001",
+      "icon": "description"
+    },
+    "entreprise": {
+      "label": "Entreprise",
+      "type": "text",
+      "placeholder": "Ex: ACME Corp",
+      "required": true,
+      "icon": "business"
+    },
+    "civiliteDestinataire": {
+      "label": "Civilité Destinataire",
+      "type": "select",
+      "options": ["Monsieur", "Madame", "Monsieur et Madame"],
+      "required": false
+    },
+    "nomDestinataire": {
+      "label": "Nom Destinataire",
+      "type": "text",
+      "required": false,
+      "placeholder": "Ex: Dupont",
+      "icon": "person"
+    },
+    "statutDestinataire": {
+      "label": "Statut Destinataire",
+      "type": "text",
+      "required": false,
+      "placeholder": "Ex: Président, Directeur...",
+      "icon": "work"
+    },
+    "batiment": {
+      "label": "Bâtiment",
+      "type": "text",
+      "required": false,
+      "placeholder": "Ex: Bâtiment A",
+      "icon": "apartment"
+    },
+    "adresse": {
+      "label": "Adresse",
+      "type": "text",
+      "required": false,
+      "placeholder": "Ex: 123 rue de la Paix",
+      "icon": "place"
+    },
+    "cpVille": {
+      "label": "Code postal + Ville",
+      "type": "text",
+      "required": false,
+      "placeholder": "Ex: 75001 Paris",
+      "icon": "location_city"
+    },
+    "emailDestinataire": {
+      "label": "Email Destinataire",
+      "type": "email",
+      "required": true,
+      "placeholder": "destinataire@exemple.com",
+      "icon": "email"
+    },
+    "signatureExp": {
+      "label": "Secrétaire Fédéral",
+      "type": "select",
+      "options": [
+        "Bruno REYNES",
+        "Eric KELLER",
+        "Edwin LIARD",
+        "Gérard CIANNARELLA",
+        "Géraldine GOMIZ",
+        "Jean-Yves SABOT",
+        "Nathalie CAPART",
+        "Olivier LEFEBVRE",
+        "Paul RIBEIRO",
+        "Valentin RODRIGUEZ"
+      ],
+      "required": true,
+      "icon": "edit"
+    }
+  },
+  "templates": {
+    "designation": {
+      "nom": "Lettre de Désignation",
+      "fichier": "template_designation.docx",
+      "description": "Désignation de délégué syndical",
+      "variables_specifiques": {
+        "numeroCourrier": {
+          "label": "Numéro de Recommandé",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: 2025-001",
+          "icon": "tag"
+        },
+        "civiliteDelegue": {
+          "label": "Civilité Délégué Nommé",
+          "type": "select",
+          "options": ["Monsieur", "Madame"],
+          "required": false
+        },
+        "nomDelegue": {
+          "label": "Nom Délégué Nommé",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Martin Dupont",
+          "icon": "person"
+        },
+        "emailDelegue": {
+          "label": "Email Délégué Nommé",
+          "type": "email",
+          "required": true,
+          "placeholder": "delegue@exemple.com",
+          "icon": "email"
+        },
+        "civiliteRemplace": {
+          "label": "Civilité du Remplaçé",
+          "type": "select",
+          "options": ["Monsieur", "Madame"],
+          "required": false
+        },
+        "nomRemplace": {
+          "label": "Nom du Remplaçé",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Sophie Bernard",
+          "icon": "person"
+        }
+      }
+    },
+    "negociation": {
+      "nom": "Mandat de Négociation",
+      "fichier": "template_negociation.docx",
+      "description": "Mandat de négociation collective",
+      "variables_specifiques": {
+        "objet": {
+          "label": "Objet du Mandat",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Négociation accord temps de travail",
+          "icon": "subject"
+        },
+        "civiliteDelegue": {
+          "label": "Civilité du Mandataire",
+          "type": "select",
+          "options": ["Monsieur", "Madame"],
+          "required": false
+        },
+        "nomDelegue": {
+          "label": "Nom du Mandataire",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Jean Durand",
+          "icon": "person"
+        },
+        "emailDelegue": {
+          "label": "Email du Mandataire",
+          "type": "email",
+          "required": true,
+          "placeholder": "mandataire@exemple.com",
+          "icon": "email"
+        }
+      }
+    },
+    "custom": {
+      "nom": "Document Personnalisé",
+      "fichier": "template_custom.docx",
+      "description": "Document personnalisé avec contenu IA",
+      "variables_specifiques": {
+        "objet": {
+          "label": "Objet du Document",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Demande d'information",
+          "icon": "subject"
+        },
+        "texteIa": {
+          "label": "Contenu du Document",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "Saisissez le contenu du document (minimum 10 caractères pour déclencher l'IA)...",
+          "icon": "edit_note",
+          "rows": 5
+        }
+      }
+    }
+  }
+}

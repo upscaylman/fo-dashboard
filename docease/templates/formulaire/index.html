@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocEase - FO Métaux</title>
+  <meta name="description" content="FO Métaux - DocEase - Générateur de documents">
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/styles.css">
+<!-- Configuration des variables d'environnement (pour Netlify) -->
+<script>
+  // Variables d'environnement - peuvent être surchargées par Netlify
+  window.ENV = {
+    WEBHOOK_URL: 'https://dee-wakeful-succulently.ngrok-free.dev/webhook/7f72ac69-35b7-4771-a5c6-7acb18947254',
+    WEBHOOK_EMAIL_URL: 'https://dee-wakeful-succulently.ngrok-free.dev/webhook/1ee6e745-fc31-4fd8-bc59-531bd4a69997',
+    WEBHOOK_PDF_CONVERT_URL: 'https://dee-wakeful-succulently.ngrok-free.dev/api/convert-pdf',
+    WEBHOOK_AI_IMPROVE_URL: 'https://dee-wakeful-succulently.ngrok-free.dev/webhook/ai-improve-text'
+  };
+</script>
+</head>
+<body>
+  <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
