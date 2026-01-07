@@ -31,6 +31,12 @@ export const TEMPLATES: Template[] = [
     image: '/assets/img/nego_template.png'
   },
   {
+    id: 'convocations',
+    title: 'Convocations',
+    description: 'Convocations Bureau ou CA Fédérale',
+    image: '/assets/img/convocations_template.png'
+  },
+  {
     id: 'custom',
     title: 'Document Personnalisé',
     description: 'Document personnalisé avec contenu IA',
@@ -52,7 +58,7 @@ export const STEPS: StepConfig[] = [
 
 // Champs communs à tous les templates
 export const COMMON_FIELDS: FormField[] = [
-  { id: 'codeDocument', label: 'Numéro du document', type: 'text', placeholder: 'Ex : DOC-2024-001', required: true, icon: 'description', width: 'half' },
+  { id: 'codeDocument', label: 'Numéro du document', type: 'text', placeholder: 'Ex : DOC-2024-001', required: true, icon: 'description', width: 'half', forceUppercase: true },
   { id: 'numeroCourrier', label: 'Numéro de la Circulaire', type: 'text', placeholder: 'Ex: 2025-001', required: true, icon: 'tag', width: 'half' },
   { id: 'entreprise', label: 'Entreprise', type: 'text', placeholder: 'Ex: ACME Corp', required: true, icon: 'business', width: 'half' },
   { id: 'civiliteDestinataire', label: 'Civilité Destinataire', type: 'select', options: ['Monsieur', 'Madame', 'Monsieur et Madame'], required: false, width: 'half' },
@@ -84,6 +90,35 @@ export const TEMPLATE_SPECIFIC_FIELDS: Record<string, FormField[]> = {
     { id: 'civiliteDelegue', label: 'Civilité du Mandataire', type: 'select', options: ['Monsieur', 'Madame'], required: true, width: 'half' },
     { id: 'nomDelegue', label: 'Nom du Mandataire', type: 'text', placeholder: 'Ex: Jean Durand', required: true, icon: 'person', width: 'half' },
     { id: 'emailDelegue', label: 'Email du Mandataire', type: 'email', placeholder: 'mandataire@exemple.com', required: true, icon: 'email', width: 'half' },
+  ],
+  convocations: [
+    { id: 'typeConvocation', label: 'Type de convocation à générer', type: 'select', options: ['CA Fédérale', 'Bureau Fédéral'], required: true, icon: 'category', width: 'full' },
+  ],
+  // Champs spécifiques pour CA Fédérale
+  convocations_ca_federale: [
+    { id: 'typeConvocation', label: 'Type de convocation à générer', type: 'select', options: ['CA Fédérale', 'Bureau Fédéral'], required: true, icon: 'category', width: 'full' },
+    { id: 'dateDebut', label: 'Date de début', type: 'date', required: true, icon: 'event', width: 'half' },
+    { id: 'heureDebut', label: 'Heure de début', type: 'time', placeholder: 'Ex: 09h00', required: true, icon: 'schedule', width: 'half' },
+    { id: 'dateFin', label: 'Date de fin', type: 'date', required: true, icon: 'event', width: 'half' },
+    { id: 'heureFin', label: 'Heure de fin', type: 'time', placeholder: 'Ex: 17h00', required: true, icon: 'schedule', width: 'half' },
+    { id: 'ordreDuJour1', label: 'Ordre du jour 1', type: 'text', placeholder: 'Premier point à l\'ordre du jour', required: true, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour2', label: 'Ordre du jour 2', type: 'text', placeholder: 'Deuxième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour3', label: 'Ordre du jour 3', type: 'text', placeholder: 'Troisième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour4', label: 'Ordre du jour 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour5', label: 'Ordre du jour 5', type: 'text', placeholder: 'Cinquième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour6', label: 'Ordre du jour 6', type: 'text', placeholder: 'Sixième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour7', label: 'Ordre du jour 7', type: 'text', placeholder: 'Septième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour8', label: 'Ordre du jour 8', type: 'text', placeholder: 'Huitième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+  ],
+  // Champs spécifiques pour Bureau Fédéral
+  convocations_bureau_federal: [
+    { id: 'typeConvocation', label: 'Type de convocation à générer', type: 'select', options: ['CA Fédérale', 'Bureau Fédéral'], required: true, icon: 'category', width: 'full' },
+    { id: 'dateDebut', label: 'Date de la réunion', type: 'date', required: true, icon: 'event', width: 'half' },
+    { id: 'heureDebut', label: 'Heure de début', type: 'time', placeholder: 'Ex: 09h00', required: true, icon: 'schedule', width: 'half' },
+    { id: 'ordreDuJour1', label: 'Ordre du jour 1', type: 'text', placeholder: 'Premier point à l\'ordre du jour', required: true, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour2', label: 'Ordre du jour 2', type: 'text', placeholder: 'Deuxième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour3', label: 'Ordre du jour 3', type: 'text', placeholder: 'Troisième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour4', label: 'Ordre du jour 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
   ],
   circulaire: [
     { id: 'objet', label: 'Objet de la Circulaire', type: 'text', placeholder: 'Ex: Information importante', required: true, icon: 'subject', width: 'full' },

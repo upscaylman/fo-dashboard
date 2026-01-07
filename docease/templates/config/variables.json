@@ -163,6 +163,102 @@
         }
       }
     },
+    "convocations": {
+      "nom": "Convocations",
+      "fichier": "template_convocations.docx",
+      "description": "Convocations Bureau ou CA Fédérale",
+      "variables_specifiques": {
+        "typeConvocation": {
+          "label": "Type de convocation à générer",
+          "type": "select",
+          "options": ["CA Fédérale", "Bureau Fédéral"],
+          "required": true,
+          "icon": "category"
+        },
+        "dateDebut": {
+          "label": "Date de début",
+          "type": "date",
+          "required": true,
+          "icon": "event"
+        },
+        "heureDebut": {
+          "label": "Heure de début",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: 09h00",
+          "icon": "schedule"
+        },
+        "dateFin": {
+          "label": "Date de fin",
+          "type": "date",
+          "required": false,
+          "icon": "event"
+        },
+        "heureFin": {
+          "label": "Heure de fin",
+          "type": "text",
+          "required": false,
+          "placeholder": "Ex: 17h00",
+          "icon": "schedule"
+        },
+        "ordreDuJour1": {
+          "label": "Ordre du jour 1",
+          "type": "text",
+          "required": true,
+          "placeholder": "Premier point à l'ordre du jour",
+          "icon": "list"
+        },
+        "ordreDuJour2": {
+          "label": "Ordre du jour 2",
+          "type": "text",
+          "required": false,
+          "placeholder": "Deuxième point à l'ordre du jour",
+          "icon": "list"
+        },
+        "ordreDuJour3": {
+          "label": "Ordre du jour 3",
+          "type": "text",
+          "required": false,
+          "placeholder": "Troisième point à l'ordre du jour",
+          "icon": "list"
+        },
+        "ordreDuJour4": {
+          "label": "Ordre du jour 4",
+          "type": "text",
+          "required": false,
+          "placeholder": "Quatrième point à l'ordre du jour",
+          "icon": "list"
+        },
+        "ordreDuJour5": {
+          "label": "Ordre du jour 5",
+          "type": "text",
+          "required": false,
+          "placeholder": "Cinquième point à l'ordre du jour (CA uniquement)",
+          "icon": "list"
+        },
+        "ordreDuJour6": {
+          "label": "Ordre du jour 6",
+          "type": "text",
+          "required": false,
+          "placeholder": "Sixième point à l'ordre du jour (CA uniquement)",
+          "icon": "list"
+        },
+        "ordreDuJour7": {
+          "label": "Ordre du jour 7",
+          "type": "text",
+          "required": false,
+          "placeholder": "Septième point à l'ordre du jour (CA uniquement)",
+          "icon": "list"
+        },
+        "ordreDuJour8": {
+          "label": "Ordre du jour 8",
+          "type": "text",
+          "required": false,
+          "placeholder": "Huitième point à l'ordre du jour (CA uniquement)",
+          "icon": "list"
+        }
+      }
+    },
     "custom": {
       "nom": "Document Personnalisé",
       "fichier": "template_custom.docx",

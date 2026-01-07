@@ -1,9 +1,29 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { validateField } from '../utils/validation';
+import { TimePicker } from './TimePicker';
+import { DatePicker } from './DatePicker';
+
+// Fonction pour formater une date en format français (ex: "19 mai 2026")
+const formatDateToFrench = (dateString: string): string => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  
+  const months = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+  ];
+  
+  const day = date.getDate();
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  
+  return `${day} ${month} ${year}`;
+};
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> {
   label: string;
-  type?: 'text' | 'email' | 'textarea' | 'date' | 'select';
+  type?: 'text' | 'email' | 'textarea' | 'date' | 'time' | 'select';
   options?: string[];
   icon?: string;
   error?: string;
@@ -11,6 +31,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTe
   fieldId?: string;
   hasUppercaseToggle?: boolean;
   onUppercaseChange?: (isUppercase: boolean) => void;
+  forceUppercase?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -25,12 +46,17 @@ export const Input: React.FC<InputProps> = ({
   fieldId,
   hasUppercaseToggle,
   onUppercaseChange,
+  forceUppercase,
   ...props
 }) => {
   const [internalError, setInternalError] = useState<string | undefined>();
   const [touched, setTouched] = useState(false);
   // 'upper' = majuscules, 'lower' = minuscules
   const [caseMode, setCaseMode] = useState<'upper' | 'lower'>('lower');
+  // État pour le DatePicker personnalisé
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  // État pour le TimePicker personnalisé
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
 
   const error = externalError || internalError;
   // Afficher l'erreur si elle vient de l'extérieur (validation globale) OU si le champ a été touché
@@ -156,9 +182,12 @@ export const Input: React.FC<InputProps> = ({
     }
   };
 
-  // Transformer la casse à la saisie selon le mode actif
+  // Transformer la casse à la saisie selon le mode actif ou forceUppercase
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (hasUppercaseToggle) {
+    // ForceUppercase a la priorité
+    if (forceUppercase) {
+      e.target.value = e.target.value.toUpperCase();
+    } else if (hasUppercaseToggle) {
       if (caseMode === 'upper') {
         e.target.value = e.target.value.toUpperCase();
       } else if (caseMode === 'lower') {
@@ -170,12 +199,176 @@ export const Input: React.FC<InputProps> = ({
     }
   };
 
+  // Gérer le changement de date pour formater en français
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isoDate = e.target.value; // Format YYYY-MM-DD
+    const frenchDate = formatDateToFrench(isoDate);
+    
+    // Créer un événement synthétique avec la date formatée en français
+    const syntheticEvent = {
+      ...e,
+      target: { ...e.target, value: frenchDate }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    if (props.onChange) {
+      (props.onChange as (e: React.ChangeEvent<HTMLInputElement>) => void)(syntheticEvent);
+    }
+  };
+
+  // Formater l'heure en format français (ex: "09h00")
+  const formatTimeToFrench = (timeString: string): string => {
+    if (!timeString) return '';
+    // timeString est au format HH:MM
+    const [hours, minutes] = timeString.split(':');
+    if (!hours || !minutes) return timeString;
+    return `${hours}h${minutes}`;
+  };
+
   // Obtenir l'icône et le label selon le mode
   const getCaseIcon = () => caseMode === 'upper' ? 'keyboard_arrow_up' : 'keyboard_arrow_down';
   const getCaseLabel = () => caseMode === 'upper' ? 'ABC' : 'abc';
   const getCaseTitle = () => caseMode === 'upper' 
     ? 'Majuscules - Cliquer pour minuscules' 
     : 'Minuscules - Cliquer pour majuscules';
+
+  // Déterminer le handler onChange approprié
+  const getOnChangeHandler = () => {
+    if (type === 'date') return handleDateChange;
+    if (hasUppercaseToggle || forceUppercase) return handleInputChange;
+    return props.onChange as any;
+  };
+
+  // Gérer la sélection de date depuis le DatePicker
+  const handleDatePickerSelect = (date: string) => {
+    if (props.onChange) {
+      const syntheticEvent = {
+        target: { value: date }
+      } as React.ChangeEvent<HTMLInputElement>;
+      (props.onChange as (e: React.ChangeEvent<HTMLInputElement>) => void)(syntheticEvent);
+    }
+  };
+
+  // Rendu spécifique pour les champs de type date
+  if (type === 'date') {
+    return (
+      <div className={`${wrapperClass} ${className}`}>
+        <div className="flex items-center justify-between mb-1">
+          <label className={labelClass} style={{ marginBottom: 0 }}>
+            {label}
+            {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
+          </label>
+        </div>
+        <div className="relative">
+          {/* Input texte visible qui affiche la date formatée en français */}
+          <input
+            type="text"
+            className={`${inputClass} pr-12`}
+            placeholder={props.placeholder || "Ex: 19 mai 2026"}
+            required={required}
+            onBlur={handleBlur}
+            aria-invalid={showError ? 'true' : 'false'}
+            aria-describedby={showError ? `${fieldId}-error` : undefined}
+            value={(props.value as string) || ''}
+            onChange={(e) => {
+              if (props.onChange) {
+                (props.onChange as (e: React.ChangeEvent<HTMLInputElement>) => void)(e);
+              }
+            }}
+          />
+          {/* Icône calendrier cliquable avec style IA */}
+          <button
+            type="button"
+            onClick={() => setIsDatePickerOpen(true)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:text-[#a84383] dark:hover:text-[#e062b1] hover:bg-[#ffecf8] dark:hover:bg-[#4a1a36]/50 transition-all"
+            title="Ouvrir le calendrier"
+          >
+            <span className="material-icons text-base">calendar_today</span>
+          </button>
+          {icon && <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none">{icon}</span>}
+        </div>
+        {showError && (
+          <div id={`${fieldId}-error`} className="flex items-center gap-1 mt-1 ml-1 text-sm text-red-600 animate-[fadeIn_0.2s]" role="alert">
+            <span className="material-icons text-sm">error</span>
+            <span>{error}</span>
+          </div>
+        )}
+        
+        {/* DatePicker Modal */}
+        <DatePicker
+          isOpen={isDatePickerOpen}
+          onClose={() => setIsDatePickerOpen(false)}
+          onDateSelect={handleDatePickerSelect}
+          initialDate={(props.value as string) || ''}
+        />
+      </div>
+    );
+  }
+
+  // Gérer la sélection d'heure depuis le TimePicker
+  const handleTimePickerSelect = (time: string) => {
+    if (props.onChange) {
+      const syntheticEvent = {
+        target: { value: time }
+      } as React.ChangeEvent<HTMLInputElement>;
+      (props.onChange as (e: React.ChangeEvent<HTMLInputElement>) => void)(syntheticEvent);
+    }
+  };
+
+  // Rendu spécifique pour les champs de type time
+  if (type === 'time') {
+    return (
+      <div className={`${wrapperClass} ${className}`}>
+        <div className="flex items-center justify-between mb-1">
+          <label className={labelClass} style={{ marginBottom: 0 }}>
+            {label}
+            {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
+          </label>
+        </div>
+        <div className="relative">
+          {/* Input texte visible qui affiche l'heure formatée en français */}
+          <input
+            type="text"
+            className={`${inputClass} pr-12`}
+            placeholder={props.placeholder || "Ex: 09h00"}
+            required={required}
+            onBlur={handleBlur}
+            aria-invalid={showError ? 'true' : 'false'}
+            aria-describedby={showError ? `${fieldId}-error` : undefined}
+            value={(props.value as string) || ''}
+            onChange={(e) => {
+              if (props.onChange) {
+                (props.onChange as (e: React.ChangeEvent<HTMLInputElement>) => void)(e);
+              }
+            }}
+          />
+          {/* Icône horloge cliquable avec style IA */}
+          <button
+            type="button"
+            onClick={() => setIsTimePickerOpen(true)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:text-[#a84383] dark:hover:text-[#e062b1] hover:bg-[#ffecf8] dark:hover:bg-[#4a1a36]/50 transition-all"
+            title="Sélectionner l'heure"
+          >
+            <span className="material-icons text-base">schedule</span>
+          </button>
+          {icon && <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none">{icon}</span>}
+        </div>
+        {showError && (
+          <div id={`${fieldId}-error`} className="flex items-center gap-1 mt-1 ml-1 text-sm text-red-600 animate-[fadeIn_0.2s]" role="alert">
+            <span className="material-icons text-sm">error</span>
+            <span>{error}</span>
+          </div>
+        )}
+        
+        {/* TimePicker Modal */}
+        <TimePicker
+          isOpen={isTimePickerOpen}
+          onClose={() => setIsTimePickerOpen(false)}
+          onTimeSelect={handleTimePickerSelect}
+          initialTime={(props.value as string) || ''}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`${wrapperClass} ${className}`}>
@@ -205,14 +398,14 @@ export const Input: React.FC<InputProps> = ({
       <div className="relative">
         <input
           type={type}
-          className={`${inputClass} ${caseMode === 'upper' ? 'uppercase' : caseMode === 'lower' ? 'lowercase' : ''}`}
+          className={`${inputClass} ${forceUppercase ? 'uppercase' : caseMode === 'upper' ? 'uppercase' : caseMode === 'lower' ? 'lowercase' : ''}`}
           placeholder={props.placeholder || " "}
           required={required}
           onBlur={handleBlur}
           aria-invalid={showError ? 'true' : 'false'}
           aria-describedby={showError ? `${fieldId}-error` : undefined}
           {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
-          onChange={hasUppercaseToggle ? handleInputChange : props.onChange as any}
+          onChange={getOnChangeHandler()}
         />
         {icon && <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none">{icon}</span>}
       </div>
@@ -225,3 +418,6 @@ export const Input: React.FC<InputProps> = ({
     </div>
   );
 };
+
+// Exporter la fonction de formatage pour une utilisation externe
+export { formatDateToFrench };

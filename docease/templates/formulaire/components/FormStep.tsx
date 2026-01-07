@@ -308,6 +308,7 @@ const FormStepComponent: React.FC<FormStepProps> = ({
                 onChange={(e) => onChange(field.id, e.target.value)}
                 fieldId={field.id}
                 hasUppercaseToggle={field.hasUppercaseToggle}
+                forceUppercase={field.forceUppercase}
                 error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
               />
             )}

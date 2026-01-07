@@ -32,6 +32,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
         return 'Désignation de délégué syndical';
       case 'negociation':
         return 'Mandat de négociation collective';
+      case 'convocations':
+        return 'Convocations Bureau ou CA Fédérale';
       case 'circulaire':
         return 'Circulaire d\'informations';
       case 'custom':

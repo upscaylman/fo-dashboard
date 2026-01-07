@@ -63,10 +63,14 @@ const App: React.FC = () => {
   const { toast, showSuccess, showError, showInfo, hideToast } = useToast();
 
   // Optimisation: mémoriser les valeurs calculées
-  // Filtrer les steps selon le template (circulaire n'a pas de page signataire)
+  // Filtrer les steps selon le template (circulaire n'a pas de page signataire, convocations n'a que contenu et signataire)
   const availableSteps = useMemo(() => {
     if (selectedTemplate === 'circulaire') {
       return STEPS.filter(step => step.id !== 'expediteur');
+    }
+    if (selectedTemplate === 'convocations') {
+      // Pour les convocations : pas de coordonnées, juste contenu et signataire
+      return STEPS.filter(step => step.id !== 'coordonnees');
     }
     return STEPS;
   }, [selectedTemplate]);
@@ -94,21 +98,44 @@ const App: React.FC = () => {
         // Pour la circulaire, emailDestinataire n'est pas obligatoire
         return COMMON_FIELDS.filter(f => ['numeroCourrier', 'emailDestinataire'].includes(f.id))
           .map(field => field.id === 'emailDestinataire' ? { ...field, required: false } : field);
+      } else if (selectedTemplate === 'convocations') {
+        // Pour les convocations, pas de champs coordonnées spécifiques, on saute directement au contenu
+        return [];
       } else {
         return COMMON_FIELDS.filter(f => ['codeDocument', 'entreprise', 'civiliteDestinataire', 'nomDestinataire', 'statutDestinataire', 'batiment', 'adresse', 'cpVille', 'emailDestinataire'].includes(f.id));
       }
     }
 
-    if (stepId === 'contenu' && selectedTemplate && TEMPLATE_SPECIFIC_FIELDS[selectedTemplate]) {
-      return TEMPLATE_SPECIFIC_FIELDS[selectedTemplate];
+    if (stepId === 'contenu' && selectedTemplate) {
+      // Gestion spéciale pour les convocations : champs dynamiques selon le type choisi
+      if (selectedTemplate === 'convocations') {
+        const typeConvocation = formData.typeConvocation;
+        if (typeConvocation === 'CA Fédérale') {
+          return TEMPLATE_SPECIFIC_FIELDS['convocations_ca_federale'] || [];
+        } else if (typeConvocation === 'Bureau Fédéral') {
+          return TEMPLATE_SPECIFIC_FIELDS['convocations_bureau_federal'] || [];
+        }
+        // Par défaut, afficher juste le sélecteur de type
+        return TEMPLATE_SPECIFIC_FIELDS['convocations'] || [];
+      }
+      
+      if (TEMPLATE_SPECIFIC_FIELDS[selectedTemplate]) {
+        return TEMPLATE_SPECIFIC_FIELDS[selectedTemplate];
+      }
     }
 
     if (stepId === 'expediteur') {
+      // Pour les convocations, ajouter le champ codeDocument dans l'étape signataire
+      if (selectedTemplate === 'convocations') {
+        const codeDocumentField = COMMON_FIELDS.find(f => f.id === 'codeDocument');
+        const signatureField = COMMON_FIELDS.filter(f => f.id === 'signatureExp');
+        return codeDocumentField ? [codeDocumentField, ...signatureField] : signatureField;
+      }
       return COMMON_FIELDS.filter(f => f.id === 'signatureExp');
     }
 
     return FORM_FIELDS[stepId] || [];
-  }, [selectedTemplate, customFieldsOrder]);
+  }, [selectedTemplate, customFieldsOrder, formData.typeConvocation]);
 
   // Vérifier si tous les champs requis d'une étape sont remplis ET valides
   const isStepValid = useCallback((stepId: StepType): boolean => {
@@ -201,7 +228,23 @@ const App: React.FC = () => {
         setFormData(savedData);
       } else {
         console.log('🆕 Nouveau template, données vides');
-        setFormData({});
+        // Pour les convocations, pré-remplir le signataire et le numéro de document par défaut
+        if (selectedTemplate === 'convocations') {
+          const defaultSignataire = 'Valentin RODRIGUEZ';
+          // Extraire les initiales (VR pour Valentin RODRIGUEZ)
+          const initials = defaultSignataire.replace(/-/g, ' ').trim()
+            .split(/\s+/)
+            .map(word => word.charAt(0).toUpperCase())
+            .join('');
+          const year = new Date().getFullYear();
+          const randomNum = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+          setFormData({ 
+            signatureExp: defaultSignataire,
+            codeDocument: `${initials}-${year}-${randomNum}`
+          });
+        } else {
+          setFormData({});
+        }
       }
 
       setCurrentStepIdx(0);
@@ -217,11 +260,20 @@ const App: React.FC = () => {
 
   // Optimisation: mémoriser handleStepChange pour éviter les re-renders
   const handleStepChange = useCallback((idx: number) => {
+    // Pour les convocations, bloquer l'accès à l'étape signataire si le type n'est pas sélectionné
+    if (selectedTemplate === 'convocations') {
+      const targetStep = availableSteps[idx];
+      if (targetStep?.id === 'expediteur' && !formData.typeConvocation) {
+        // Afficher une alerte ou ne rien faire
+        return;
+      }
+    }
+    
     // Permettre la navigation libre entre les étapes
     // Ne plus bloquer la navigation même si les champs ne sont pas remplis
     setCurrentStepIdx(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [selectedTemplate, availableSteps, formData.typeConvocation]);
 
 
 
@@ -246,6 +298,16 @@ const App: React.FC = () => {
       prefix = 'Designation';
     } else if (selectedTemplate === 'negociation') {
       prefix = 'Negociation';
+    } else if (selectedTemplate === 'convocations') {
+      // Pour convocations : utiliser le type de convocation
+      const typeConvocation = formData.typeConvocation || '';
+      if (typeConvocation === 'CA Fédérale') {
+        prefix = 'Convocation_CA';
+      } else if (typeConvocation === 'Bureau Fédéral') {
+        prefix = 'Convocation_Bureau';
+      } else {
+        prefix = 'Convocation';
+      }
     } else if (selectedTemplate === 'circulaire') {
       prefix = 'Circulaire';
     } else if (selectedTemplate === 'custom') {
@@ -851,7 +913,7 @@ const App: React.FC = () => {
                 <h1 className="text-4xl font-bold text-white drop-shadow-md">Génération de documents</h1>
                 <p className="text-white/70 text-lg mt-1">
                    {selectedTemplate
-                     ? `Modèle sélectionné : ${TEMPLATES.find(t => t.id === selectedTemplate)?.title}`
+                     ? `Modèle sélectionné : ${TEMPLATES.find(t => t.id === selectedTemplate)?.title}${selectedTemplate === 'convocations' && formData.typeConvocation ? ` - ${formData.typeConvocation}` : ''}`
                      : 'Créez vos documents professionnels en quelques clics.'}
                 </p>
               </div>
@@ -871,13 +933,18 @@ const App: React.FC = () => {
                     {availableSteps.map((step, idx) => {
                       const isActive = currentStepIdx === idx;
                       const isCompleted = currentStepIdx > idx;
+                      // Pour les convocations, désactiver l'étape signataire si le type n'est pas sélectionné
+                      const isDisabled = selectedTemplate === 'convocations' && step.id === 'expediteur' && !formData.typeConvocation;
 
                       return (
                         <button
                           key={step.id}
-                          onClick={() => handleStepChange(idx)}
+                          onClick={() => !isDisabled && handleStepChange(idx)}
+                          disabled={isDisabled}
+                          title={isDisabled ? 'Veuillez d\'abord sélectionner le type de convocation' : undefined}
                           className={`
                             relative group flex items-center gap-2 md:gap-3 px-2 py-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] select-none
+                            ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                             ${isActive
                                ? 'bg-[#ffecf8] dark:bg-[#4a1a36] pr-3 md:pr-6 flex-grow md:flex-grow-0 ring-1 ring-[#ffd8ec] dark:ring-[#a84383]'
                                : 'flex-shrink-0'}
@@ -974,10 +1041,11 @@ const App: React.FC = () => {
 
                        <button
                          onClick={() => handleStepChange(currentStepIdx + 1)}
-                         disabled={isLastStep}
+                         disabled={isLastStep || (selectedTemplate === 'convocations' && availableSteps[currentStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation)}
+                         title={selectedTemplate === 'convocations' && availableSteps[currentStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation ? 'Veuillez d\'abord sélectionner le type de convocation' : undefined}
                          className={`
                            h-12 px-6 rounded-full flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:shadow-[#a84383]/30 dark:hover:shadow-[#e062b1]/30 transition-all duration-300 flex-shrink-0
-                           ${isLastStep
+                           ${isLastStep || (selectedTemplate === 'convocations' && availableSteps[currentStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation)
                              ? 'bg-gray-100 dark:bg-gray-800 text-gray-300 cursor-not-allowed shadow-none'
                              : 'bg-[#a84383] dark:bg-[#e062b1] text-white active:scale-95'}
                          `}

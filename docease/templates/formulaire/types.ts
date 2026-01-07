@@ -1,7 +1,8 @@
 // Types de base
-export type TemplateId = 'designation' | 'negociation' | 'custom' | 'circulaire';
+export type TemplateId = 'designation' | 'negociation' | 'custom' | 'circulaire' | 'convocations';
 export type StepType = 'coordonnees' | 'contenu' | 'expediteur';
-export type FieldType = 'text' | 'email' | 'textarea' | 'date' | 'select';
+export type ConvocationType = 'ca_federale' | 'bureau_federal';
+export type FieldType = 'text' | 'email' | 'textarea' | 'date' | 'time' | 'select';
 export type FieldWidth = 'full' | 'half';
 
 // Template
@@ -26,6 +27,7 @@ export interface FormField {
   rows?: number;
   maxLength?: number;
   hasUppercaseToggle?: boolean; // Affiche une case à cocher pour mettre en majuscules
+  forceUppercase?: boolean; // Force les majuscules sans toggle
 }
 
 // Données du formulaire
