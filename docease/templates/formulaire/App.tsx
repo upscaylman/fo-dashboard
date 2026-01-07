@@ -66,14 +66,20 @@ const App: React.FC = () => {
   // Filtrer les steps selon le template (circulaire n'a pas de page signataire, convocations n'a que contenu et signataire)
   const availableSteps = useMemo(() => {
     if (selectedTemplate === 'circulaire') {
-      return STEPS.filter(step => step.id !== 'expediteur');
+      return STEPS.filter(step => step.id !== 'expediteur' && step.id !== 'jour1' && step.id !== 'jour2');
     }
     if (selectedTemplate === 'convocations') {
       // Pour les convocations : pas de coordonnées, juste contenu et signataire
-      return STEPS.filter(step => step.id !== 'coordonnees');
+      // Si CA Fédérale est sélectionné, ajouter les onglets jour1 et jour2
+      if (formData.typeConvocation === 'CA Fédérale') {
+        return STEPS.filter(step => step.id !== 'coordonnees');
+      }
+      // Pour Bureau Fédéral ou pas encore sélectionné, pas d'onglets jour
+      return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2');
     }
-    return STEPS;
-  }, [selectedTemplate]);
+    // Pour les autres templates, pas d'onglets jour
+    return STEPS.filter(step => step.id !== 'jour1' && step.id !== 'jour2');
+  }, [selectedTemplate, formData.typeConvocation]);
 
   const currentStep = useMemo(() => availableSteps[currentStepIdx], [availableSteps, currentStepIdx]);
   const isFirstStep = useMemo(() => currentStepIdx === 0, [currentStepIdx]);
@@ -122,6 +128,15 @@ const App: React.FC = () => {
       if (TEMPLATE_SPECIFIC_FIELDS[selectedTemplate]) {
         return TEMPLATE_SPECIFIC_FIELDS[selectedTemplate];
       }
+    }
+
+    // Gestion des onglets jour pour CA Fédérale
+    if (stepId === 'jour1' && selectedTemplate === 'convocations' && formData.typeConvocation === 'CA Fédérale') {
+      return TEMPLATE_SPECIFIC_FIELDS['convocations_ca_federale_jour1'] || [];
+    }
+
+    if (stepId === 'jour2' && selectedTemplate === 'convocations' && formData.typeConvocation === 'CA Fédérale') {
+      return TEMPLATE_SPECIFIC_FIELDS['convocations_ca_federale_jour2'] || [];
     }
 
     if (stepId === 'expediteur') {

@@ -141,6 +141,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
       case 'coordonnees': return 'bg-[#2f2f2f]';
       case 'contenu': return 'bg-[#181a1c]';
       case 'expediteur': return 'bg-[#181a1c]';
+      case 'jour1': return 'bg-[#181a1c]';
+      case 'jour2': return 'bg-[#181a1c]';
     }
   };
 
@@ -149,6 +151,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
       case 'coordonnees': return 'person';
       case 'contenu': return 'article';
       case 'expediteur': return 'send';
+      case 'jour1': return 'today';
+      case 'jour2': return 'event';
     }
   };
 
@@ -157,6 +161,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
         case 'coordonnees': return 'Coordonnées';
         case 'contenu': return 'Contenu';
         case 'expediteur': return 'Signataire';
+        case 'jour1': return 'Ordre du jour 1';
+        case 'jour2': return 'Ordre du jour 2';
     }
   }
 

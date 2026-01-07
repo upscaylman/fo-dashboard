@@ -53,6 +53,8 @@ export const TEMPLATES: Template[] = [
 export const STEPS: StepConfig[] = [
   { id: 'coordonnees', label: 'Coordonnées', icon: 'person', description: 'Informations du destinataire' },
   { id: 'contenu', label: 'Contenu', icon: 'article', description: 'Détails de la demande' },
+  { id: 'jour1', label: 'Ordre du jour 1', icon: 'today', description: 'Ordre du jour - 1ère journée' },
+  { id: 'jour2', label: 'Ordre du jour 2', icon: 'event', description: 'Ordre du jour - 2ème journée' },
   { id: 'expediteur', label: 'Signataire', icon: 'send', description: 'Choix du Secrétaire Fédéral' },
 ];
 
@@ -94,31 +96,37 @@ export const TEMPLATE_SPECIFIC_FIELDS: Record<string, FormField[]> = {
   convocations: [
     { id: 'typeConvocation', label: 'Type de convocation à générer', type: 'select', options: ['CA Fédérale', 'Bureau Fédéral'], required: true, icon: 'category', width: 'full' },
   ],
-  // Champs spécifiques pour CA Fédérale
+  // Champs spécifiques pour CA Fédérale - Page Contenu (dates et heures uniquement)
   convocations_ca_federale: [
     { id: 'typeConvocation', label: 'Type de convocation à générer', type: 'select', options: ['CA Fédérale', 'Bureau Fédéral'], required: true, icon: 'category', width: 'full' },
     { id: 'dateDebut', label: 'Date de début', type: 'date', required: true, icon: 'event', width: 'half' },
     { id: 'heureDebut', label: 'Heure de début', type: 'time', placeholder: 'Ex: 09h00', required: true, icon: 'schedule', width: 'half' },
     { id: 'dateFin', label: 'Date de fin', type: 'date', required: true, icon: 'event', width: 'half' },
     { id: 'heureFin', label: 'Heure de fin', type: 'time', placeholder: 'Ex: 17h00', required: true, icon: 'schedule', width: 'half' },
-    { id: 'ordreDuJour1', label: 'Ordre du jour 1', type: 'text', placeholder: 'Premier point à l\'ordre du jour', required: true, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour2', label: 'Ordre du jour 2', type: 'text', placeholder: 'Deuxième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour3', label: 'Ordre du jour 3', type: 'text', placeholder: 'Troisième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour4', label: 'Ordre du jour 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour5', label: 'Ordre du jour 5', type: 'text', placeholder: 'Cinquième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour6', label: 'Ordre du jour 6', type: 'text', placeholder: 'Sixième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour7', label: 'Ordre du jour 7', type: 'text', placeholder: 'Septième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour8', label: 'Ordre du jour 8', type: 'text', placeholder: 'Huitième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+  ],
+  // Champs CA Fédérale - 1er jour (ordres du jour 1-4)
+  convocations_ca_federale_jour1: [
+    { id: 'ordreDuJour1', label: 'Point 1', type: 'text', placeholder: 'Premier point à l\'ordre du jour', required: true, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour2', label: 'Point 2', type: 'text', placeholder: 'Deuxième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour3', label: 'Point 3', type: 'text', placeholder: 'Troisième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour4', label: 'Point 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+  ],
+  // Champs CA Fédérale - 2ème jour (ordres du jour 5-8)
+  convocations_ca_federale_jour2: [
+    { id: 'ordreDuJour5', label: 'Point 1', type: 'text', placeholder: 'Premier point du 2ème jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour6', label: 'Point 2', type: 'text', placeholder: 'Deuxième point du 2ème jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour7', label: 'Point 3', type: 'text', placeholder: 'Troisième point du 2ème jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour8', label: 'Point 4', type: 'text', placeholder: 'Quatrième point du 2ème jour', required: false, icon: 'list', width: 'full' },
   ],
   // Champs spécifiques pour Bureau Fédéral
   convocations_bureau_federal: [
     { id: 'typeConvocation', label: 'Type de convocation à générer', type: 'select', options: ['CA Fédérale', 'Bureau Fédéral'], required: true, icon: 'category', width: 'full' },
     { id: 'dateDebut', label: 'Date de la réunion', type: 'date', required: true, icon: 'event', width: 'half' },
     { id: 'heureDebut', label: 'Heure de début', type: 'time', placeholder: 'Ex: 09h00', required: true, icon: 'schedule', width: 'half' },
-    { id: 'ordreDuJour1', label: 'Ordre du jour 1', type: 'text', placeholder: 'Premier point à l\'ordre du jour', required: true, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour2', label: 'Ordre du jour 2', type: 'text', placeholder: 'Deuxième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour3', label: 'Ordre du jour 3', type: 'text', placeholder: 'Troisième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
-    { id: 'ordreDuJour4', label: 'Ordre du jour 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour1', label: 'Point 1', type: 'text', placeholder: 'Premier point à l\'ordre du jour', required: true, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour2', label: 'Point 2', type: 'text', placeholder: 'Deuxième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour3', label: 'Point 3', type: 'text', placeholder: 'Troisième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
+    { id: 'ordreDuJour4', label: 'Point 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'list', width: 'full' },
   ],
   circulaire: [
     { id: 'objet', label: 'Objet de la Circulaire', type: 'text', placeholder: 'Ex: Information importante', required: true, icon: 'subject', width: 'full' },
