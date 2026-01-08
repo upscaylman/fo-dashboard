@@ -143,6 +143,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
       case 'expediteur': return 'bg-[#181a1c]';
       case 'jour1': return 'bg-[#181a1c]';
       case 'jour2': return 'bg-[#181a1c]';
+      case 'ordreDuJourBureau': return 'bg-[#181a1c]';
+      default: return 'bg-[#181a1c]';
     }
   };
 
@@ -153,6 +155,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
       case 'expediteur': return 'send';
       case 'jour1': return 'today';
       case 'jour2': return 'event';
+      case 'ordreDuJourBureau': return 'list_alt';
+      default: return 'article';
     }
   };
 
@@ -163,7 +167,17 @@ const FormStepComponent: React.FC<FormStepProps> = ({
         case 'expediteur': return 'Signataire';
         case 'jour1': return 'Ordre du jour 1';
         case 'jour2': return 'Ordre du jour 2';
+        case 'ordreDuJourBureau': return 'Ordre du jour';
+        default: return 'Étape';
     }
+  }
+
+  // Message d'info spécifique par étape
+  const getStepInfoMessage = (s: StepType) => {
+    if (s === 'ordreDuJourBureau') {
+      return 'Veuillez remplir les points à l\'ordre du jour ci-dessous';
+    }
+    return 'Veuillez remplir les champs ci-dessous';
   }
 
   return (
@@ -178,8 +192,15 @@ const FormStepComponent: React.FC<FormStepProps> = ({
         </div>
         <div className="flex-1">
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{getStepTitle(step)}</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide">
-            {isCustomizing ? 'Mode personnalisation : Glissez-déposez les champs' : 'veuillez remplir les champs ci-dessous'}
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide flex items-center gap-1">
+            {isCustomizing ? (
+              'Mode personnalisation : Glissez-déposez les champs'
+            ) : (
+              <>
+                <span className="material-icons text-sm text-[#e062b1]">edit_note</span>
+                {getStepInfoMessage(step)}
+              </>
+            )}
           </p>
         </div>
       </div>

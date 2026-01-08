@@ -66,19 +66,23 @@ const App: React.FC = () => {
   // Filtrer les steps selon le template (circulaire n'a pas de page signataire, convocations n'a que contenu et signataire)
   const availableSteps = useMemo(() => {
     if (selectedTemplate === 'circulaire') {
-      return STEPS.filter(step => step.id !== 'expediteur' && step.id !== 'jour1' && step.id !== 'jour2');
+      return STEPS.filter(step => step.id !== 'expediteur' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau');
     }
     if (selectedTemplate === 'convocations') {
       // Pour les convocations : pas de coordonnées, juste contenu et signataire
       // Si CA Fédérale est sélectionné, ajouter les onglets jour1 et jour2
       if (formData.typeConvocation === 'CA Fédérale') {
-        return STEPS.filter(step => step.id !== 'coordonnees');
+        return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'ordreDuJourBureau');
       }
-      // Pour Bureau Fédéral ou pas encore sélectionné, pas d'onglets jour
-      return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2');
+      // Pour Bureau Fédéral, afficher l'onglet ordreDuJourBureau
+      if (formData.typeConvocation === 'Bureau Fédéral') {
+        return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2');
+      }
+      // Pas encore sélectionné, pas d'onglets jour
+      return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau');
     }
     // Pour les autres templates, pas d'onglets jour
-    return STEPS.filter(step => step.id !== 'jour1' && step.id !== 'jour2');
+    return STEPS.filter(step => step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau');
   }, [selectedTemplate, formData.typeConvocation]);
 
   // Protection : si l'index dépasse le tableau, revenir au premier step
@@ -143,6 +147,11 @@ const App: React.FC = () => {
 
     if (stepId === 'jour2' && selectedTemplate === 'convocations' && formData.typeConvocation === 'CA Fédérale') {
       return TEMPLATE_SPECIFIC_FIELDS['convocations_ca_federale_jour2'] || [];
+    }
+
+    // Gestion de l'onglet Ordre du jour pour Bureau Fédéral
+    if (stepId === 'ordreDuJourBureau' && selectedTemplate === 'convocations' && formData.typeConvocation === 'Bureau Fédéral') {
+      return TEMPLATE_SPECIFIC_FIELDS['convocations_bureau_federal_ordre_du_jour'] || [];
     }
 
     if (stepId === 'expediteur') {

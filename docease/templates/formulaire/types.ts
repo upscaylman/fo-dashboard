@@ -1,6 +1,6 @@
 // Types de base
 export type TemplateId = 'designation' | 'negociation' | 'custom' | 'circulaire' | 'convocations';
-export type StepType = 'coordonnees' | 'contenu' | 'expediteur' | 'jour1' | 'jour2';
+export type StepType = 'coordonnees' | 'contenu' | 'expediteur' | 'jour1' | 'jour2' | 'ordreDuJourBureau';
 export type ConvocationType = 'ca_federale' | 'bureau_federal';
 export type FieldType = 'text' | 'email' | 'textarea' | 'date' | 'time' | 'select';
 export type FieldWidth = 'full' | 'half';
