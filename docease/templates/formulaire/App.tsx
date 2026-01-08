@@ -42,6 +42,9 @@ const App: React.FC = () => {
   // Persistance des données par template (en mémoire uniquement, perdu à l'actualisation)
   const [templateDataStore, setTemplateDataStore] = useState<Record<string, FormData>>({});
 
+  // Persistance des données par type de convocation (CA Fédérale / Bureau Fédéral)
+  const [convocationDataStore, setConvocationDataStore] = useState<Record<string, FormData>>({});
+
   // Ordre personnalisé des champs par étape (pour le mode personnalisation)
   const [customFieldsOrder, setCustomFieldsOrder] = useState<Record<string, FormField[]>>({});
 
@@ -422,6 +425,61 @@ const App: React.FC = () => {
   // Optimisation: mémoriser handleInputChange
   const handleInputChange = useCallback((key: string, value: string) => {
     setFormData(prev => {
+      // Si on change le type de convocation, sauvegarder les données actuelles et restaurer celles du nouveau type
+      if (key === 'typeConvocation' && prev.typeConvocation !== value) {
+        console.log('🔄 Changement de type de convocation:', prev.typeConvocation, '→', value);
+        
+        // Sauvegarder les données actuelles pour le type précédent (si il existe)
+        if (prev.typeConvocation) {
+          console.log('💾 Sauvegarde des données pour:', prev.typeConvocation);
+          setConvocationDataStore(store => ({
+            ...store,
+            [prev.typeConvocation as string]: { ...prev }
+          }));
+        }
+        
+        // Vérifier si des données existent pour le nouveau type
+        const savedData = convocationDataStore[value];
+        if (savedData && Object.keys(savedData).length > 0) {
+          console.log('📂 Restauration des données pour:', value, savedData);
+          // Restaurer les données sauvegardées
+          const restoredData = { ...savedData, typeConvocation: value };
+          // Invalider le cache
+          setGeneratedWord(null);
+          setPdfBlob(null);
+          // Sauvegarder
+          if (selectedTemplate) {
+            saveCurrentTemplateData(selectedTemplate, restoredData);
+          }
+          return restoredData;
+        } else {
+          // Pas de données sauvegardées : garder uniquement les champs essentiels
+          console.log('🆕 Nouveau type, données vides pour:', value);
+          const newData: FormData = {
+            typeConvocation: value,
+            signatureExp: prev.signatureExp || 'Valentin RODRIGUEZ',
+            codeDocument: prev.codeDocument || ''
+          };
+          // Régénérer le codeDocument si nécessaire
+          if (!newData.codeDocument && newData.signatureExp) {
+            const initials = getInitials(newData.signatureExp as string);
+            if (initials) {
+              const year = new Date().getFullYear();
+              const randomNum = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+              newData.codeDocument = `${initials}-${year}-${randomNum}`;
+            }
+          }
+          // Invalider le cache
+          setGeneratedWord(null);
+          setPdfBlob(null);
+          // Sauvegarder
+          if (selectedTemplate) {
+            saveCurrentTemplateData(selectedTemplate, newData);
+          }
+          return newData;
+        }
+      }
+
       const newData = { ...prev, [key]: value };
 
       // Retirer le champ de la liste des invalides si l'utilisateur le remplit
@@ -458,7 +516,7 @@ const App: React.FC = () => {
         return newCache;
       });
     }
-  }, [selectedTemplate]);
+  }, [selectedTemplate, convocationDataStore]);
 
   // Obtenir tous les IDs de champs valides pour le template actuel
   const getValidFieldIds = useCallback((): string[] => {
@@ -1170,6 +1228,11 @@ const App: React.FC = () => {
             onSend={handleSendEmail}
             isSending={isSending}
             defaultEmail={formData.emailDestinataire as string}
+            selectedTemplate={selectedTemplate || undefined}
+            typeConvocation={formData.typeConvocation as string}
+            dateDebut={formData.dateDebut as string}
+            heureDebut={formData.heureDebut as string}
+            numeroCourrier={formData.numeroCourrier as string}
           />
         )}
       </Suspense>

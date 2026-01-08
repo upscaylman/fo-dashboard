@@ -151,11 +151,57 @@ interface ShareModalProps {
   onSend: (emails: string[], customMessage: string) => void;
   isSending: boolean;
   defaultEmail?: string;
+  selectedTemplate?: string;
+  typeConvocation?: string;
+  dateDebut?: string;
+  heureDebut?: string;
+  numeroCourrier?: string;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onSend, isSending, defaultEmail }) => {
-  // Message par défaut prédéfini
-  const defaultMessage = `Bonjour Madame, Monsieur,
+export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onSend, isSending, defaultEmail, selectedTemplate, typeConvocation, dateDebut, heureDebut, numeroCourrier }) => {
+  // Génère le message par défaut selon le template
+  const getDefaultMessage = () => {
+    if (selectedTemplate === 'convocations') {
+      if (typeConvocation === 'CA Fédérale') {
+        return `Madame, Monsieur,
+
+Vous êtes convié(e) à participer à la réunion de la Commission Administrative Fédérale qui se tiendra le ${dateDebut || '[date]'} à ${heureDebut || '[heure]'}.
+
+Veuillez trouver ci-joint la convocation officielle avec l'ordre du jour.
+
+Votre présence est vivement souhaitée.
+
+Cordialement,
+FO METAUX`;
+      } else if (typeConvocation === 'Bureau Fédéral') {
+        return `Madame, Monsieur,
+
+Vous êtes convié(e) à participer à la réunion du Bureau Fédéral qui se tiendra le ${dateDebut || '[date]'} à ${heureDebut || '[heure]'}.
+
+Veuillez trouver ci-joint la convocation officielle avec l'ordre du jour.
+
+Votre présence est vivement souhaitée.
+
+Cordialement,
+FO METAUX`;
+      }
+    }
+    
+    if (selectedTemplate === 'circulaire') {
+      return `Madame, Monsieur,
+
+Veuillez trouver ci-joint la Circulaire ${numeroCourrier ? `n°${numeroCourrier}` : ''} de la Fédération FO Métaux.
+
+Nous vous remercions de bien vouloir en prendre connaissance et de la diffuser auprès de vos équipes.
+
+Restant à votre disposition pour tout renseignement complémentaire.
+
+Cordialement,
+FO METAUX`;
+    }
+    
+    // Message par défaut pour les autres templates
+    return `Bonjour Madame, Monsieur,
 
 Veuillez trouver ci-joint le courrier de notre Fédération FO,
 Fait pour valoir ce que de droit,
@@ -164,14 +210,19 @@ Bonne réception,
 
 Cordialement,
 FO METAUX`;
+  };
+
+  const defaultMessage = getDefaultMessage();
 
   const [message, setMessage] = useState(defaultMessage);
   const [emails, setEmails] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
 
-  // Initialiser avec l'email par défaut quand la modal s'ouvre
+  // Initialiser avec l'email par défaut et le message quand la modal s'ouvre
   React.useEffect(() => {
     if (isOpen) {
+      // Réinitialiser le message prédéfini selon le template
+      setMessage(getDefaultMessage());
       // Réinitialiser la liste d'emails à chaque ouverture
       if (defaultEmail) {
         // Si defaultEmail contient plusieurs emails séparés par des virgules (cas de la circulaire)
@@ -182,7 +233,7 @@ FO METAUX`;
       }
       setInputValue('');
     }
-  }, [isOpen]); // Ne pas inclure defaultEmail pour éviter les doublons
+  }, [isOpen, selectedTemplate, typeConvocation, dateDebut, heureDebut, numeroCourrier]); // Recalculer le message si le template change
 
   const removeEmail = (index: number) => {
     setEmails(prev => prev.filter((_, i) => i !== index));
