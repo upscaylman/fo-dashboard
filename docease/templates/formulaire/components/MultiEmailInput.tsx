@@ -9,6 +9,7 @@ interface MultiEmailInputProps {
   error?: string;
   placeholder?: string;
   predefinedEmails?: Array<{ name: string; email: string }>;
+  helpText?: string; // Texte d'aide affiché dans une info-bulle
 }
 
 export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
@@ -18,7 +19,8 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   required,
   error,
   placeholder = 'Saisissez ou sélectionnez des emails...',
-  predefinedEmails = []
+  predefinedEmails = [],
+  helpText
 }) => {
   const [emails, setEmails] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -209,10 +211,23 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
 
   return (
     <div className="relative group w-full" ref={containerRef}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1 min-h-[28px] flex items-center">
-        {label}
-        {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
-      </label>
+      <div className="flex items-center justify-between mb-1 ml-1 min-h-[28px]">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+          {label}
+          {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
+        </label>
+        {helpText && (
+          <span className="relative group/help inline-flex mr-1">
+            <span className="cursor-help">
+              <span className="material-icons text-gray-700 dark:text-gray-300" style={{ fontSize: '14px' }}>help</span>
+            </span>
+            <span className="absolute right-0 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-xl opacity-0 invisible group-hover/help:opacity-100 group-hover/help:visible transition-all duration-200 pointer-events-none">
+              {helpText}
+              <span className="absolute right-3 top-full border-4 border-transparent border-t-gray-800"></span>
+            </span>
+          </span>
+        )}
+      </div>
 
       <div
         className={`

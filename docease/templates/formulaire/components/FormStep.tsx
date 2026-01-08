@@ -340,6 +340,7 @@ const FormStepComponent: React.FC<FormStepProps> = ({
                 placeholder={field.placeholder}
                 predefinedEmails={CONVOCATION_EMAILS}
                 error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
+                helpText="Les destinataires recevront l'email en copie cachée (BCC)"
               />
             ) : (
               <Input

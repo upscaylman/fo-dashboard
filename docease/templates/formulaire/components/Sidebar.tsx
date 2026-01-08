@@ -141,7 +141,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
         </div>
 
         {/* Contenu de la liste */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar overflow-x-hidden" aria-label="Liste des modèles">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" style={{ overflow: isDesktopCollapsed ? 'visible' : undefined }} aria-label="Liste des modèles">
           {templates.map(template => (
             <button
               key={template.id}
@@ -230,17 +230,22 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
                 </div>
               )}
 
-              {/* Tooltip au survol OU si sélectionné (Visible uniquement si réduit) */}
-              {isDesktopCollapsed && (
+              {/* Tooltip au survol (Visible uniquement si réduit ET non sélectionné) */}
+              {isDesktopCollapsed && selectedTemplate !== template.id && (
                 <div className={`
                   absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2 bg-gray-800 text-white dark:text-[rgb(156,163,175)] text-xs rounded-lg transition-all duration-200 whitespace-nowrap z-50 shadow-xl pointer-events-none transform
-                  ${selectedTemplate === template.id
-                    ? 'opacity-100 visible translate-x-0'
-                    : 'opacity-0 invisible translate-x-[-10px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0'}
+                  opacity-0 invisible translate-x-[-10px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0
                 `}>
                   {template.title}
                   {/* Flèche du tooltip */}
                   <div className="absolute top-1/2 right-full -translate-y-1/2 -mr-[1px] border-8 border-transparent border-r-gray-800"></div>
+                </div>
+              )}
+
+              {/* Flèche indicatrice pour le template sélectionné (sans tooltip) */}
+              {isDesktopCollapsed && selectedTemplate === template.id && (
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1 pointer-events-none">
+                  <div className="border-8 border-transparent border-l-[#aa4584] dark:border-l-[#e062b1]"></div>
                 </div>
               )}
             </button>
