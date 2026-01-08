@@ -81,9 +81,15 @@ const App: React.FC = () => {
     return STEPS.filter(step => step.id !== 'jour1' && step.id !== 'jour2');
   }, [selectedTemplate, formData.typeConvocation]);
 
-  const currentStep = useMemo(() => availableSteps[currentStepIdx], [availableSteps, currentStepIdx]);
-  const isFirstStep = useMemo(() => currentStepIdx === 0, [currentStepIdx]);
-  const isLastStep = useMemo(() => currentStepIdx === availableSteps.length - 1, [currentStepIdx, availableSteps.length]);
+  // Protection : si l'index dépasse le tableau, revenir au premier step
+  const safeStepIdx = useMemo(() => {
+    if (currentStepIdx >= availableSteps.length) return 0;
+    return currentStepIdx;
+  }, [currentStepIdx, availableSteps.length]);
+
+  const currentStep = useMemo(() => availableSteps[safeStepIdx] || availableSteps[0], [availableSteps, safeStepIdx]);
+  const isFirstStep = useMemo(() => safeStepIdx === 0, [safeStepIdx]);
+  const isLastStep = useMemo(() => safeStepIdx === availableSteps.length - 1, [safeStepIdx, availableSteps.length]);
 
   // Vérifier si le formulaire a des données
   const hasData = useMemo(() => Object.keys(formData).length > 0 && selectedTemplate !== null, [formData, selectedTemplate]);
@@ -225,6 +231,9 @@ const App: React.FC = () => {
   // Mettre à jour les champs du formulaire quand le template change
   useEffect(() => {
     if (selectedTemplate && TEMPLATE_SPECIFIC_FIELDS[selectedTemplate]) {
+      // Réinitialiser à la première étape pour éviter les erreurs d'index
+      setCurrentStepIdx(0);
+      
       // Ajouter les champs spécifiques au template dans l'étape "contenu"
       FORM_FIELDS.contenu = TEMPLATE_SPECIFIC_FIELDS[selectedTemplate];
 
@@ -392,12 +401,12 @@ const App: React.FC = () => {
 
     if (isLeftSwipe && !isLastStep) {
       // Swipe gauche = page suivante (navigation libre)
-      handleStepChange(currentStepIdx + 1);
+      handleStepChange(safeStepIdx + 1);
     }
 
     if (isRightSwipe && !isFirstStep) {
       // Swipe droite = page précédente
-      handleStepChange(currentStepIdx - 1);
+      handleStepChange(safeStepIdx - 1);
     }
   };
 
@@ -461,6 +470,19 @@ const App: React.FC = () => {
     // Toujours inclure templateType et templateName
     fieldIds.push('templateType', 'templateName');
 
+    // Pour les convocations, toujours inclure typeConvocation et tous les champs possibles
+    if (selectedTemplate === 'convocations') {
+      const convocationFields = [
+        'typeConvocation', 'dateDebut', 'heureDebut', 'dateFin', 'heureFin',
+        'ordreDuJour1', 'ordreDuJour2', 'ordreDuJour3', 'ordreDuJour4',
+        'ordreDuJour5', 'ordreDuJour6', 'ordreDuJour7', 'ordreDuJour8',
+        'codeDocument', 'signatureExp'
+      ];
+      convocationFields.forEach(f => {
+        if (!fieldIds.includes(f)) fieldIds.push(f);
+      });
+    }
+
     return fieldIds;
   }, [selectedTemplate, availableSteps, getFieldsForStep]);
 
@@ -468,6 +490,10 @@ const App: React.FC = () => {
   const cleanFormData = useCallback((data: FormData): Record<string, string> => {
     const cleaned: Record<string, string> = {};
     const validFieldIds = getValidFieldIds();
+
+    console.log(`📋 Valid field IDs pour ${selectedTemplate}:`, validFieldIds);
+    console.log(`📋 FormData keys:`, Object.keys(data));
+    console.log(`📋 typeConvocation dans formData:`, data.typeConvocation);
 
     Object.keys(data).forEach(key => {
       // Filtrer uniquement les champs valides pour ce template
@@ -946,8 +972,8 @@ const App: React.FC = () => {
                     onTouchEnd={onTouchEnd}
                   >
                     {availableSteps.map((step, idx) => {
-                      const isActive = currentStepIdx === idx;
-                      const isCompleted = currentStepIdx > idx;
+                      const isActive = safeStepIdx === idx;
+                      const isCompleted = safeStepIdx > idx;
                       // Pour les convocations, désactiver l'étape signataire si le type n'est pas sélectionné
                       const isDisabled = selectedTemplate === 'convocations' && step.id === 'expediteur' && !formData.typeConvocation;
 
@@ -1041,7 +1067,7 @@ const App: React.FC = () => {
                      {/* Navigation Group */}
                      <div className="flex items-center gap-2 flex-shrink-0">
                        <button
-                         onClick={() => handleStepChange(currentStepIdx - 1)}
+                         onClick={() => handleStepChange(safeStepIdx - 1)}
                          disabled={isFirstStep}
                          className={`
                            h-12 px-4 rounded-full flex items-center justify-center gap-2 transition-all duration-300 flex-shrink-0
@@ -1055,12 +1081,12 @@ const App: React.FC = () => {
                        </button>
 
                        <button
-                         onClick={() => handleStepChange(currentStepIdx + 1)}
-                         disabled={isLastStep || (selectedTemplate === 'convocations' && availableSteps[currentStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation)}
-                         title={selectedTemplate === 'convocations' && availableSteps[currentStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation ? 'Veuillez d\'abord sélectionner le type de convocation' : undefined}
+                         onClick={() => handleStepChange(safeStepIdx + 1)}
+                         disabled={isLastStep || (selectedTemplate === 'convocations' && availableSteps[safeStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation)}
+                         title={selectedTemplate === 'convocations' && availableSteps[safeStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation ? 'Veuillez d\'abord sélectionner le type de convocation' : undefined}
                          className={`
                            h-12 px-6 rounded-full flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:shadow-[#a84383]/30 dark:hover:shadow-[#e062b1]/30 transition-all duration-300 flex-shrink-0
-                           ${isLastStep || (selectedTemplate === 'convocations' && availableSteps[currentStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation)
+                           ${isLastStep || (selectedTemplate === 'convocations' && availableSteps[safeStepIdx + 1]?.id === 'expediteur' && !formData.typeConvocation)
                              ? 'bg-gray-100 dark:bg-gray-800 text-gray-300 cursor-not-allowed shadow-none'
                              : 'bg-[#a84383] dark:bg-[#e062b1] text-white active:scale-95'}
                          `}

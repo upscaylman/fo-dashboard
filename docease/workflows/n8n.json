@@ -84,7 +84,7 @@
     },
     {
       "parameters": {
-        "filePath": "={{ '/templates/word/template_' + $('Preparer Donnees').item.json.typeDocument + '.docx' }}"
+        "filePath": "={{ $('Preparer Donnees').first().json.typeDocument === 'convocations' ? ($('Preparer Donnees').first().json.typeConvocation === 'CA Fédérale' ? '/templates/word/template_convocation_CA.docx' : '/templates/word/template_convocation_bureau.docx') : '/templates/word/template_' + $('Preparer Donnees').first().json.typeDocument + '.docx' }}"
       },
       "id": "b7197a19-b73e-47ef-98bc-212cfb36fbc1",
       "name": "Lire Template Word",
@@ -224,6 +224,12 @@
               "type": "string"
             },
             {
+              "id": "typeConvocation",
+              "name": "typeConvocation",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.typeConvocation || '' }}",
+              "type": "string"
+            },
+            {
               "id": "texteIa",
               "name": "texteIa",
               "value": "={{ $('Formulaire (Webhook)').item.json.body.texteIa || '' }}",
@@ -293,6 +299,78 @@
               "id": "77521e46-cd7f-430d-bb7c-3359c9da8df8",
               "name": "circulaireTexteB",
               "value": "={{ $('Formulaire (Webhook)').item.json.body.circulaireTexteB || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "dateDebut",
+              "name": "dateDebut",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.dateDebut || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "heureDebut",
+              "name": "heureDebut",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.heureDebut || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "dateFin",
+              "name": "dateFin",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.dateFin || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "heureFin",
+              "name": "heureFin",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.heureFin || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour1",
+              "name": "ordreDuJour1",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour1 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour2",
+              "name": "ordreDuJour2",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour2 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour3",
+              "name": "ordreDuJour3",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour3 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour4",
+              "name": "ordreDuJour4",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour4 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour5",
+              "name": "ordreDuJour5",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour5 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour6",
+              "name": "ordreDuJour6",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour6 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour7",
+              "name": "ordreDuJour7",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour7 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ordreDuJour8",
+              "name": "ordreDuJour8",
+              "value": "={{ $('Formulaire (Webhook)').item.json.body.ordreDuJour8 || '' }}",
               "type": "string"
             },
             {
@@ -390,7 +468,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Récupérer les données du nœud précédent\nconst inputData = $('Preparer Donnees').item.json;\n\n// Ajouter le texte IA si disponible\ntry {\n  const iaNode = $('Extraire Texte IA');\n  if (iaNode && iaNode.item && iaNode.item.json && iaNode.item.json.texteIa) {\n    inputData.texteIa = iaNode.item.json.texteIa;\n  }\n} catch (e) {\n  console.log('Pas d\\'IA');\n}\n\n// NETTOYER : supprimer les variables vides/undefined/null\n// pour éviter les lignes vides dans le document Word\nconst cleanData = {};\nfor (const [key, value] of Object.entries(inputData)) {\n  // Convertir en string pour vérifier\n  const strValue = String(value);\n  \n  // Ne garder que les valeurs non vides\n  if (value !== undefined && \n      value !== null && \n      value !== \"\" && \n      strValue !== \"undefined\" && \n      strValue !== \"null\" &&\n      strValue.trim() !== \"\") {\n    cleanData[key] = value;\n  }\n}\n\nconsole.log('Données nettoyées:', Object.keys(cleanData));\nconsole.log('Valeurs:', cleanData);\n\nreturn {\n  json: cleanData,\n  binary: items[0].binary\n};"
+        "jsCode": "// Récupérer les données du nœud précédent\nconst inputData = { ...$('Preparer Donnees').first().json };\n\nconsole.log('=== FUSIONNER DONNEES ===');\nconsole.log('typeDocument:', inputData.typeDocument);\nconsole.log('typeConvocation:', inputData.typeConvocation);\n\n// Ajouter le texte IA si disponible\ntry {\n  const iaNode = $('Extraire Texte IA');\n  if (iaNode && iaNode.first() && iaNode.first().json && iaNode.first().json.texteIa) {\n    inputData.texteIa = iaNode.first().json.texteIa;\n  }\n} catch (e) {\n  console.log('Pas d\\'IA');\n}\n\n// NETTOYER les données\nconst cleanData = {};\nfor (const [key, value] of Object.entries(inputData)) {\n  const strValue = String(value);\n  \n  // Pour les ordreDuJour : NE PAS inclure si vide (pour que {-w:p} fonctionne)\n  if (key.startsWith('ordreDuJour')) {\n    if (value && strValue.trim() !== '' && strValue !== 'undefined' && strValue !== 'null') {\n      cleanData[key] = value;\n    }\n    // Si vide, on n'ajoute pas du tout = le paragraphe disparaît avec {-w:p}\n  } else {\n    // Pour les autres champs : remplacer undefined/null par chaîne vide\n    if (value === undefined || value === null || strValue === 'undefined' || strValue === 'null') {\n      cleanData[key] = '';\n    } else {\n      cleanData[key] = value;\n    }\n  }\n}\n\nconsole.log('Données nettoyées:', Object.keys(cleanData));\n\nreturn {\n  json: cleanData,\n  binary: items[0].binary\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

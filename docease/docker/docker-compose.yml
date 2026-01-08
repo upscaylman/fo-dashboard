@@ -79,8 +79,8 @@ services:
       # Données persistantes n8n
       - n8n_data:/home/node/.n8n
       
-      # Templates Word (lecture seule)
-      - ./../templates:/templates:ro
+      # Templates Word (lecture-écriture pour mises à jour)
+      - ./../templates:/templates:rw
       
       # Workflows
       - ./../workflows:/workflows
