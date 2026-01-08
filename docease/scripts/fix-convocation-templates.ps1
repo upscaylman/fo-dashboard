@@ -8,7 +8,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Fix-TemplateXml {
+function Repair-TemplateXml {
     param([string]$XmlContent)
     
     # Liste des variables à corriger
@@ -35,7 +35,7 @@ function Fix-TemplateXml {
     return $modified
 }
 
-function Fix-DocxTemplate {
+function Repair-DocxTemplate {
     param([string]$DocxPath)
     
     Write-Host "`n=== Traitement de $DocxPath ===" -ForegroundColor Cyan
@@ -136,7 +136,7 @@ $templatesToFix = @(
 $fixedCount = 0
 foreach ($template in $templatesToFix) {
     $templatePath = Join-Path $TemplatesDir $template
-    if (Fix-DocxTemplate -DocxPath $templatePath) {
+    if (Repair-DocxTemplate -DocxPath $templatePath) {
         $fixedCount++
     }
 }
