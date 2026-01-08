@@ -96,7 +96,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
       {/* Sidebar Container */}
       <aside
         className={`
-          fixed md:sticky inset-y-0 md:top-0 left-0 z-[60] md:z-30
+          fixed md:sticky inset-y-0 md:top-0 left-0 z-[60] md:z-40
           bg-white dark:bg-[rgb(30,30,30)] border-r border-gray-100 dark:border-gray-800 shadow-2xl md:shadow-none
           transform transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]
           ${isOpenMobile ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -233,7 +233,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
               {/* Tooltip au survol (Visible uniquement si réduit ET non sélectionné) */}
               {isDesktopCollapsed && selectedTemplate !== template.id && (
                 <div className={`
-                  absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2 bg-gray-800 text-white dark:text-[rgb(156,163,175)] text-xs rounded-lg transition-all duration-200 whitespace-nowrap z-50 shadow-xl pointer-events-none transform
+                  absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2 bg-gray-800 text-white dark:text-[rgb(156,163,175)] text-xs rounded-lg transition-all duration-200 whitespace-nowrap z-[9999] shadow-xl pointer-events-none transform
                   opacity-0 invisible translate-x-[-10px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0
                 `}>
                   {template.title}

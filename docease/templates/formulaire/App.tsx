@@ -1244,6 +1244,7 @@ const App: React.FC = () => {
               setShowPreview(false);
               setShowShare(true);
             }}
+            filename={generateFilename('pdf')}
           />
         )}
         {showShare && (

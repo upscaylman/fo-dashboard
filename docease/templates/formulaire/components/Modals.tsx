@@ -57,6 +57,7 @@ interface PreviewModalProps {
   onDownloadWord: () => void;
   onDownloadPdf: () => void;
   onShare: () => void;
+  filename?: string;
 }
 
 export const PreviewModal: React.FC<PreviewModalProps> = ({
@@ -66,7 +67,8 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   isLoading,
   onDownloadWord,
   onDownloadPdf,
-  onShare
+  onShare,
+  filename
 }) => {
   const pdfUrl = pdfBlob ? URL.createObjectURL(pdfBlob) : null;
   
@@ -85,7 +87,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Prévisualisation PDF"
-      subtitle="Vérifiez le document avant de télécharger ou partager"
+      subtitle={filename ? `📄 ${filename.replace('.docx', '.pdf')}` : 'Vérifiez le document avant de télécharger ou partager'}
       icon="visibility"
       maxWidth="max-w-6xl"
       actions={
