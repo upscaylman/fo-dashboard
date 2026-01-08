@@ -209,7 +209,7 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
 
   return (
     <div className="relative group w-full" ref={containerRef}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1 min-h-[28px] flex items-center">
         {label}
         {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
       </label>

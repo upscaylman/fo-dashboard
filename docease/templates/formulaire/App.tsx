@@ -69,7 +69,15 @@ const App: React.FC = () => {
   // Filtrer les steps selon le template (circulaire n'a pas de page signataire, convocations n'a que contenu et signataire)
   const availableSteps = useMemo(() => {
     if (selectedTemplate === 'circulaire') {
-      return STEPS.filter(step => step.id !== 'expediteur' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau');
+      // Pour circulaire : contenu en premier, puis coordonnées (renommé en Destinataire(s))
+      const circulaireSteps = STEPS.filter(step => step.id !== 'expediteur' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau')
+        .map(step => step.id === 'coordonnees' ? { ...step, label: 'Destinataire(s)', icon: 'group', description: 'Sélectionnez les destinataires' } : step);
+      // Inverser l'ordre : contenu avant coordonnées
+      return circulaireSteps.sort((a, b) => {
+        if (a.id === 'contenu') return -1;
+        if (b.id === 'contenu') return 1;
+        return 0;
+      });
     }
     if (selectedTemplate === 'convocations') {
       // Pour les convocations : pas de coordonnées, juste contenu et signataire
@@ -108,15 +116,17 @@ const App: React.FC = () => {
 
   // Fonction pour obtenir les champs selon le template et l'étape
   const getFieldsForStep = useCallback((stepId: StepType): FormField[] => {
-    if (customFieldsOrder[stepId]) {
-      return customFieldsOrder[stepId];
+    // Clé unique par template + étape pour isoler les personnalisations
+    const customKey = `${selectedTemplate}_${stepId}`;
+    if (customFieldsOrder[customKey]) {
+      return customFieldsOrder[customKey];
     }
 
     if (stepId === 'coordonnees') {
       if (selectedTemplate === 'circulaire') {
-        // Pour la circulaire, emailDestinataire n'est pas obligatoire
-        return COMMON_FIELDS.filter(f => ['numeroCourrier', 'emailDestinataire'].includes(f.id))
-          .map(field => field.id === 'emailDestinataire' ? { ...field, required: false } : field);
+        // Pour la circulaire, seulement emailDestinataire (non obligatoire, pleine largeur) - numeroCourrier est dans contenu
+        return COMMON_FIELDS.filter(f => f.id === 'emailDestinataire')
+          .map(field => ({ ...field, required: false, width: 'full' as const }));
       } else if (selectedTemplate === 'convocations') {
         // Pour les convocations, pas de champs coordonnées spécifiques, on saute directement au contenu
         return [];
@@ -158,11 +168,20 @@ const App: React.FC = () => {
     }
 
     if (stepId === 'expediteur') {
-      // Pour les convocations, ajouter le champ codeDocument dans l'étape signataire
+      // Pour les convocations, ajouter le champ codeDocument et emailEnvoi dans l'étape signataire
       if (selectedTemplate === 'convocations') {
         const codeDocumentField = COMMON_FIELDS.find(f => f.id === 'codeDocument');
+        const emailEnvoiField: FormField = { 
+          id: 'emailEnvoi', 
+          label: 'Destinataires', 
+          type: 'email', 
+          placeholder: 'Sélectionnez les destinataires...', 
+          required: true, 
+          icon: 'group', 
+          width: 'half' 
+        };
         const signatureField = COMMON_FIELDS.filter(f => f.id === 'signatureExp');
-        return codeDocumentField ? [codeDocumentField, ...signatureField] : signatureField;
+        return codeDocumentField ? [codeDocumentField, emailEnvoiField, ...signatureField] : [emailEnvoiField, ...signatureField];
       }
       return COMMON_FIELDS.filter(f => f.id === 'signatureExp');
     }
@@ -616,18 +635,22 @@ const App: React.FC = () => {
   }, []);
 
   const handleFieldsReorder = (stepId: string, newFields: FormField[]) => {
-    console.log('🔄 Réorganisation des champs pour', stepId, newFields);
+    // Clé unique par template + étape pour isoler les personnalisations
+    const customKey = `${selectedTemplate}_${stepId}`;
+    console.log('🔄 Réorganisation des champs pour', customKey, newFields);
     setCustomFieldsOrder(prev => ({
       ...prev,
-      [stepId]: newFields
+      [customKey]: newFields
     }));
   };
 
   const handleRemovedFieldsChange = (stepId: string, removedFields: { field: FormField; originalIndex: number }[]) => {
-    console.log('🗑️ Champs supprimés pour', stepId, removedFields);
+    // Clé unique par template + étape pour isoler les suppressions
+    const customKey = `${selectedTemplate}_${stepId}`;
+    console.log('🗑️ Champs supprimés pour', customKey, removedFields);
     setRemovedFieldsByStep(prev => ({
       ...prev,
-      [stepId]: removedFields
+      [customKey]: removedFields
     }));
   };
 
@@ -1170,13 +1193,15 @@ const App: React.FC = () => {
             <div className="max-w-5xl mx-auto min-h-[400px]">
                <FormStep
                   step={currentStep.id as StepType}
+                  stepLabel={currentStep.label}
+                  stepDescription={currentStep.description}
                   data={formData}
                   onChange={handleInputChange}
                   isCustomizing={isCustomizing && selectedTemplate === 'custom'}
                   customFields={getFieldsForStep(currentStep.id as StepType)}
                   onFieldsReorder={(newFields) => handleFieldsReorder(currentStep.id, newFields)}
                   invalidFields={invalidFields}
-                  removedFields={removedFieldsByStep[currentStep.id] || []}
+                  removedFields={removedFieldsByStep[`${selectedTemplate}_${currentStep.id}`] || []}
                   onRemovedFieldsChange={(removedFields) => handleRemovedFieldsChange(currentStep.id, removedFields)}
                   showInfo={showInfo}
                   showSuccess={showSuccess}

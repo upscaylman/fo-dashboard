@@ -17,6 +17,48 @@ export const PREDEFINED_EMAILS = [
   { name: 'Valentin RODRIGUEZ', email: 'vrodriguez@fo-metaux.fr' },
 ];
 
+// Emails prédéfinis pour les convocations (CA Fédérale / Bureau Fédéral)
+export const CONVOCATION_EMAILS = [
+  { name: 'AIT ATHMANE Brahim', email: 'brahim.aitathmane@gmail.com' },
+  { name: 'AUBERT Yanis', email: 'yanisaubert@yahoo.fr' },
+  { name: 'BARBEROT Daniel', email: 'daniel.barberot@safrangroup.com' },
+  { name: 'BELLOTTI Lionel', email: 'lbellotti@fo-metaux.fr' },
+  { name: 'BERNARD Laurent', email: 'laurent.bernard@force-ouvriere.fr' },
+  { name: 'BIANCHI Eléna', email: 'elena.bianchifo@orange.fr' },
+  { name: 'BOCCIARELLI Patricia', email: 'patricia.bocciarelli@stellantis.com' },
+  { name: 'BORZIC Eric', email: 'udfo67@force-ouvriere.fr' },
+  { name: 'CAILLE Nathalie', email: 'secretaire.fometaux.marseille@gmail.com' },
+  { name: 'CAPART Nathalie', email: 'ncapart@fo-metaux.fr' },
+  { name: 'CARRE Stéphane', email: 'stephane.carre@mecachrome.com' },
+  { name: 'CIANNARELLA Gérard', email: 'gciannarella@fo-metaux.fr' },
+  { name: 'CICCIONE Philippe', email: 'philippeciccione@gmail.com' },
+  { name: 'DA CRUZ Emmanuel', email: 'emmanuel.da-cruz@se.com' },
+  { name: 'DAVID Frederick', email: 'frederick.david@airbus.com' },
+  { name: 'DAVY Karen', email: 'karen.davy@safrangroup.com' },
+  { name: 'DELBOUIS Dominique', email: 'dominique.delbouis@airbus.com' },
+  { name: 'DEVY Eric', email: 'usm.fo.69@gmail.com' },
+  { name: 'DIOGO Philippe', email: 'diogo-.philippe@orange.fr' },
+  { name: 'DOLZA Sylvain', email: 'sylvain.dolza@airbus.com' },
+  { name: 'KELLER Eric', email: 'ekeller@fo-metaux.fr' },
+  { name: 'LE PAPE Julien', email: 'julien.le-pape@safrangroup.com' },
+  { name: 'LEFEBVRE Olivier', email: 'olefebvre@fo-metaux.fr' },
+  { name: 'LIARD Edwin', email: 'eliard@fo-metaux.fr' },
+  { name: 'LIBERT Frédéric', email: 'fo.ags.aq.libert@gmail.com' },
+  { name: 'MESTARI Mounir', email: 'mounir.mestari@renault.com' },
+  { name: 'NIVON Géraldine', email: 'gnivon@fo-metaux.fr' },
+  { name: 'PASCOT Olivier', email: 'pasco.olivier@wanadoo.fr' },
+  { name: 'PINTO Elisabeth', email: 'elisabeth.pinto@se.com' },
+  { name: 'REPESSE Olivier', email: 'olivier.repesse@volvo.com' },
+  { name: 'REYNES Bruno', email: 'breynes@fo-metaux.fr' },
+  { name: 'RIBEIRO Paul', email: 'pribeiro@fo-metaux.fr' },
+  { name: 'RODRIGUEZ Valentin', email: 'vrodriguez@fo-metaux.fr' },
+  { name: 'SABOT Jean-Yves', email: 'jysabot@fo-metaux.fr' },
+  { name: 'SCHORR Déborah', email: 'deborah.schorr@mpsa.com' },
+  { name: 'SEIGNE Jean-Sébastien', email: 'jean-sebastien.seigne@airbus.com' },
+  { name: 'SOURMAIL Gaylord', email: 'gaylordsourmail@gmail.com' },
+  { name: 'THOUREY David', email: 'david.thourey@arcelormittal.com' },
+];
+
 export const TEMPLATES: Template[] = [
   {
     id: 'designation',
@@ -133,7 +175,8 @@ export const TEMPLATE_SPECIFIC_FIELDS: Record<string, FormField[]> = {
     { id: 'ordreDuJour4', label: 'Point 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'format_list_numbered', width: 'full' },
   ],
   circulaire: [
-    { id: 'objet', label: 'Objet de la Circulaire', type: 'text', placeholder: 'Ex: Information importante', required: true, icon: 'subject', width: 'full' },
+    { id: 'numeroCourrier', label: 'Numéro de la Circulaire', type: 'text', placeholder: 'Ex: 2025-001', required: true, icon: 'tag', width: 'half' },
+    { id: 'objet', label: 'Objet de la Circulaire', type: 'text', placeholder: 'Ex: Information importante', required: true, icon: 'subject', width: 'half' },
     { id: 'circulaireTexteA', label: 'Contenu de la Circulaire', type: 'textarea', placeholder: 'Saisissez le contenu de la circulaire...', required: true, icon: 'description', rows: 8, width: 'full' },
     { id: 'circulaireTexteB', label: 'Autres contenu', type: 'textarea', placeholder: 'Saisissez d\'autres contenus...', required: true, icon: 'edit_note', rows: 8, width: 'full' },
   ],

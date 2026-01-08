@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo } from 'react';
 import { StepType, FormField, FormData, TemplateId } from '../types';
-import { FORM_FIELDS, PREDEFINED_EMAILS } from '../constants';
+import { FORM_FIELDS, PREDEFINED_EMAILS, CONVOCATION_EMAILS } from '../constants';
 import { Input } from './Input';
 import { AITextarea } from './AITextarea';
 import { AddressInput } from './AddressInput';
@@ -8,6 +8,8 @@ import { MultiEmailInput } from './MultiEmailInput';
 
 interface FormStepProps {
   step: StepType;
+  stepLabel?: string;
+  stepDescription?: string;
   data: FormData;
   onChange: (key: string, value: string) => void;
   isCustomizing?: boolean;
@@ -24,6 +26,8 @@ interface FormStepProps {
 
 const FormStepComponent: React.FC<FormStepProps> = ({
   step,
+  stepLabel,
+  stepDescription,
   data,
   onChange,
   isCustomizing = false,
@@ -161,6 +165,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
   };
 
   const getStepTitle = (s: StepType) => {
+    // Utiliser stepLabel si fourni
+    if (stepLabel) return stepLabel;
     switch(s) {
         case 'coordonnees': return 'Coordonnées';
         case 'contenu': return 'Contenu';
@@ -174,6 +180,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
 
   // Message d'info spécifique par étape
   const getStepInfoMessage = (s: StepType) => {
+    // Utiliser stepDescription si fourni
+    if (stepDescription) return stepDescription;
     if (s === 'ordreDuJourBureau') {
       return 'Veuillez remplir les points à l\'ordre du jour ci-dessous';
     }
@@ -321,6 +329,16 @@ const FormStepComponent: React.FC<FormStepProps> = ({
                 required={field.required}
                 placeholder={field.placeholder}
                 predefinedEmails={PREDEFINED_EMAILS}
+                error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
+              />
+            ) : field.id === 'emailEnvoi' && selectedTemplate === 'convocations' ? (
+              <MultiEmailInput
+                label={field.label}
+                value={data[field.id] || ''}
+                onChange={(value) => onChange(field.id, value)}
+                required={field.required}
+                placeholder={field.placeholder}
+                predefinedEmails={CONVOCATION_EMAILS}
                 error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
               />
             ) : (

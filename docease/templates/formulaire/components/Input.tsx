@@ -63,7 +63,7 @@ export const Input: React.FC<InputProps> = ({
   const showError = externalError ? true : (touched && internalError);
 
   const wrapperClass = "relative group";
-  const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1";
+  const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1 min-h-[28px] flex items-center";
   const baseInputClass = `w-full bg-[#fdfbff] dark:bg-[rgb(37,37,37)] border-2 text-[#1c1b1f] dark:text-white text-base rounded-2xl py-3 outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${icon ? 'pl-12 pr-4' : 'px-4'}`;
   const inputClass = `${baseInputClass} ${
     showError
