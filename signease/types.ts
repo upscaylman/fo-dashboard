@@ -69,6 +69,7 @@ export interface MockEmail {
   subject: string;
   body: string;
   sentAt: string;
+  updatedAt?: string; // Pour le suivi des mises à jour en temps réel
   read: boolean;
   signatureLink: string;
   documentName: string;

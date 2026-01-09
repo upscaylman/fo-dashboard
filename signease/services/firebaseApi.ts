@@ -250,6 +250,7 @@ export const subscribeToDocuments = (
     return () => {}; // Retourner une fonction vide si pas d'email
   }
 
+  const userEmailLower = userEmail.toLowerCase();
   const q = query(collection(db, "documents"), orderBy("updatedAt", "desc"));
 
   // Créer le listener en temps réel
@@ -262,14 +263,16 @@ export const subscribeToDocuments = (
         } as Document)
     );
 
-    // Filtrer uniquement les documents de l'utilisateur
+    // Filtrer uniquement les documents de l'utilisateur (insensible à la casse)
     const visibleDocuments = allDocuments.filter(
-      (doc) => doc.creatorEmail === userEmail
+      (doc) => doc.creatorEmail?.toLowerCase() === userEmailLower
     );
 
     console.log(
       "🔄 Documents mis à jour en temps réel:",
-      visibleDocuments.length
+      visibleDocuments.length,
+      "- Statuts:",
+      visibleDocuments.map(d => `${d.name}: ${d.status}`).join(", ")
     );
     onUpdate(visibleDocuments);
   });
@@ -738,15 +741,27 @@ export const sendSignatureConfirmationEmail = async (
 ): Promise<{ success: boolean; error?: any }> => {
   const TEMPLATE_ID = "template_6t8rxgv"; // ✅ Template pour notification de signature
 
+  // Construire les URLs correctement pour HashRouter
+  const baseUrl = window.location.origin + window.location.pathname;
+  const viewLink = `${baseUrl}#/sign/${viewToken}`;
+  const verifyLink = `${baseUrl}#/verify?doc=${documentId}`;
+
+  console.log("📧 Préparation email de confirmation:");
+  console.log("   - Destinataire:", creatorEmail);
+  console.log("   - Document:", documentName);
+  console.log("   - Signataire:", signerName, `(${signerEmail})`);
+  console.log("   - Lien de visualisation:", viewLink);
+
   const templateParams = {
     recipient_email: creatorEmail,
+    to_email: creatorEmail, // Ajout pour compatibilité EmailJS
     document_name: documentName,
     document_id: documentId,
     signer_name: signerName,
     signer_email: signerEmail,
     signature_date: new Date().toLocaleString("fr-FR"),
-    view_link: `${window.location.origin}${window.location.pathname}#/sign/${viewToken}`,
-    verify_link: `${window.location.origin}${window.location.pathname}#/verify?doc=${documentId}`, // 🔐 Nouveau lien de vérification
+    view_link: viewLink,
+    verify_link: verifyLink,
   };
 
   const result = await sendEmailViaDualServices(
@@ -754,6 +769,13 @@ export const sendSignatureConfirmationEmail = async (
     templateParams,
     creatorEmail
   );
+  
+  if (result.success) {
+    console.log("✅ Email de confirmation envoyé avec succès à:", creatorEmail);
+  } else {
+    console.error("❌ Échec d'envoi de l'email de confirmation à:", creatorEmail);
+  }
+  
   return { success: result.success };
 };
 
@@ -793,6 +815,23 @@ export const submitSignature = async (
         )
         .every((f) => f.value != null)
     );
+
+    // 🔍 DEBUG: Afficher les informations de signature
+    console.log("📝 submitSignature - Informations:");
+    console.log("   - Document:", envelope.document.name);
+    console.log("   - Signataire actuel:", signer.email);
+    console.log("   - Nombre de destinataires:", envelope.recipients.length);
+    console.log("   - Nombre de champs signés:", signedFields.length);
+    console.log("   - allSigned:", allSigned);
+    
+    // Vérifier chaque destinataire
+    envelope.recipients.forEach((recipient, idx) => {
+      const recipientSignatureFields = updatedFields.filter(
+        (f) => f.recipientId === recipient.id && f.type === FieldType.SIGNATURE
+      );
+      const signedCount = recipientSignatureFields.filter((f) => f.value != null).length;
+      console.log(`   - Destinataire ${idx + 1} (${recipient.email}): ${signedCount}/${recipientSignatureFields.length} champs signés`);
+    });
 
     // Mettre à jour l'enveloppe
     await updateDoc(doc(db, "envelopes", envelopeId), {
@@ -947,15 +986,23 @@ export const submitSignature = async (
       events: newEvents,
     });
 
-    // 🔄 Mettre à jour l'email original du destinataire pour refléter la signature
+    // 🔄 Mettre à jour l'email original du destinataire actuel pour refléter sa signature
     const originalEmailId = `email-${token}`;
     const originalEmailDoc = await getDoc(doc(db, "emails", originalEmailId));
     if (originalEmailDoc.exists()) {
+      // Message différent selon si le document est complètement signé ou non
+      const emailSubject = allSigned 
+        ? `✅ Document finalisé : ${envelope.document.name}`
+        : `✅ Document signé : ${envelope.document.name}`;
+      
+      const emailBody = allSigned
+        ? `Bonjour ${signer.name},\n\nVous avez signé le document "${envelope.document.name}".\n\nToutes les signatures ont été collectées - le document est maintenant finalisé.\n\nDate de signature : ${new Date().toLocaleString("fr-FR")}\n\nVous pouvez consulter le document finalisé depuis votre tableau de bord SignEase.`
+        : `Bonjour ${signer.name},\n\nVous avez signé le document "${envelope.document.name}".\n\nD'autres signatures sont encore en attente.\n\nDate de signature : ${new Date().toLocaleString("fr-FR")}`;
+
       await updateDoc(doc(db, "emails", originalEmailId), {
-        subject: `✅ Document signé : ${envelope.document.name}`,
-        body: `Bonjour ${signer.name},\n\nVous avez signé le document "${
-          envelope.document.name
-        }".\n\nDate de signature : ${new Date().toLocaleString("fr-FR")}`,
+        subject: emailSubject,
+        body: emailBody,
+        updatedAt: new Date().toISOString(), // 🔔 Important pour déclencher le listener temps réel
       });
       console.log("   ✅ Email original du destinataire mis à jour");
     }
@@ -980,6 +1027,54 @@ export const submitSignature = async (
         "📧 Document complètement signé - Envoi de notification à l'expéditeur..."
       );
 
+      // 🔔 Mettre à jour les emails de TOUS les autres destinataires pour les notifier que le document est finalisé
+      console.log("   🔔 Notification à tous les destinataires que le document est finalisé...");
+      for (const recipient of envelope.recipients) {
+        // Ne pas re-notifier le signataire actuel (déjà fait plus haut)
+        if (recipient.id === signer.id) continue;
+        
+        // Récupérer le token de ce destinataire
+        const recipientTokenQuery = query(
+          collection(db, "tokens"),
+          where("envelopeId", "==", envelopeId),
+          where("recipientId", "==", recipient.id)
+        );
+        const recipientTokenDocs = await getDocs(recipientTokenQuery);
+        
+        for (const tokenDoc of recipientTokenDocs.docs) {
+          const recipientEmailId = `email-${tokenDoc.id}`;
+          const recipientEmailDoc = await getDoc(doc(db, "emails", recipientEmailId));
+          
+          if (recipientEmailDoc.exists()) {
+            await updateDoc(doc(db, "emails", recipientEmailId), {
+              subject: `✅ Document finalisé : ${envelope.document.name}`,
+              body: `Bonjour ${recipient.name},\n\nLe document "${envelope.document.name}" a été signé par tous les destinataires.\n\nToutes les signatures ont été collectées le ${new Date().toLocaleString("fr-FR")}.\n\nVous pouvez consulter le document finalisé depuis votre tableau de bord SignEase.`,
+              updatedAt: new Date().toISOString(),
+            });
+            console.log(`   ✅ Email mis à jour pour ${recipient.name} (${recipient.email})`);
+          }
+        }
+      }
+
+      // 🔔 Créer un email interne pour l'expéditeur (pour le Dashboard et les notifications)
+      const creatorEmail = envelope.document.creatorEmail || signer.email;
+      const signedEmailId = `email-signed-${envelope.document.id}-${Date.now()}`;
+      const signedEmail: MockEmail = {
+        id: signedEmailId,
+        from: signer.email,
+        to: creatorEmail,
+        toEmail: creatorEmail,
+        subject: `✅ Document signé : ${envelope.document.name}`,
+        body: `Bonjour,\n\nLe document "${envelope.document.name}" a été signé par ${signer.name} (${signer.email}).\n\nDate de signature : ${new Date().toLocaleString("fr-FR")}\n\nVous pouvez consulter et télécharger le document signé depuis votre tableau de bord SignEase.`,
+        signatureLink: documentViewUrl, // Lien de visualisation du document signé
+        documentName: envelope.document.name,
+        sentAt: new Date().toISOString(),
+        read: false,
+      };
+
+      await setDoc(doc(db, "emails", signedEmailId), signedEmail);
+      console.log("   ✅ Email de confirmation créé pour l'expéditeur (notification interne)");
+
       // Envoyer l'email de confirmation externe avec le token de visualisation
       const confirmationResult = await sendSignatureConfirmationEmail(
         envelope.document.id,
@@ -992,6 +1087,29 @@ export const submitSignature = async (
 
       if (!confirmationResult.success) {
         console.warn("⚠️ Email externe de confirmation non envoyé");
+      }
+    } else {
+      // 🔔 Même si pas tous signé, notifier l'expéditeur qu'un signataire a signé
+      const creatorEmail = envelope.document.creatorEmail || signer.email;
+      
+      // Ne créer une notification que si l'expéditeur n'est pas le signataire lui-même
+      if (creatorEmail.toLowerCase() !== signer.email.toLowerCase()) {
+        const partialSignedEmailId = `email-partial-signed-${envelope.document.id}-${signer.id}-${Date.now()}`;
+        const partialSignedEmail: MockEmail = {
+          id: partialSignedEmailId,
+          from: signer.email,
+          to: creatorEmail,
+          toEmail: creatorEmail,
+          subject: `📝 Signature en cours : ${envelope.document.name}`,
+          body: `Bonjour,\n\n${signer.name} (${signer.email}) a signé le document "${envelope.document.name}".\n\nD'autres signatures sont encore en attente.\n\nDate de signature : ${new Date().toLocaleString("fr-FR")}`,
+          signatureLink: documentViewUrl,
+          documentName: envelope.document.name,
+          sentAt: new Date().toISOString(),
+          read: false,
+        };
+
+        await setDoc(doc(db, "emails", partialSignedEmailId), partialSignedEmail);
+        console.log("   ✅ Email de signature partielle créé pour l'expéditeur");
       }
     }
 

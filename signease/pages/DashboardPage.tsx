@@ -139,11 +139,13 @@ const DashboardPage: React.FC = () => {
   const emailToUnifiedDocument = (email: MockEmail): UnifiedDocument => {
     let status = DocumentStatus.SENT;
 
-    // Déterminer le statut selon le contenu de l'email
-    if (email.subject.includes("✅") || email.body?.includes("signé")) {
+    // Déterminer le statut selon le contenu de l'email (sujet OU body)
+    if (email.subject.includes("✅") || email.subject.includes("finalisé") || email.body?.includes("signé") || email.body?.includes("finalisé")) {
       status = DocumentStatus.SIGNED;
     } else if (email.subject.includes("❌") || email.body?.includes("rejeté")) {
       status = DocumentStatus.REJECTED;
+    } else if (email.subject.includes("📝") || email.body?.includes("en attente")) {
+      status = DocumentStatus.SENT; // Signature en cours = toujours en attente
     }
 
     // Calculer la date d'expiration à 1 an après la date de création du document
@@ -151,12 +153,15 @@ const DashboardPage: React.FC = () => {
     const expirationDate = new Date(email.sentAt);
     expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 
+    // Utiliser updatedAt si disponible, sinon sentAt
+    const updatedAt = email.updatedAt || email.sentAt;
+
     return {
       id: `email-${email.id}`,
       name: email.documentName || email.subject,
       status: status,
       createdAt: email.sentAt,
-      updatedAt: email.sentAt,
+      updatedAt: updatedAt,
       totalPages: 0, // Non applicable pour les emails
       expiresAt: expirationDate.toISOString(), // Définir la date d'expiration à 1 an après la création
       creatorEmail: email.from || "",
