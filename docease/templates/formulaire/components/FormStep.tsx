@@ -229,8 +229,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
         </div>
       )}
 
-      {/* Fields Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Fields Grid - 6 colonnes pour supporter half (3 cols) et third (2 cols) */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-5 items-start">
         {fields.map((field, index) => (
           <div
             key={field.id}
@@ -240,7 +240,7 @@ const FormStepComponent: React.FC<FormStepProps> = ({
             onDragEnd={handleDragEnd}
             className={`
               relative transition-all duration-300 transform-gpu
-              ${field.width === 'full' ? 'md:col-span-2' : ''}
+              ${field.width === 'full' ? 'md:col-span-6' : field.width === 'third' ? 'md:col-span-2' : 'md:col-span-3'}
 
               ${isCustomizing ? 'cursor-grab active:cursor-grabbing p-4 border-2 border-dashed border-[#3b5265]/30 dark:border-blue-400/30 rounded-2xl bg-gray-50/50 dark:bg-[#252525] hover:bg-white dark:hover:bg-[#2f2f2f] hover:shadow-lg hover:border-[#3b5265] dark:hover:border-blue-400 hover:z-10' : ''}
 
@@ -320,7 +320,7 @@ const FormStepComponent: React.FC<FormStepProps> = ({
                 required={field.required}
                 placeholder={field.placeholder}
                 error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
-                resetKey={step}
+                resetKey={`${selectedTemplate}_${step}`}
               />
             ) : field.id === 'emailDestinataire' && selectedTemplate === 'circulaire' ? (
               <MultiEmailInput

@@ -80,17 +80,25 @@ const App: React.FC = () => {
       });
     }
     if (selectedTemplate === 'convocations') {
-      // Pour les convocations : pas de coordonnées, juste contenu et signataire
+      // Pour les convocations : pas de coordonnées, juste contenu et signataire (renommé Destinataire(s))
+      const renameExpStep = (step: typeof STEPS[0]) => 
+        step.id === 'expediteur' ? { ...step, label: 'Destinataire(s)', icon: 'group', description: 'Email des destinataires' } : step;
+      
       // Si CA Fédérale est sélectionné, ajouter les onglets jour1 et jour2
       if (formData.typeConvocation === 'CA Fédérale') {
-        return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'ordreDuJourBureau');
+        return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'ordreDuJourBureau').map(renameExpStep);
       }
       // Pour Bureau Fédéral, afficher l'onglet ordreDuJourBureau
       if (formData.typeConvocation === 'Bureau Fédéral') {
-        return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2');
+        return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2').map(renameExpStep);
       }
       // Pas encore sélectionné, pas d'onglets jour
-      return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau');
+      return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau').map(renameExpStep);
+    }
+    if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
+      // Pour designation, negociation et custom : coordonnées, contenu (avec codeDocument + signatureExp), destinataire(s)
+      return STEPS.filter(step => step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau')
+        .map(step => step.id === 'expediteur' ? { ...step, label: 'Destinataire(s)', icon: 'group', description: 'Email du destinataire' } : step);
     }
     // Pour les autres templates, pas d'onglets jour
     return STEPS.filter(step => step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau');
@@ -130,6 +138,19 @@ const App: React.FC = () => {
       } else if (selectedTemplate === 'convocations') {
         // Pour les convocations, pas de champs coordonnées spécifiques, on saute directement au contenu
         return [];
+      } else if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
+        // Pour designation, negociation et custom : coordonnées SANS codeDocument et SANS emailDestinataire
+        // Adresse, Bâtiment et Code postal + Ville sur la même ligne en 3 colonnes
+        const baseFields = COMMON_FIELDS.filter(f => ['entreprise', 'civiliteDestinataire', 'nomDestinataire', 'statutDestinataire'].includes(f.id));
+        const adresseField = COMMON_FIELDS.find(f => f.id === 'adresse');
+        const batimentField = COMMON_FIELDS.find(f => f.id === 'batiment');
+        const cpVilleField = COMMON_FIELDS.find(f => f.id === 'cpVille');
+        
+        const result = [...baseFields];
+        if (adresseField) result.push({ ...adresseField, width: 'third' as const });
+        if (batimentField) result.push({ ...batimentField, width: 'third' as const });
+        if (cpVilleField) result.push({ ...cpVilleField, width: 'third' as const });
+        return result;
       } else {
         return COMMON_FIELDS.filter(f => ['codeDocument', 'entreprise', 'civiliteDestinataire', 'nomDestinataire', 'statutDestinataire', 'batiment', 'adresse', 'cpVille', 'emailDestinataire'].includes(f.id));
       }
@@ -146,6 +167,18 @@ const App: React.FC = () => {
         }
         // Par défaut, afficher juste le sélecteur de type
         return TEMPLATE_SPECIFIC_FIELDS['convocations'] || [];
+      }
+      
+      // Pour designation, negociation et custom : ajouter codeDocument au début et signatureExp à la fin
+      if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
+        const codeDocumentField = COMMON_FIELDS.find(f => f.id === 'codeDocument');
+        const signatureField = COMMON_FIELDS.find(f => f.id === 'signatureExp');
+        const templateFields = TEMPLATE_SPECIFIC_FIELDS[selectedTemplate] || [];
+        const result: FormField[] = [];
+        if (codeDocumentField) result.push(codeDocumentField);
+        result.push(...templateFields);
+        if (signatureField) result.push(signatureField);
+        return result;
       }
       
       if (TEMPLATE_SPECIFIC_FIELDS[selectedTemplate]) {
@@ -168,9 +201,8 @@ const App: React.FC = () => {
     }
 
     if (stepId === 'expediteur') {
-      // Pour les convocations, ajouter le champ codeDocument et emailEnvoi dans l'étape signataire
+      // Pour les convocations, seulement emailEnvoi (signatureExp déplacé dans Ordre du jour 2)
       if (selectedTemplate === 'convocations') {
-        const codeDocumentField = COMMON_FIELDS.find(f => f.id === 'codeDocument');
         const emailEnvoiField: FormField = { 
           id: 'emailEnvoi', 
           label: 'Destinataires', 
@@ -178,10 +210,17 @@ const App: React.FC = () => {
           placeholder: 'Sélectionnez les destinataires...', 
           required: true, 
           icon: 'group', 
-          width: 'half' 
+          width: 'full' 
         };
-        const signatureField = COMMON_FIELDS.filter(f => f.id === 'signatureExp');
-        return codeDocumentField ? [codeDocumentField, emailEnvoiField, ...signatureField] : [emailEnvoiField, ...signatureField];
+        return [emailEnvoiField];
+      }
+      // Pour designation, negociation et custom, retourner emailDestinataire en pleine largeur (onglet Destinataire(s))
+      if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
+        const emailField = COMMON_FIELDS.find(f => f.id === 'emailDestinataire');
+        if (emailField) {
+          return [{ ...emailField, width: 'full' as const }];
+        }
+        return [];
       }
       return COMMON_FIELDS.filter(f => f.id === 'signatureExp');
     }
@@ -1215,7 +1254,7 @@ const App: React.FC = () => {
                        variant="primary"
                        label="Prévisualiser le document"
                        icon="visibility"
-                       className="py-4 px-8 text-lg rounded-[2rem] shadow-xl hover:shadow-2xl hover:shadow-[#a84383]/20"
+                       className={`py-4 px-8 text-lg rounded-[2rem] shadow-xl hover:shadow-2xl hover:shadow-[#a84383]/20 ${!areAllRequiredFieldsFilled ? 'opacity-50 cursor-not-allowed' : ''}`}
                        onClick={handlePreview}
                      />
                   </div>

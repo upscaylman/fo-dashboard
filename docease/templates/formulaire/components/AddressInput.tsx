@@ -45,11 +45,21 @@ export const AddressInput: React.FC<AddressInputProps> = ({
   // Initialiser avec la valeur actuelle pour éviter de déclencher une recherche au montage
   const lastSearchedValueRef = useRef<string>(value);
   const initialMountRef = useRef(true);
+  // Protéger contre les recherches automatiques pendant 500ms après le montage
+  const mountProtectionRef = useRef(true);
+
+  // Désactiver la protection après un délai
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      mountProtectionRef.current = false;
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const showError = !!externalError;
 
   const wrapperClass = "relative group";
-  const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1";
+  const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1 min-h-[28px] flex items-center";
   const baseInputClass = `w-full bg-[#fdfbff] dark:bg-[rgb(37,37,37)] border-2 text-[#1c1b1f] dark:text-white text-base rounded-2xl py-3 outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${icon ? 'pl-12 pr-4' : 'px-4'}`;
   const inputClass = `${baseInputClass} ${
     showError
@@ -70,7 +80,8 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       if (response.ok) {
         const data = await response.json();
         setAddresses(data.features || []);
-        if (data.features && data.features.length > 0) {
+        // Ne pas ouvrir automatiquement si la protection au montage est active
+        if (data.features && data.features.length > 0 && !mountProtectionRef.current) {
           setShowSuggestions(true);
         }
       }
@@ -88,6 +99,15 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       initialMountRef.current = false;
       if (value) {
         // Si une valeur existe au montage, la marquer comme déjà validée
+        lastSearchedValueRef.current = value;
+      }
+      return;
+    }
+
+    // Protection contre les recherches automatiques juste après le montage
+    if (mountProtectionRef.current) {
+      // Mettre à jour lastSearchedValueRef pour éviter une recherche quand la protection expire
+      if (value) {
         lastSearchedValueRef.current = value;
       }
       return;
@@ -135,17 +155,39 @@ export const AddressInput: React.FC<AddressInputProps> = ({
     }
   };
 
-  // Calculer la position du dropdown
+  // Calculer la position du dropdown avec détection des limites de l'écran
   const updateDropdownPosition = useCallback(() => {
     if (inputRef.current && showSuggestions) {
       const rect = inputRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        position: 'absolute',
-        top: `${rect.bottom + 8}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-        zIndex: 10000
-      });
+      const dropdownHeight = 280; // Hauteur max estimée du dropdown (max-h-64 = 256px + padding)
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      // Si pas assez d'espace en bas ET plus d'espace en haut, afficher vers le haut
+      const shouldFlip = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+      
+      if (shouldFlip) {
+        // Afficher au-dessus de l'input
+        setDropdownStyle({
+          position: 'absolute',
+          bottom: `${viewportHeight - rect.top + 8}px`,
+          left: `${rect.left}px`,
+          width: `${rect.width}px`,
+          zIndex: 10000,
+          maxHeight: `${Math.min(spaceAbove - 16, 256)}px`
+        });
+      } else {
+        // Afficher en dessous de l'input (comportement par défaut)
+        setDropdownStyle({
+          position: 'absolute',
+          top: `${rect.bottom + 8}px`,
+          left: `${rect.left}px`,
+          width: `${rect.width}px`,
+          zIndex: 10000,
+          maxHeight: `${Math.min(spaceBelow - 16, 256)}px`
+        });
+      }
     }
   }, [showSuggestions]);
 
@@ -187,12 +229,21 @@ export const AddressInput: React.FC<AddressInputProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showSuggestions]);
 
-  // Nettoyer les suggestions quand resetKey change (changement de page)
+  // Nettoyer les suggestions quand resetKey change (changement de page/template)
   useEffect(() => {
     setAddresses([]);
     setShowSuggestions(false);
     hasUserTypedRef.current = false;
-    // NE PAS réinitialiser lastSearchedValueRef pour garder la mémoire de la valeur validée
+    // Réactiver la protection et mettre à jour les refs
+    mountProtectionRef.current = true;
+    initialMountRef.current = true;
+    const timer = setTimeout(() => {
+      mountProtectionRef.current = false;
+      // À ce moment, synchroniser lastSearchedValueRef avec la valeur actuelle
+      lastSearchedValueRef.current = value;
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
 
   return (
@@ -218,8 +269,8 @@ export const AddressInput: React.FC<AddressInputProps> = ({
               onChange(newValue);
             }}
             onFocus={() => {
-              // Ne montrer les suggestions que si l'utilisateur a déjà tapé
-              if (addresses.length > 0 && hasUserTypedRef.current) {
+              // Ne montrer les suggestions que si l'utilisateur a déjà tapé ET que la protection au montage est désactivée
+              if (addresses.length > 0 && hasUserTypedRef.current && !mountProtectionRef.current) {
                 setShowSuggestions(true);
                 updateDropdownPosition();
               }
@@ -256,7 +307,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
         <div
           ref={dropdownRef}
           style={dropdownStyle}
-          className="bg-white dark:bg-[rgb(47,47,47)] border-2 border-[#a84383] dark:border-[#e062b1] rounded-2xl shadow-xl max-h-60 overflow-y-auto"
+          className="bg-white dark:bg-[rgb(47,47,47)] border-2 border-[#a84383] dark:border-[#e062b1] rounded-2xl shadow-xl overflow-y-auto"
         >
           <div className="p-2">
             <div className="text-xs text-gray-500 dark:text-gray-400 px-3 py-2 font-medium">Sélectionnez une adresse :</div>
