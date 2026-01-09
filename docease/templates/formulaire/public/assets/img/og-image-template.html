@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200, height=630">
+  <title>DocEase OG Image</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 1200px;
+      height: 630px;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 50%, #1e1e1e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* Background Pattern */
+    .pattern {
+      position: absolute;
+      inset: 0;
+      opacity: 0.03;
+      background-image: radial-gradient(circle at 25px 25px, #aa4584 2px, transparent 0);
+      background-size: 50px 50px;
+    }
+    
+    /* Gradient Orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.3;
+    }
+    
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: #aa4584;
+      top: -100px;
+      right: -100px;
+    }
+    
+    .orb-2 {
+      width: 300px;
+      height: 300px;
+      background: #e062b1;
+      bottom: -50px;
+      left: -50px;
+    }
+    
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 60px;
+      z-index: 10;
+      padding: 60px;
+    }
+    
+    .logo-container {
+      flex-shrink: 0;
+    }
+    
+    .logo {
+      width: 180px;
+      height: 180px;
+      background: linear-gradient(135deg, #aa4584, #e062b1);
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 60px rgba(170, 69, 132, 0.4);
+    }
+    
+    .logo img {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+    }
+    
+    .content {
+      flex: 1;
+    }
+    
+    .badge {
+      display: inline-block;
+      background: rgba(170, 69, 132, 0.2);
+      border: 1px solid rgba(170, 69, 132, 0.4);
+      color: #e062b1;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 72px;
+      font-weight: 900;
+      color: white;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+    
+    h1 span {
+      color: #e062b1;
+    }
+    
+    p {
+      font-size: 24px;
+      color: #9ca3af;
+      line-height: 1.5;
+      max-width: 600px;
+    }
+    
+    .features {
+      display: flex;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d1d5db;
+      font-size: 16px;
+    }
+    
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(170, 69, 132, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e062b1;
+    }
+    
+    .footer {
+      position: absolute;
+      bottom: 30px;
+      left: 60px;
+      right: 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .footer-logo img {
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="pattern"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  
+  <div class="container">
+    <div class="logo-container">
+      <div class="logo">
+        <img src="docEase_HD.png" alt="DocEase">
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="badge">🔧 Outil Syndical</div>
+      <h1>Doc<span>Ease</span></h1>
+      <p>Générez vos documents syndicaux en quelques clics : convocations, désignations, circulaires et plus encore.</p>
+      
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">📄</div>
+          <span>Convocations</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">✍️</div>
+          <span>Désignations</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📢</div>
+          <span>Circulaires</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📋</div>
+          <span>Modèles</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <div class="footer-logo">
+      <span>by FO Métaux</span>
+    </div>
+    <span>docease-fometaux.netlify.app</span>
+  </div>
+</body>
+</html>

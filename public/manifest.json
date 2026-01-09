@@ -1,0 +1,86 @@
+{
+  "name": "FO Métaux Dashboard",
+  "short_name": "FO Métaux",
+  "description": "Portail des Secrétaires et Militants FO Métaux - Gestion des outils syndicaux",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF8F6",
+  "theme_color": "#d00013",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fr-FR",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/images/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "FO Métaux Dashboard sur mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tableau de bord",
+      "short_name": "Dashboard",
+      "url": "/",
+      "icons": [{ "src": "/images/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mon profil",
+      "short_name": "Profil",
+      "url": "/profile",
+      "icons": [{ "src": "/images/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   HashRouter,
   Navigate,
@@ -9,7 +9,9 @@ import {
 import CookieBanner from "./components/CookieBanner";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
+import { InstallPWAButton } from "./components/InstallPWAButton";
 import { PresenceTracker } from "./components/PresenceTracker";
+import { SplashScreen } from "./components/SplashScreen";
 import { ToastProvider } from "./components/Toast";
 import { UserProvider, useUser } from "./components/UserContext";
 import VersionUpdateBanner from "./components/VersionUpdateBanner";
@@ -28,29 +30,47 @@ import "./utils/firebaseCheck";
 const AppContent: React.FC = () => {
   const { currentUser, setCurrentUser, isLoading } = useUser();
   const location = useLocation();
+  
+  // Splash screen au premier chargement
+  const [showSplash, setShowSplash] = useState(() => {
+    const hasShownSplash = sessionStorage.getItem('signease-splash-shown');
+    return !hasShownSplash;
+  });
+  
+  const handleSplashFinished = () => {
+    setShowSplash(false);
+    sessionStorage.setItem('signease-splash-shown', 'true');
+  };
 
   // Vérifier si on est sur une route /sign/:token
   const isSigningRoute = location.pathname.startsWith("/sign/");
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="inline-block">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <>
+        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="inline-block">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+            <p className="mt-4 text-onSurfaceVariant">Chargement...</p>
           </div>
-          <p className="mt-4 text-onSurfaceVariant">Chargement...</p>
         </div>
-      </div>
+      </>
     );
   }
 
   // Afficher la page de connexion SEULEMENT si pas d'utilisateur ET pas sur une route /sign/:token
   if (!currentUser && !isSigningRoute) {
     return (
-      <LoginPage
-        onSubmit={(email) => setCurrentUser({ email })}
-      />
+      <>
+        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+        <LoginPage
+          onSubmit={(email) => setCurrentUser({ email })}
+        />
+        <InstallPWAButton />
+      </>
     );
   }
 
@@ -60,6 +80,7 @@ const AppContent: React.FC = () => {
   // Si utilisateur, afficher l'app
   return (
     <>
+      {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
       {currentUser && <Header />}
       {currentUser && <PresenceTracker />}
       <main className="flex-grow animate-fade-in page-transition">
@@ -80,6 +101,7 @@ const AppContent: React.FC = () => {
       </main>
       {currentUser && shouldShowFooter && <Footer />}
       {currentUser && <CookieBanner />}
+      <InstallPWAButton />
     </>
   );
 };

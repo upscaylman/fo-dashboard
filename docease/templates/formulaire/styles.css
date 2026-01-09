@@ -266,3 +266,68 @@ body {
   0% { left: -100%; }
   50%, 100% { left: 100%; }
 }
+
+/* PWA Install Banner Animation */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Splash Screen Animations */
+@keyframes loading-bar {
+  0% {
+    width: 0%;
+    margin-left: 0%;
+  }
+  50% {
+    width: 70%;
+    margin-left: 15%;
+  }
+  100% {
+    width: 100%;
+    margin-left: 0%;
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1.5s ease-in-out infinite;
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
+/* PWA Standalone Mode - Ajustements quand l'app est installée */
+@media (display-mode: standalone) {
+  /* Masquer les éléments spécifiques web quand en mode app */
+  .hide-in-pwa {
+    display: none !important;
+  }
+  
+  /* Safe area pour les iPhone avec encoche */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

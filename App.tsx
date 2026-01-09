@@ -9,6 +9,7 @@ import ProfilePage from './pages/ProfilePage';
 import SplashScreen from './components/layout/SplashScreen';
 import ChatAssistant from './components/dashboard/ChatAssistant';
 import CommandPalette from './components/ui/CommandPalette';
+import InstallPWAButton from './components/ui/InstallPWAButton';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { BookmarkProvider } from './context/BookmarkContext';
@@ -240,10 +241,20 @@ const AppContent: React.FC = () => {
     }
 
     if (currentPath === '/register') {
-      return <RegisterPage onNavigate={navigateTo} />;
+      return (
+        <>
+          <RegisterPage onNavigate={navigateTo} />
+          <InstallPWAButton />
+        </>
+      );
     }
     // Par défaut, afficher Login pour toutes les autres routes non-auth
-    return <LoginPage onNavigate={navigateTo} />;
+    return (
+      <>
+        <LoginPage onNavigate={navigateTo} />
+        <InstallPWAButton />
+      </>
+    );
   }
 
   return (
@@ -257,6 +268,7 @@ const AppContent: React.FC = () => {
         <Footer />
         <ChatAssistant />
         <CommandPalette />
+        <InstallPWAButton />
       </div>
     </ReadOnlyOverlay>
   );

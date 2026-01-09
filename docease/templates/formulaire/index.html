@@ -2,10 +2,52 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DocEase - FO Métaux</title>
-  <meta name="description" content="FO Métaux - DocEase - Générateur de documents">
+  <meta name="description" content="Générez vos documents syndicaux en quelques clics : convocations, désignations, circulaires et plus encore.">
+  
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://docease-fometaux.netlify.app/">
+  <meta property="og:title" content="DocEase - Générateur de Documents FO Métaux">
+  <meta property="og:description" content="🔧 Générez vos documents syndicaux en quelques clics : convocations, désignations, circulaires et plus encore. Simple, rapide et professionnel !">
+  <meta property="og:image" content="https://docease-fometaux.netlify.app/assets/img/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="DocEase by FO Métaux">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://docease-fometaux.netlify.app/">
+  <meta name="twitter:title" content="DocEase - Générateur de Documents FO Métaux">
+  <meta name="twitter:description" content="🔧 Générez vos documents syndicaux en quelques clics : convocations, désignations, circulaires et plus encore.">
+  <meta name="twitter:image" content="https://docease-fometaux.netlify.app/assets/img/og-image.png">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#aa4584">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DocEase">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="DocEase">
+  <meta name="msapplication-TileColor" content="#1e293b">
+  <meta name="msapplication-TileImage" content="/assets/img/icon-144x144.png">
+  <meta name="msapplication-tap-highlight" content="no">
+  
+  <!-- Manifest PWA -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Icônes -->
   <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/img/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/img/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/assets/img/icon-192x192.png">
+  
+  <!-- Splash screens iOS -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -38,5 +80,45 @@
 <body>
   <div id="root"></div>
 <script type="module" src="/index.tsx"></script>
+
+<!-- Enregistrement du Service Worker pour PWA -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('✅ ServiceWorker enregistré:', registration.scope);
+          
+          // Vérifier les mises à jour
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Nouvelle version disponible
+                console.log('🔄 Nouvelle version disponible');
+              }
+            });
+          });
+        })
+        .catch((error) => {
+          console.error('❌ Erreur ServiceWorker:', error);
+        });
+    });
+  }
+  
+  // Détecter si l'app est installée
+  window.addEventListener('appinstalled', () => {
+    console.log('📱 DocEase a été installé!');
+  });
+  
+  // Gérer le prompt d'installation
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Vous pouvez afficher un bouton "Installer l'app" ici
+    console.log('💡 Installation disponible');
+  });
+</script>
 </body>
 </html>

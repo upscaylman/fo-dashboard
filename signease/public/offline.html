@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignEase - Hors ligne</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #FFFBFF 0%, #FFDAD4 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #201A19;
+      padding: 20px;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 400px;
+    }
+    
+    .offline-icon {
+      font-size: 80px;
+      margin-bottom: 24px;
+      opacity: 0.8;
+    }
+    
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #B71C1C;
+    }
+    
+    p {
+      font-size: 16px;
+      color: #534341;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    
+    .retry-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: #B71C1C;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      font-family: 'Manrope', sans-serif;
+    }
+    
+    .retry-button:hover {
+      background: #8B0000;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(183, 28, 28, 0.3);
+    }
+    
+    .retry-button:active {
+      transform: translateY(0);
+    }
+    
+    .status {
+      margin-top: 24px;
+      padding: 12px 20px;
+      background: rgba(183, 28, 28, 0.1);
+      border: 1px solid rgba(183, 28, 28, 0.3);
+      border-radius: 8px;
+      color: #B71C1C;
+      font-size: 14px;
+    }
+    
+    .status.online {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: #16a34a;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="offline-icon">📡</div>
+    <h1>Vous êtes hors ligne</h1>
+    <p>
+      SignEase a besoin d'une connexion internet pour fonctionner.
+      Vérifiez votre connexion et réessayez.
+    </p>
+    <button class="retry-button" onclick="location.reload()">
+      🔄 Réessayer
+    </button>
+    <div class="status" id="status">
+      ❌ Aucune connexion détectée
+    </div>
+  </div>
+
+  <script>
+    function updateStatus() {
+      const statusEl = document.getElementById('status');
+      if (navigator.onLine) {
+        statusEl.className = 'status online';
+        statusEl.innerHTML = '✅ Connexion rétablie - Rechargement...';
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        statusEl.className = 'status';
+        statusEl.innerHTML = '❌ Aucune connexion détectée';
+      }
+    }
+
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    updateStatus();
+  </script>
+</body>
+</html>

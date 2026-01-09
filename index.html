@@ -2,9 +2,48 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/images/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>FO Métaux Dashboard</title>
+    <meta name="description" content="Portail des Secrétaires et Militants FO Métaux - Accédez à vos outils syndicaux : DocEase, SignEase et plus encore." />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#d00013" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FO Métaux" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="FO Métaux" />
+    <meta name="msapplication-TileColor" content="#d00013" />
+    <meta name="msapplication-TileImage" content="/images/icon-144x144.png" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Icônes -->
+    <link rel="icon" type="image/png" href="/images/saasEase_HD.png" />
+    <link rel="apple-touch-icon" href="/images/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/images/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/images/icon-192x192.png" />
+    
+    <!-- Open Graph / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fo-metaux-dashboard.netlify.app/" />
+    <meta property="og:title" content="FO Métaux - Portail Secrétaires & Militants" />
+    <meta property="og:description" content="🔧 Accédez à vos outils syndicaux : DocEase, SignEase et plus encore. Le portail officiel FO Métaux." />
+    <meta property="og:image" content="https://fo-metaux-dashboard.netlify.app/images/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="FO Métaux" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FO Métaux - Portail Secrétaires & Militants" />
+    <meta name="twitter:description" content="🔧 Accédez à vos outils syndicaux : DocEase, SignEase et plus encore." />
+    <meta name="twitter:image" content="https://fo-metaux-dashboard.netlify.app/images/og-image.png" />
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -61,5 +100,33 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    
+    <!-- Enregistrement du Service Worker pour PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('✅ ServiceWorker enregistré:', registration.scope);
+              
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🔄 Nouvelle version disponible');
+                  }
+                });
+              });
+            })
+            .catch((error) => {
+              console.error('❌ Erreur ServiceWorker:', error);
+            });
+        });
+      }
+      
+      window.addEventListener('appinstalled', () => {
+        console.log('📱 FO Métaux Dashboard a été installé!');
+      });
+    </script>
   </body>
 </html>

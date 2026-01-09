@@ -9,6 +9,8 @@ import { FormStep } from './components/FormStep';
 import { Button } from './components/Button';
 import { UpdateNotification } from './components/UpdateNotification';
 import { LoginPage } from './components/LoginPage';
+import { InstallPWAButton } from './components/InstallPWAButton';
+import { SplashScreen } from './components/SplashScreen';
 import { generateWordDocument, convertWordToPdf, downloadBlob, base64ToBlob, sendEmailWithPdf, trackDocumentGeneration } from './api';
 import { Toast, useToast } from './components/Toast';
 import { LoadingOverlay, AppSkeleton } from './components/Spinner';
@@ -22,6 +24,13 @@ const ShareModal = lazy(() => import('./components/Modals').then(module => ({ de
 const App: React.FC = () => {
   // Authentification
   const { isAuthenticated, isLoading: authLoading, user } = useDoceaseAuth();
+  
+  // Splash screen au premier chargement
+  const [showSplash, setShowSplash] = useState(() => {
+    // Afficher le splash uniquement si c'est un nouveau chargement (pas de session storage)
+    const hasShownSplash = sessionStorage.getItem('docease-splash-shown');
+    return !hasShownSplash;
+  });
   
   // Tracking de présence
   const { trackActivity, updatePresence } = useDoceasePresence({ 
@@ -1035,13 +1044,27 @@ const App: React.FC = () => {
     return <AppSkeleton />;
   }
 
+  // Callback quand le splash screen est terminé
+  const handleSplashFinished = () => {
+    setShowSplash(false);
+    sessionStorage.setItem('docease-splash-shown', 'true');
+  };
+
   // Afficher la page de connexion si non authentifié
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <>
+        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+        <LoginPage />
+      </>
+    );
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#2f2f2f] dark:bg-[rgb(18,18,18)] text-[#1c1b1f] dark:text-white">
+      {/* Splash Screen */}
+      {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+      
       {/* Sidebar */}
       <Sidebar
         templates={TEMPLATES}
@@ -1326,6 +1349,9 @@ const App: React.FC = () => {
 
       {/* Update Notification */}
       <UpdateNotification checkInterval={5 * 60 * 1000} />
+
+      {/* PWA Install Banner */}
+      <InstallPWAButton />
 
     </div>
   );
