@@ -160,12 +160,16 @@ const App: React.FC = () => {
       // Gestion spéciale pour les convocations : champs dynamiques selon le type choisi
       if (selectedTemplate === 'convocations') {
         const typeConvocation = formData.typeConvocation;
+        console.log('📋 getFieldsForStep contenu - typeConvocation:', typeConvocation);
         if (typeConvocation === 'CA Fédérale') {
+          console.log('📋 Retourne champs CA Fédérale');
           return TEMPLATE_SPECIFIC_FIELDS['convocations_ca_federale'] || [];
         } else if (typeConvocation === 'Bureau Fédéral') {
+          console.log('📋 Retourne champs Bureau Fédéral');
           return TEMPLATE_SPECIFIC_FIELDS['convocations_bureau_federal'] || [];
         }
         // Par défaut, afficher juste le sélecteur de type
+        console.log('📋 Retourne champs par défaut (juste sélecteur)');
         return TEMPLATE_SPECIFIC_FIELDS['convocations'] || [];
       }
       
@@ -482,62 +486,57 @@ const App: React.FC = () => {
 
   // Optimisation: mémoriser handleInputChange
   const handleInputChange = useCallback((key: string, value: string) => {
-    setFormData(prev => {
-      // Si on change le type de convocation, sauvegarder les données actuelles et restaurer celles du nouveau type
-      if (key === 'typeConvocation' && prev.typeConvocation !== value) {
-        console.log('🔄 Changement de type de convocation:', prev.typeConvocation, '→', value);
+    console.log('🔄 handleInputChange appelé:', key, '=', value);
+    
+    // Gestion spéciale pour le changement de type de convocation
+    if (key === 'typeConvocation') {
+      console.log('🎯 Changement de typeConvocation détecté:', value);
+      setFormData(prev => {
+        // Si même valeur, ne rien faire
+        if (prev.typeConvocation === value) {
+          return prev;
+        }
         
         // Sauvegarder les données actuelles pour le type précédent (si il existe)
         if (prev.typeConvocation) {
-          console.log('💾 Sauvegarde des données pour:', prev.typeConvocation);
-          setConvocationDataStore(store => ({
-            ...store,
-            [prev.typeConvocation as string]: { ...prev }
-          }));
+          // Utiliser setTimeout pour éviter la mise à jour imbriquée
+          setTimeout(() => {
+            setConvocationDataStore(store => ({
+              ...store,
+              [prev.typeConvocation as string]: { ...prev }
+            }));
+          }, 0);
         }
         
-        // Vérifier si des données existent pour le nouveau type
-        const savedData = convocationDataStore[value];
-        if (savedData && Object.keys(savedData).length > 0) {
-          console.log('📂 Restauration des données pour:', value, savedData);
-          // Restaurer les données sauvegardées
-          const restoredData = { ...savedData, typeConvocation: value };
-          // Invalider le cache
-          setGeneratedWord(null);
-          setPdfBlob(null);
-          // Sauvegarder
-          if (selectedTemplate) {
-            saveCurrentTemplateData(selectedTemplate, restoredData);
+        // Créer les nouvelles données
+        const newData: FormData = {
+          typeConvocation: value,
+          signatureExp: prev.signatureExp || 'Valentin RODRIGUEZ',
+          codeDocument: prev.codeDocument || ''
+        };
+        
+        // Régénérer le codeDocument si nécessaire
+        if (!newData.codeDocument && newData.signatureExp) {
+          const initials = getInitials(newData.signatureExp as string);
+          if (initials) {
+            const year = new Date().getFullYear();
+            const randomNum = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+            newData.codeDocument = `${initials}-${year}-${randomNum}`;
           }
-          return restoredData;
-        } else {
-          // Pas de données sauvegardées : garder uniquement les champs essentiels
-          console.log('🆕 Nouveau type, données vides pour:', value);
-          const newData: FormData = {
-            typeConvocation: value,
-            signatureExp: prev.signatureExp || 'Valentin RODRIGUEZ',
-            codeDocument: prev.codeDocument || ''
-          };
-          // Régénérer le codeDocument si nécessaire
-          if (!newData.codeDocument && newData.signatureExp) {
-            const initials = getInitials(newData.signatureExp as string);
-            if (initials) {
-              const year = new Date().getFullYear();
-              const randomNum = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-              newData.codeDocument = `${initials}-${year}-${randomNum}`;
-            }
-          }
-          // Invalider le cache
-          setGeneratedWord(null);
-          setPdfBlob(null);
-          // Sauvegarder
-          if (selectedTemplate) {
-            saveCurrentTemplateData(selectedTemplate, newData);
-          }
-          return newData;
         }
-      }
+        
+        return newData;
+      });
+      
+      // Invalider le cache
+      setGeneratedWord(null);
+      setPdfBlob(null);
+      
+      return; // Sortir tôt pour éviter le traitement normal
+    }
 
+    // Traitement normal pour les autres champs
+    setFormData(prev => {
       const newData = { ...prev, [key]: value };
 
       // Retirer le champ de la liste des invalides si l'utilisateur le remplit
@@ -574,7 +573,7 @@ const App: React.FC = () => {
         return newCache;
       });
     }
-  }, [selectedTemplate, convocationDataStore]);
+  }, [selectedTemplate]);
 
   // Obtenir tous les IDs de champs valides pour le template actuel
   const getValidFieldIds = useCallback((): string[] => {
@@ -1095,7 +1094,11 @@ const App: React.FC = () => {
 
                   {/* Step Indicators */}
                   <div
-                    className="flex items-center gap-1 md:gap-2 w-full md:w-auto px-1 py-1 overflow-x-auto scrollbar-thin scrollbar-mobile-hidden"
+                    className={`flex items-center gap-1 md:gap-2 w-full md:w-auto px-1 py-1 scrollbar-thin scrollbar-mobile-hidden ${
+                      availableSteps.length >= 4 
+                        ? 'overflow-x-auto md:overflow-hidden snap-x snap-mandatory' 
+                        : 'overflow-hidden'
+                    }`}
                     onTouchStart={onTouchStart}
                     onTouchMove={onTouchMove}
                     onTouchEnd={onTouchEnd}
@@ -1113,11 +1116,12 @@ const App: React.FC = () => {
                           disabled={isDisabled}
                           title={isDisabled ? 'Veuillez d\'abord sélectionner le type de convocation' : undefined}
                           className={`
-                            relative group flex items-center gap-2 md:gap-3 px-2 py-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] select-none
+                            relative group flex items-center gap-2 md:gap-3 px-2 py-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.2,0,0,1)] select-none min-w-0
+                            ${availableSteps.length >= 4 ? 'snap-start flex-shrink-0' : ''}
                             ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
                             ${isActive
-                               ? 'bg-[#ffecf8] dark:bg-[#4a1a36] pr-3 md:pr-6 flex-grow md:flex-grow-0 ring-1 ring-[#ffd8ec] dark:ring-[#a84383]'
-                               : 'flex-shrink-0'}
+                               ? 'bg-[#ffecf8] dark:bg-[#4a1a36] pr-3 md:pr-6 ' + (availableSteps.length < 4 ? 'flex-1 ' : '') + 'md:flex-none ring-1 ring-[#ffd8ec] dark:ring-[#a84383]'
+                               : availableSteps.length < 4 ? 'flex-shrink-0' : ''}
                           `}
                         >
                            <div className={`
@@ -1231,6 +1235,7 @@ const App: React.FC = () => {
             {/* Form Content */}
             <div className="max-w-5xl mx-auto min-h-[400px]">
                <FormStep
+                  key={`${selectedTemplate}_${currentStep.id}_${formData.typeConvocation || 'default'}`}
                   step={currentStep.id as StepType}
                   stepLabel={currentStep.label}
                   stepDescription={currentStep.description}

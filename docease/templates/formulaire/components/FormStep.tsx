@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, memo } from 'react';
 import { StepType, FormField, FormData, TemplateId } from '../types';
 import { FORM_FIELDS, PREDEFINED_EMAILS, CONVOCATION_EMAILS } from '../constants';
 import { Input } from './Input';
@@ -42,23 +42,16 @@ const FormStepComponent: React.FC<FormStepProps> = ({
   showError,
   selectedTemplate
 }) => {
-  // Utiliser l'ordre personnalisé si disponible, sinon l'ordre par défaut
-  const [fields, setFields] = useState<FormField[]>(customFields || FORM_FIELDS[step]);
+  // Utiliser directement customFields - plus de useState qui cause des problèmes de sync
+  const fields = customFields || FORM_FIELDS[step];
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  // Mettre à jour les champs quand step ou customFields changent
-  useEffect(() => {
-    const newFields = customFields || FORM_FIELDS[step];
-    setFields(newFields);
-  }, [step, customFields]);
 
   // SECTION: LOGIQUE SUPPRESSION & RESTAURATION
   const removeField = (index: number) => {
     const newFields = [...fields];
     // On retire le champ de la liste principale
     const [removed] = newFields.splice(index, 1);
-    setFields(newFields);
     // On l'ajoute à la liste des champs supprimés avec son index d'origine
     const newRemovedFields = [...externalRemovedFields, { field: removed, originalIndex: index }];
 
@@ -77,7 +70,6 @@ const FormStepComponent: React.FC<FormStepProps> = ({
     const insertIndex = Math.min(removedItem.originalIndex, newFields.length);
     // Insérer le champ à sa position d'origine
     newFields.splice(insertIndex, 0, removedItem.field);
-    setFields(newFields);
     // On le retire de la liste des champs supprimés
     const newRemovedFields = externalRemovedFields.filter(item => item.field.id !== removedItem.field.id);
 
@@ -116,7 +108,6 @@ const FormStepComponent: React.FC<FormStepProps> = ({
       const [draggedField] = newFields.splice(draggedIndex, 1);
       newFields.splice(dragOverIndex, 0, draggedField);
 
-      setFields(newFields);
       if (onFieldsReorder) {
         onFieldsReorder(newFields);
       }
@@ -133,7 +124,6 @@ const FormStepComponent: React.FC<FormStepProps> = ({
     if (targetIndex >= 0 && targetIndex < fields.length) {
       [newFields[index], newFields[targetIndex]] = [newFields[targetIndex], newFields[index]];
 
-      setFields(newFields);
       if (onFieldsReorder) {
         onFieldsReorder(newFields);
       }
