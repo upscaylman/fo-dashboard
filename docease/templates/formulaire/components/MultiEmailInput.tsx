@@ -30,6 +30,7 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -118,13 +119,13 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      // Ne pas fermer si on clique dans le container ou dans le dropdown portal
-      if (containerRef.current && !containerRef.current.contains(target)) {
-        // Vérifier si le clic est dans le dropdown portal
-        const dropdownElement = document.querySelector('[data-dropdown-portal]');
-        if (!dropdownElement || !dropdownElement.contains(target)) {
-          setShowDropdown(false);
-        }
+      // Ne pas fermer si on clique dans la zone d'input ou dans le dropdown portal
+      const isInInputContainer = inputContainerRef.current && inputContainerRef.current.contains(target);
+      const dropdownElement = document.querySelector('[data-dropdown-portal]');
+      const isInDropdown = dropdownElement && dropdownElement.contains(target);
+      
+      if (!isInInputContainer && !isInDropdown) {
+        setShowDropdown(false);
       }
     };
 
@@ -262,6 +263,7 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       </div>
 
       <div
+        ref={inputContainerRef}
         className={`
           w-full bg-[#fdfbff] dark:bg-[rgb(37,37,37)] border-2 text-base rounded-2xl
           outline-none transition-all duration-200

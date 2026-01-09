@@ -39,6 +39,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const isSelectingRef = useRef(false);
   const hasUserTypedRef = useRef(false);
   // Initialiser avec la valeur actuelle pour éviter de déclencher une recherche au montage
@@ -165,6 +166,27 @@ export const AddressInput: React.FC<AddressInputProps> = ({
     }
   }, [showSuggestions, updateDropdownPosition]);
 
+  // Fermer le dropdown si on clique ailleurs
+  useEffect(() => {
+    if (!showSuggestions) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      // Ne pas fermer si on clique dans l'input ou le dropdown
+      const isInInput = inputRef.current?.contains(target);
+      const isInDropdown = dropdownRef.current?.contains(target);
+      
+      if (!isInInput && !isInDropdown) {
+        setShowSuggestions(false);
+        setAddresses([]);
+        hasUserTypedRef.current = false;
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSuggestions]);
+
   // Nettoyer les suggestions quand resetKey change (changement de page)
   useEffect(() => {
     setAddresses([]);
@@ -232,6 +254,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       {/* Portail pour les suggestions - monté dans body */}
       {showSuggestions && addresses.length > 0 && createPortal(
         <div
+          ref={dropdownRef}
           style={dropdownStyle}
           className="bg-white dark:bg-[rgb(47,47,47)] border-2 border-[#a84383] dark:border-[#e062b1] rounded-2xl shadow-xl max-h-60 overflow-y-auto"
         >

@@ -39,6 +39,7 @@ export const CONVOCATION_EMAILS = [
   { name: 'DEVY Eric', email: 'usm.fo.69@gmail.com' },
   { name: 'DIOGO Philippe', email: 'diogo-.philippe@orange.fr' },
   { name: 'DOLZA Sylvain', email: 'sylvain.dolza@airbus.com' },
+  { name: 'GOMIZ Géraldine', email: 'ggomiz@fo-metaux.fr' },
   { name: 'KELLER Eric', email: 'ekeller@fo-metaux.fr' },
   { name: 'LE PAPE Julien', email: 'julien.le-pape@safrangroup.com' },
   { name: 'LEFEBVRE Olivier', email: 'olefebvre@fo-metaux.fr' },

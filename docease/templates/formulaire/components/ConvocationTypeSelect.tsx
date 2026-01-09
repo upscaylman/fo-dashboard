@@ -40,6 +40,7 @@ export const ConvocationTypeSelect: React.FC<ConvocationTypeSelectProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const selectButtonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Détecter si on est sur mobile
@@ -73,10 +74,13 @@ export const ConvocationTypeSelect: React.FC<ConvocationTypeSelectProps> = ({
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      // Ne pas fermer si on clique dans le container ou le dropdown
-      if (containerRef.current?.contains(target)) return;
-      if (dropdownRef.current?.contains(target)) return;
-      setIsOpen(false);
+      // Ne pas fermer si on clique dans le bouton de sélection ou le dropdown
+      const isInSelectButton = selectButtonRef.current?.contains(target);
+      const isInDropdown = dropdownRef.current?.contains(target);
+      
+      if (!isInSelectButton && !isInDropdown) {
+        setIsOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -164,6 +168,7 @@ export const ConvocationTypeSelect: React.FC<ConvocationTypeSelectProps> = ({
 
       {/* Bouton principal */}
       <button
+        ref={selectButtonRef}
         type="button"
         onClick={handleToggle}
         className={`
