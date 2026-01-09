@@ -1259,6 +1259,7 @@ const App: React.FC = () => {
             dateDebut={formData.dateDebut as string}
             heureDebut={formData.heureDebut as string}
             numeroCourrier={formData.numeroCourrier as string}
+            onDownload={handleDownloadPdf}
           />
         )}
       </Suspense>

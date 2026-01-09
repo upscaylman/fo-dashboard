@@ -48,25 +48,18 @@ export const Header: React.FC<HeaderProps> = ({ onPreview, onDownload, onShare, 
 
         {/* Action Buttons */}
         <nav className="flex items-center gap-2 sm:gap-3" aria-label="Actions principales">
+          {/* Prévisualiser - Desktop uniquement */}
           <Button
             variant="primary"
             icon="visibility"
             label="Prévisualiser"
             onClick={onPreview}
             disabled={!hasData}
-            className="hidden sm:inline-flex"
+            className="hidden md:inline-flex"
             aria-label="Prévisualiser le document"
           />
-          <button
-             onClick={onPreview}
-             disabled={!hasData}
-             className="hidden w-10 h-10 items-center justify-center rounded-full bg-[#aa4584] text-white disabled:opacity-50 transition-all hover:scale-105"
-             aria-label="Prévisualiser le document"
-             title="Prévisualiser"
-          >
-             <span className="material-icons" aria-hidden="true">visibility</span>
-          </button>
 
+          {/* Télécharger - Desktop uniquement */}
           <Button
             variant="secondary"
             icon="download"
@@ -76,16 +69,8 @@ export const Header: React.FC<HeaderProps> = ({ onPreview, onDownload, onShare, 
             className="hidden md:inline-flex"
             aria-label="Télécharger le document PDF"
           />
-           <button
-             onClick={onDownload}
-             disabled={!hasData}
-             className="md:hidden w-10 h-10 flex items-center justify-center rounded-full bg-[#dd60b0] text-white disabled:opacity-50 transition-all hover:scale-105"
-             aria-label="Télécharger le document PDF"
-             title="Télécharger PDF"
-          >
-             <span className="material-icons" aria-hidden="true">download</span>
-          </button>
 
+          {/* Partager - Toujours visible */}
           <Button
             variant="outlined"
             icon="share"
@@ -95,14 +80,15 @@ export const Header: React.FC<HeaderProps> = ({ onPreview, onDownload, onShare, 
             className="hidden sm:inline-flex"
             aria-label="Partager le document par email"
           />
-           <button
-             onClick={onShare}
-             disabled={!hasData}
-             className="sm:hidden w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2f2f2f] text-[#aa4584] dark:text-[#e062b1] disabled:opacity-50 transition-all hover:scale-105"
-             aria-label="Partager le document par email"
-             title="Partager"
+          {/* Bouton partager mobile */}
+          <button
+            onClick={onShare}
+            disabled={!hasData}
+            className="sm:hidden w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2f2f2f] text-[#aa4584] dark:text-[#e062b1] disabled:opacity-50 transition-all hover:scale-105"
+            aria-label="Partager le document par email"
+            title="Partager"
           >
-             <span className="material-icons" aria-hidden="true">share</span>
+            <span className="material-icons" aria-hidden="true">share</span>
           </button>
 
           {/* Divider */}

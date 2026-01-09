@@ -5,6 +5,7 @@ import { Input } from './Input';
 import { AITextarea } from './AITextarea';
 import { AddressInput } from './AddressInput';
 import { MultiEmailInput } from './MultiEmailInput';
+import { ConvocationTypeSelect } from './ConvocationTypeSelect';
 
 interface FormStepProps {
   step: StepType;
@@ -341,6 +342,14 @@ const FormStepComponent: React.FC<FormStepProps> = ({
                 predefinedEmails={CONVOCATION_EMAILS}
                 error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
                 helpText="Les destinataires recevront l'email en copie cachée (BCC)"
+              />
+            ) : field.id === 'typeConvocation' && selectedTemplate === 'convocations' ? (
+              <ConvocationTypeSelect
+                label={field.label}
+                value={data[field.id] || ''}
+                onChange={(value) => onChange(field.id, value)}
+                required={field.required}
+                error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
               />
             ) : (
               <Input

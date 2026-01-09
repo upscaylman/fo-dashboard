@@ -25,9 +25,21 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   const [emails, setEmails] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Détecter si on est sur mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Initialiser les emails depuis la valeur
   useEffect(() => {
@@ -168,9 +180,13 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   };
 
   const handleInputFocus = () => {
-    // Ouvrir le dropdown automatiquement au focus si on a des emails prédéfinis
-    if (predefinedEmails.length > 0) {
+    // Ouvrir le dropdown automatiquement au focus si on a des emails prédéfinis (desktop uniquement)
+    if (predefinedEmails.length > 0 && !isMobile) {
       setShowDropdown(true);
+    }
+    // Sur mobile, on ouvre la modal
+    if (predefinedEmails.length > 0 && isMobile) {
+      setShowMobileModal(true);
     }
   };
 
@@ -183,7 +199,23 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   };
 
   const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
+    if (isMobile) {
+      setShowMobileModal(true);
+    } else {
+      setShowDropdown(!showDropdown);
+    }
+  };
+
+  const toggleEmailSelection = (email: string) => {
+    if (emails.includes(email)) {
+      const newEmails = emails.filter(e => e !== email);
+      setEmails(newEmails);
+      onChange(newEmails.join(', '));
+    } else {
+      const newEmails = [...emails, email];
+      setEmails(newEmails);
+      onChange(newEmails.join(', '));
+    }
   };
 
   const selectPredefinedEmail = (email: string) => {
@@ -374,6 +406,115 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
                 Tous les destinataires ont été sélectionnés
               </div>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal mobile plein écran */}
+      {showMobileModal && isMobile && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/50 z-[99999] flex items-end"
+          onClick={() => setShowMobileModal(false)}
+        >
+          <div 
+            className="w-full bg-white dark:bg-[rgb(37,37,37)] rounded-t-3xl max-h-[80vh] flex flex-col animate-[slideUp_0.3s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              animation: 'slideUp 0.3s ease-out',
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Sélectionner les destinataires
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowMobileModal(false)}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <span className="material-icons text-gray-600 dark:text-gray-400">close</span>
+              </button>
+            </div>
+
+            {/* Bouton Tout sélectionner */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => {
+                  const allEmails = predefinedEmails.map(p => p.email);
+                  const allSelected = allEmails.every(e => emails.includes(e));
+                  if (allSelected) {
+                    // Tout désélectionner
+                    setEmails([]);
+                    onChange('');
+                  } else {
+                    // Tout sélectionner
+                    setEmails(allEmails);
+                    onChange(allEmails.join(', '));
+                  }
+                }}
+                className="w-full py-3 px-4 bg-[#a84383] dark:bg-[#e062b1] text-white font-medium rounded-xl flex items-center justify-center gap-2"
+              >
+                <span className="material-icons text-xl">
+                  {predefinedEmails.every(p => emails.includes(p.email)) ? 'remove_done' : 'done_all'}
+                </span>
+                {predefinedEmails.every(p => emails.includes(p.email)) ? 'Tout désélectionner' : 'Tout sélectionner'}
+              </button>
+            </div>
+
+            {/* Liste des destinataires */}
+            <div className="flex-1 overflow-y-auto p-2">
+              {predefinedEmails.map(({ name, email }, index) => {
+                const isSelected = emails.includes(email);
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => toggleEmailSelection(email)}
+                    className={`
+                      w-full text-left px-4 py-3 rounded-xl mb-1
+                      flex items-center gap-3 transition-colors
+                      ${isSelected 
+                        ? 'bg-[#ffecf8] dark:bg-[#4a1a36]' 
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }
+                    `}
+                  >
+                    {/* Checkbox */}
+                    <div className={`
+                      w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0
+                      ${isSelected 
+                        ? 'bg-[#a84383] border-[#a84383] dark:bg-[#e062b1] dark:border-[#e062b1]' 
+                        : 'border-gray-300 dark:border-gray-600'
+                      }
+                    `}>
+                      {isSelected && (
+                        <span className="material-icons text-white text-lg">check</span>
+                      )}
+                    </div>
+
+                    {/* Info destinataire */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 dark:text-gray-100 truncate">{name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{email}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer avec compteur */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[rgb(30,30,30)]">
+              <button
+                type="button"
+                onClick={() => setShowMobileModal(false)}
+                className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium rounded-xl"
+              >
+                Valider ({emails.length} sélectionné{emails.length > 1 ? 's' : ''})
+              </button>
+            </div>
           </div>
         </div>,
         document.body

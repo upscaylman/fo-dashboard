@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { validateField } from '../utils/validation';
 import { TimePicker } from './TimePicker';
 import { DatePicker } from './DatePicker';
@@ -57,6 +58,19 @@ export const Input: React.FC<InputProps> = ({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   // État pour le TimePicker personnalisé
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
+  // État pour la modal mobile des selects
+  const [showMobileSelect, setShowMobileSelect] = useState(false);
+  // Détection mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const error = externalError || internalError;
   // Afficher l'erreur si elle vient de l'extérieur (validation globale) OU si le champ a été touché
@@ -127,7 +141,17 @@ export const Input: React.FC<InputProps> = ({
     const selectValue = (props.value as string) || '';
 
     // Exclure 'value' des props pour éviter qu'il écrase notre valeur contrôlée
-    const { value: _, ...selectProps } = props as React.SelectHTMLAttributes<HTMLSelectElement>;
+    const { value: _, onChange: originalOnChange, ...selectProps } = props as React.SelectHTMLAttributes<HTMLSelectElement>;
+
+    const handleSelectOption = (optionValue: string) => {
+      if (originalOnChange) {
+        const syntheticEvent = {
+          target: { value: optionValue }
+        } as React.ChangeEvent<HTMLSelectElement>;
+        originalOnChange(syntheticEvent);
+      }
+      setShowMobileSelect(false);
+    };
 
     return (
       <div className={`${wrapperClass} ${className}`}>
@@ -136,20 +160,35 @@ export const Input: React.FC<InputProps> = ({
           {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
         </label>
         <div className="relative">
-          <select
-            className={`${inputClass} appearance-none cursor-pointer`}
-            required={required}
-            onBlur={handleBlur}
-            aria-invalid={showError ? 'true' : 'false'}
-            aria-describedby={showError ? `${fieldId}-error` : undefined}
-            {...selectProps}
-            value={selectValue}
-          >
-            <option value="">Sélectionner...</option>
-            {options?.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
+          {/* Version desktop: select natif */}
+          {!isMobile ? (
+            <select
+              className={`${inputClass} appearance-none cursor-pointer`}
+              required={required}
+              onBlur={handleBlur}
+              aria-invalid={showError ? 'true' : 'false'}
+              aria-describedby={showError ? `${fieldId}-error` : undefined}
+              {...selectProps}
+              onChange={originalOnChange}
+              value={selectValue}
+            >
+              <option value="">Sélectionner...</option>
+              {options?.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          ) : (
+            /* Version mobile: bouton qui ouvre la modal */
+            <button
+              type="button"
+              onClick={() => setShowMobileSelect(true)}
+              className={`${inputClass} appearance-none cursor-pointer text-left flex items-center`}
+            >
+              <span className={selectValue ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}>
+                {selectValue || 'Sélectionner...'}
+              </span>
+            </button>
+          )}
           {icon && <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">{icon}</span>}
           <span className="material-icons absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">expand_more</span>
         </div>
@@ -158,6 +197,62 @@ export const Input: React.FC<InputProps> = ({
             <span className="material-icons text-sm">error</span>
             <span>{error}</span>
           </div>
+        )}
+
+        {/* Modal mobile pour select */}
+        {showMobileSelect && isMobile && createPortal(
+          <div 
+            className="fixed inset-0 bg-black/50 z-[99999] flex items-end"
+            onClick={() => setShowMobileSelect(false)}
+          >
+            <div 
+              className="w-full bg-white dark:bg-[rgb(37,37,37)] rounded-t-3xl max-h-[70vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+              style={{ animation: 'slideUp 0.3s ease-out' }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {label}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowMobileSelect(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <span className="material-icons text-gray-600 dark:text-gray-400">close</span>
+                </button>
+              </div>
+
+              {/* Liste des options */}
+              <div className="flex-1 overflow-y-auto p-2">
+                {options?.map((opt, index) => {
+                  const isSelected = selectValue === opt;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleSelectOption(opt)}
+                      className={`
+                        w-full text-left px-4 py-4 rounded-xl mb-1
+                        flex items-center justify-between transition-colors
+                        ${isSelected 
+                          ? 'bg-[#ffecf8] dark:bg-[#4a1a36]' 
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }
+                      `}
+                    >
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{opt}</span>
+                      {isSelected && (
+                        <span className="material-icons text-[#a84383] dark:text-[#e062b1]">check_circle</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>,
+          document.body
         )}
       </div>
     );

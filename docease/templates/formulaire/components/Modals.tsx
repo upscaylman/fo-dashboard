@@ -158,9 +158,17 @@ interface ShareModalProps {
   dateDebut?: string;
   heureDebut?: string;
   numeroCourrier?: string;
+  onDownload?: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onSend, isSending, defaultEmail, selectedTemplate, typeConvocation, dateDebut, heureDebut, numeroCourrier }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onSend, isSending, defaultEmail, selectedTemplate, typeConvocation, dateDebut, heureDebut, numeroCourrier, onDownload }) => {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // Génère le message par défaut selon le template
   const getDefaultMessage = () => {
     if (selectedTemplate === 'convocations') {
@@ -305,6 +313,18 @@ FO METAUX`;
       }
     >
       <div className="space-y-6">
+        {/* Bouton de téléchargement sur mobile */}
+        {isMobile && onDownload && (
+          <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+            <Button
+              variant="secondary"
+              icon="download"
+              label="Télécharger le PDF"
+              onClick={() => { onClose(); onDownload(); }}
+              className="w-full justify-center"
+            />
+          </div>
+        )}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Destinataires</label>
           <div
