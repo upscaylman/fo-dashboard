@@ -14,6 +14,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { generateWordDocument, convertWordToPdf, downloadBlob, base64ToBlob, sendEmailWithPdf, trackDocumentGeneration } from './api';
 import { Toast, useToast } from './components/Toast';
 import { LoadingOverlay, AppSkeleton } from './components/Spinner';
+import { PullToRefresh } from './components/PullToRefresh';
 import { useDoceaseAuth } from './context/AuthContext';
 import { useDoceasePresence } from './hooks/useDoceasePresence';
 
@@ -1094,9 +1095,10 @@ const App: React.FC = () => {
         />
 
         <main className="flex-1 overflow-y-auto pb-8 px-4 md:px-8 lg:px-12 scroll-smooth pt-20">
-          <div className="max-w-6xl mx-auto w-full pt-8">
+          <PullToRefresh onRefresh={() => window.location.reload()}>
+            <div className="max-w-6xl mx-auto w-full pt-8">
 
-            {/* Page Title */}
+              {/* Page Title */}
             <div className="mb-8 flex flex-col md:flex-row md:items-center gap-6 animate-[slideDown_0.5s_ease-out]">
               <div className="flex-shrink-0 w-[72px] h-[72px] flex items-center justify-center rounded-3xl bg-[#e062b1]/20 backdrop-blur-md shadow-inner border border-[#e062b1]/30">
                 <span className="material-icons text-[#e062b1] text-4xl">edit_document</span>
@@ -1291,9 +1293,10 @@ const App: React.FC = () => {
 
           </div>
           
-          <div className="mt-12">
-            <Footer />
-          </div>
+            <div className="mt-12">
+              <Footer />
+            </div>
+          </PullToRefresh>
         </main>
       </div>
 

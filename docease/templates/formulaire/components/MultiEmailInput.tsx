@@ -32,6 +32,11 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  // Tooltip states
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const tooltipIconRef = useRef<HTMLSpanElement>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -59,6 +64,56 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   // Calculer la position du dropdown et la mettre à jour lors du scroll
   useEffect(() => {
     const updatePosition = () => {
+      // Positionnement du Tooltip
+      if (showTooltip && tooltipIconRef.current) {
+        const rect = tooltipIconRef.current.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        
+        // Calcul position (au-dessus par défaut)
+        let top = rect.top - 10; // 10px marge
+        let left = rect.right; // Alignement droit par défaut pour pointer vers l'icône
+        
+        // Style de base
+        const style: React.CSSProperties = {
+          position: 'fixed',
+          zIndex: 10002, // Au-dessus de tout (modal est 10001)
+          maxWidth: '280px', // Largeur max pour mobile
+          width: 'max-content',
+        };
+
+        // Ajustement vertical (si ça sort en haut, mettre en bas)
+        // Note: on ne connait pas la hauteur du tooltip avant rendu, on suppose ~50-100px
+        if (top < 100) { 
+          // Si trop proche du haut, afficher en dessous
+          top = rect.bottom + 10;
+          style.top = `${top}px`;
+          style.bottom = 'auto';
+        } else {
+          // Afficher au-dessus (bottom fixé à viewportHeight - top)
+          style.bottom = `${window.innerHeight - top}px`;
+          style.top = 'auto';
+        }
+
+        // Ajustement horizontal pour mobile
+        if (viewportWidth < 768) {
+          // Mobile: Centré ou limité par l'écran
+          const tooltipWidth = Math.min(viewportWidth - 32, 280); // 16px padding chaque côté
+          style.width = `${tooltipWidth}px`;
+          style.left = `${Math.max(16, rect.left - tooltipWidth + 20)}px`; // Essayer d'aligner la flèche
+          
+          // Si ça dépasse à droite
+          if (parseInt(style.left as string) + tooltipWidth > viewportWidth - 16) {
+            style.left = `${viewportWidth - tooltipWidth - 16}px`;
+          }
+        } else {
+          // Desktop: Aligné à droite de l'icône (le tooltip se développe vers la gauche)
+          style.right = `${viewportWidth - rect.right}px`;
+          style.left = 'auto';
+        }
+
+        setTooltipStyle(style);
+      }
+
       if (showDropdown && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
 
@@ -91,7 +146,7 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       }
     };
 
-    if (showDropdown) {
+    if (showDropdown || showTooltip) {
       updatePosition();
 
       // Mettre à jour la position lors du scroll, resize et changement de viewport (clavier mobile)
@@ -117,7 +172,7 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
         }
       };
     }
-  }, [showDropdown]);
+  }, [showDropdown, showTooltip]);
 
   // Fermer le dropdown si on clique ailleurs
   useEffect(() => {
@@ -138,6 +193,15 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showDropdown]);
+
+  // Gestionnaires pour le tooltip
+  const handleTooltipEnter = () => {
+    setShowTooltip(true);
+  };
+
+  const handleTooltipLeave = () => {
+    setShowTooltip(false);
+  };
 
   const addEmail = (email: string) => {
     const trimmedEmail = email.trim();
@@ -254,15 +318,28 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
           {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
         </label>
         {helpText && (
-          <span className="relative group/help inline-flex mr-1">
-            <span className="cursor-help">
+          <>
+            <span 
+              ref={tooltipIconRef}
+              className="relative inline-flex mr-1 cursor-help"
+              onMouseEnter={handleTooltipEnter}
+              onMouseLeave={handleTooltipLeave}
+              onClick={() => setShowTooltip(!showTooltip)} // Support tactile
+            >
               <span className={`material-icons ${forceLightMode ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`} style={{ fontSize: '14px' }}>help</span>
             </span>
-            <span className="absolute right-0 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-xl opacity-0 invisible group-hover/help:opacity-100 group-hover/help:visible transition-all duration-200 pointer-events-none">
-              {helpText}
-              <span className="absolute right-3 top-full border-4 border-transparent border-t-gray-800"></span>
-            </span>
-          </span>
+            
+            {showTooltip && createPortal(
+              <div 
+                style={tooltipStyle}
+                className="px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-xl animate-[fadeIn_0.2s] pointer-events-none"
+              >
+                {helpText}
+                {/* Flèche du tooltip (approximative car portail) */}
+              </div>,
+              document.body
+            )}
+          </>
         )}
       </div>
 
