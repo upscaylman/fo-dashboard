@@ -10,6 +10,8 @@ interface MultiEmailInputProps {
   placeholder?: string;
   predefinedEmails?: Array<{ name: string; email: string }>;
   helpText?: string; // Texte d'aide affiché dans une info-bulle
+  inputClassName?: string;
+  forceLightMode?: boolean;
 }
 
 export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
@@ -20,7 +22,9 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   error,
   placeholder = 'Saisissez ou sélectionnez des emails...',
   predefinedEmails = [],
-  helpText
+  helpText,
+  inputClassName = '',
+  forceLightMode = false
 }) => {
   const [emails, setEmails] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -245,14 +249,14 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
   return (
     <div className="relative group w-full" ref={containerRef}>
       <div className="flex items-center justify-between mb-1 ml-1 min-h-[28px]">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+        <label className={`text-sm font-medium ${forceLightMode ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'} flex items-center`}>
           {label}
           {required && <span style={{ color: 'rgb(196, 35, 45)' }}> *</span>}
         </label>
         {helpText && (
           <span className="relative group/help inline-flex mr-1">
             <span className="cursor-help">
-              <span className="material-icons text-gray-700 dark:text-gray-300" style={{ fontSize: '14px' }}>help</span>
+              <span className={`material-icons ${forceLightMode ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`} style={{ fontSize: '14px' }}>help</span>
             </span>
             <span className="absolute right-0 bottom-full mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-xl opacity-0 invisible group-hover/help:opacity-100 group-hover/help:visible transition-all duration-200 pointer-events-none">
               {helpText}
@@ -265,14 +269,15 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
       <div
         ref={inputContainerRef}
         className={`
-          w-full bg-[#fdfbff] dark:bg-[rgb(37,37,37)] border-2 text-base rounded-2xl
+          w-full bg-[#fdfbff] ${forceLightMode ? '' : 'dark:bg-[rgb(37,37,37)]'} border-2 text-base rounded-2xl
           outline-none transition-all duration-200
           flex items-center gap-2 cursor-text overflow-x-auto overflow-y-hidden
           h-[52px] px-4
           ${error
             ? 'border-red-500 focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-500/10'
-            : 'border-[#e7e0ec] dark:border-[rgb(75,85,99)] focus-within:border-[#a84383] focus-within:ring-4 focus-within:ring-[#a84383]/10'
+            : `border-[#e7e0ec] ${forceLightMode ? '' : 'dark:border-[rgb(75,85,99)]'} focus-within:border-[#a84383] focus-within:ring-4 focus-within:ring-[#a84383]/10`
           }
+          ${inputClassName}
         `}
         onClick={() => inputRef.current?.focus()}
         style={{ scrollbarWidth: 'thin' }}
@@ -282,13 +287,13 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
           {emails.map((email, index) => (
             <div
               key={index}
-              className="
+              className={`
                 flex items-center gap-1 px-2 rounded-full text-xs font-medium
-                bg-[#E8DEF8] dark:bg-[#4a1a36]
-                text-[#21005D] dark:text-[#e062b1]
+                bg-[#E8DEF8] ${forceLightMode ? '' : 'dark:bg-[#4a1a36]'}
+                text-[#21005D] ${forceLightMode ? '' : 'dark:text-[#e062b1]'}
                 transition-colors whitespace-nowrap flex-shrink-0
                 h-[1.875rem]
-              "
+              `}
             >
               <span className="material-icons" style={{ fontSize: '14px' }}>email</span>
               <span className="max-w-[100px] overflow-hidden text-ellipsis">{email}</span>
@@ -316,11 +321,11 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={emails.length === 0 ? placeholder : ''}
-          className="
+          className={`
             flex-1 min-w-[150px] outline-none bg-transparent
-            text-[#1c1b1f] dark:text-white
-            placeholder:text-gray-400 dark:placeholder:text-gray-500
-          "
+            text-[#1c1b1f] ${forceLightMode ? '' : 'dark:text-white'}
+            placeholder:text-gray-400 ${forceLightMode ? '' : 'dark:placeholder:text-gray-500'}
+          `}
         />
 
         {/* Bouton dropdown */}
@@ -328,13 +333,13 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
           <button
             type="button"
             onClick={toggleDropdown}
-            className="
+            className={`
               flex items-center justify-center w-8 h-8 rounded-full
-              hover:bg-gray-100 dark:hover:bg-gray-700
+              hover:bg-gray-100 ${forceLightMode ? '' : 'dark:hover:bg-gray-700'}
               transition-colors
-            "
+            `}
           >
-            <span className="material-icons text-gray-600 dark:text-gray-400">
+            <span className={`material-icons text-gray-600 ${forceLightMode ? '' : 'dark:text-gray-400'}`}>
               {showDropdown ? 'expand_less' : 'expand_more'}
             </span>
           </button>
@@ -353,11 +358,11 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
         <div
           data-dropdown-portal
           style={dropdownStyle}
-          className="
-            bg-white dark:bg-[rgb(47,47,47)]
-            border-2 border-[#a84383] dark:border-[#e062b1]
+          className={`
+            bg-white ${forceLightMode ? '' : 'dark:bg-[rgb(47,47,47)]'}
+            border-2 border-[#a84383] ${forceLightMode ? '' : 'dark:border-[#e062b1]'}
             rounded-2xl shadow-xl overflow-y-auto
-          "
+          `}
         >
           <div className="p-2">
             {/* Bouton "Tout sélectionner" */}
@@ -365,13 +370,13 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
               <button
                 type="button"
                 onClick={selectAll}
-                className="
+                className={`
                   w-full text-left px-3 py-2 rounded-xl mb-2
-                  bg-[#a84383] dark:bg-[#e062b1]
+                  bg-[#a84383] ${forceLightMode ? '' : 'dark:bg-[#e062b1]'}
                   text-white font-medium
-                  hover:bg-[#8d3a6e] dark:hover:bg-[#c54d9a]
+                  hover:bg-[#8d3a6e] ${forceLightMode ? '' : 'dark:hover:bg-[#c54d9a]'}
                   transition-colors flex items-center gap-2
-                "
+                `}
               >
                 <span className="material-icons text-sm">done_all</span>
                 Tout sélectionner
@@ -379,7 +384,7 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
             )}
 
             {/* Liste des emails prédéfinis */}
-            <div className="text-xs text-gray-500 dark:text-gray-400 px-3 py-2 font-medium">
+            <div className={`text-xs text-gray-500 ${forceLightMode ? '' : 'dark:text-gray-400'} px-3 py-2 font-medium`}>
               Sélectionnez un ou plusieurs destinataires :
             </div>
             {filteredPredefined.length > 0 ? (
@@ -388,23 +393,23 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
                   key={index}
                   type="button"
                   onClick={() => selectPredefinedEmail(email)}
-                  className="
+                  className={`
                     w-full text-left px-3 py-2 rounded-xl
-                    hover:bg-[#ffecf8] dark:hover:bg-[#4a1a36]/50
+                    hover:bg-[#ffecf8] ${forceLightMode ? '' : 'dark:hover:bg-[#4a1a36]/50'}
                     transition-colors flex items-start gap-2
-                  "
+                  `}
                 >
-                  <span className="material-icons text-[#a84383] dark:text-[#e062b1] text-sm mt-0.5">
+                  <span className={`material-icons text-[#a84383] ${forceLightMode ? '' : 'dark:text-[#e062b1]'} text-sm mt-0.5`}>
                     person
                   </span>
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">{name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{email}</div>
+                    <div className={`font-medium text-gray-900 ${forceLightMode ? '' : 'dark:text-gray-100'}`}>{name}</div>
+                    <div className={`text-xs text-gray-500 ${forceLightMode ? '' : 'dark:text-gray-400'}`}>{email}</div>
                   </div>
                 </button>
               ))
             ) : (
-              <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+              <div className={`px-3 py-4 text-center text-sm text-gray-500 ${forceLightMode ? '' : 'dark:text-gray-400'}`}>
                 Tous les destinataires ont été sélectionnés
               </div>
             )}
@@ -420,28 +425,28 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
           onClick={() => setShowMobileModal(false)}
         >
           <div 
-            className="w-full bg-white dark:bg-[rgb(37,37,37)] rounded-t-3xl max-h-[80vh] flex flex-col animate-[slideUp_0.3s_ease-out]"
+            className={`w-full bg-white ${forceLightMode ? '' : 'dark:bg-[rgb(37,37,37)]'} rounded-t-3xl max-h-[80vh] flex flex-col animate-[slideUp_0.3s_ease-out]`}
             onClick={(e) => e.stopPropagation()}
             style={{ 
               animation: 'slideUp 0.3s ease-out',
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className={`flex items-center justify-between p-4 border-b border-gray-200 ${forceLightMode ? '' : 'dark:border-gray-700'}`}>
+              <h3 className={`text-lg font-semibold text-gray-900 ${forceLightMode ? '' : 'dark:text-white'}`}>
                 Sélectionner les destinataires
               </h3>
               <button
                 type="button"
                 onClick={() => setShowMobileModal(false)}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 ${forceLightMode ? '' : 'dark:hover:bg-gray-700'}`}
               >
-                <span className="material-icons text-gray-600 dark:text-gray-400">close</span>
+                <span className={`material-icons text-gray-600 ${forceLightMode ? '' : 'dark:text-gray-400'}`}>close</span>
               </button>
             </div>
 
             {/* Bouton Tout sélectionner */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className={`p-4 border-b border-gray-200 ${forceLightMode ? '' : 'dark:border-gray-700'}`}>
               <button
                 type="button"
                 onClick={() => {
@@ -457,7 +462,7 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
                     onChange(allEmails.join(', '));
                   }
                 }}
-                className="w-full py-3 px-4 bg-[#a84383] dark:bg-[#e062b1] text-white font-medium rounded-xl flex items-center justify-center gap-2"
+                className={`w-full py-3 px-4 bg-[#a84383] ${forceLightMode ? '' : 'dark:bg-[#e062b1]'} text-white font-medium rounded-xl flex items-center justify-center gap-2`}
               >
                 <span className="material-icons text-xl">
                   {predefinedEmails.every(p => emails.includes(p.email)) ? 'remove_done' : 'done_all'}
@@ -479,8 +484,8 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
                       w-full text-left px-4 py-3 rounded-xl mb-1
                       flex items-center gap-3 transition-colors
                       ${isSelected 
-                        ? 'bg-[#ffecf8] dark:bg-[#4a1a36]' 
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? `bg-[#ffecf8] ${forceLightMode ? '' : 'dark:bg-[#4a1a36]'}`
+                        : `hover:bg-gray-100 ${forceLightMode ? '' : 'dark:hover:bg-gray-800'}`
                       }
                     `}
                   >
@@ -488,8 +493,8 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
                     <div className={`
                       w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0
                       ${isSelected 
-                        ? 'bg-[#a84383] border-[#a84383] dark:bg-[#e062b1] dark:border-[#e062b1]' 
-                        : 'border-gray-300 dark:border-gray-600'
+                        ? `bg-[#a84383] border-[#a84383] ${forceLightMode ? '' : 'dark:bg-[#e062b1] dark:border-[#e062b1]'}`
+                        : `border-gray-300 ${forceLightMode ? '' : 'dark:border-gray-600'}`
                       }
                     `}>
                       {isSelected && (
@@ -499,8 +504,8 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
 
                     {/* Info destinataire */}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 dark:text-gray-100 truncate">{name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{email}</div>
+                      <div className={`font-medium text-gray-900 ${forceLightMode ? '' : 'dark:text-gray-100'} truncate`}>{name}</div>
+                      <div className={`text-sm text-gray-500 ${forceLightMode ? '' : 'dark:text-gray-400'} truncate`}>{email}</div>
                     </div>
                   </button>
                 );
@@ -508,11 +513,11 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
             </div>
 
             {/* Footer avec compteur */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[rgb(30,30,30)]">
+            <div className={`p-4 border-t border-gray-200 ${forceLightMode ? '' : 'dark:border-gray-700'} bg-gray-50 ${forceLightMode ? '' : 'dark:bg-[rgb(30,30,30)]'}`}>
               <button
                 type="button"
                 onClick={() => setShowMobileModal(false)}
-                className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium rounded-xl"
+                className={`w-full py-3 bg-gray-900 ${forceLightMode ? '' : 'dark:bg-white'} text-white ${forceLightMode ? '' : 'dark:text-gray-900'} font-medium rounded-xl`}
               >
                 Valider ({emails.length} sélectionné{emails.length > 1 ? 's' : ''})
               </button>
@@ -524,4 +529,3 @@ export const MultiEmailInput: React.FC<MultiEmailInputProps> = ({
     </div>
   );
 };
-

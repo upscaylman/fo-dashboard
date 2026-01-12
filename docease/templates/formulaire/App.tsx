@@ -257,8 +257,8 @@ const App: React.FC = () => {
       if (field.id.toLowerCase().includes('email')) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        // Pour la circulaire, accepter plusieurs emails séparés par des virgules
-        if (selectedTemplate === 'circulaire' && field.id === 'emailDestinataire') {
+        // Pour la circulaire et convocations, accepter plusieurs emails séparés par des virgules
+        if ((selectedTemplate === 'circulaire' && field.id === 'emailDestinataire') || (selectedTemplate === 'convocations' && field.id === 'emailEnvoi')) {
           const emails = value.split(',').map(e => e.trim()).filter(e => e);
           return emails.length > 0 && emails.every(email => emailRegex.test(email));
         }
@@ -748,8 +748,8 @@ const App: React.FC = () => {
         if (field.id.toLowerCase().includes('email')) {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-          // Pour la circulaire, accepter plusieurs emails séparés par des virgules
-          if (selectedTemplate === 'circulaire' && field.id === 'emailDestinataire') {
+          // Pour la circulaire et convocations, accepter plusieurs emails séparés par des virgules
+          if ((selectedTemplate === 'circulaire' && field.id === 'emailDestinataire') || (selectedTemplate === 'convocations' && field.id === 'emailEnvoi')) {
             const emails = value.split(',').map(e => e.trim()).filter(e => e);
             const allValid = emails.every(email => emailRegex.test(email));
             if (!allValid || emails.length === 0) {
@@ -1158,8 +1158,8 @@ const App: React.FC = () => {
                              {isCompleted ? <span className="material-icons text-lg animate-[fadeIn_0.3s]">check</span> : idx + 1}
                            </div>
 
-                           <div className={`flex flex-col items-start transition-all duration-500 overflow-hidden ${isActive ? 'w-auto opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-4'}`}>
-                             <span className="font-bold text-sm text-[#2f2f2f] dark:text-white leading-none mb-1 max-w-[80px] md:max-w-none truncate">
+                           <div className={`flex flex-col items-start transition-all duration-500 overflow-hidden ${isActive ? 'max-w-[200px] opacity-100 translate-x-0' : 'max-w-0 opacity-0 -translate-x-4'}`}>
+                             <span className="font-bold text-sm text-[#2f2f2f] dark:text-white leading-none mb-1 whitespace-nowrap">
                                {step.label}
                              </span>
                              <span className="text-[10px] text-gray-500 dark:text-gray-300 font-medium whitespace-nowrap leading-none uppercase tracking-wide">
@@ -1320,7 +1320,7 @@ const App: React.FC = () => {
             onClose={() => setShowShare(false)}
             onSend={handleSendEmail}
             isSending={isSending}
-            defaultEmail={formData.emailDestinataire as string}
+            defaultEmail={selectedTemplate === 'convocations' ? (formData.emailEnvoi as string) : (formData.emailDestinataire as string)}
             selectedTemplate={selectedTemplate || undefined}
             typeConvocation={formData.typeConvocation as string}
             dateDebut={formData.dateDebut as string}

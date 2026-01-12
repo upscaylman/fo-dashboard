@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from './Button';
+import { MultiEmailInput } from './MultiEmailInput';
+import { CONVOCATION_EMAILS, PREDEFINED_EMAILS } from '../constants';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -169,6 +171,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, onSend,
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
   // Génère le message par défaut selon le template
   const getDefaultMessage = () => {
     if (selectedTemplate === 'convocations') {
@@ -225,8 +228,7 @@ FO METAUX`;
   const defaultMessage = getDefaultMessage();
 
   const [message, setMessage] = useState(defaultMessage);
-  const [emails, setEmails] = useState<string[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [emailsValue, setEmailsValue] = useState('');
 
   // Initialiser avec l'email par défaut et le message quand la modal s'ouvre
   React.useEffect(() => {
@@ -234,66 +236,28 @@ FO METAUX`;
       // Réinitialiser le message prédéfini selon le template
       setMessage(getDefaultMessage());
       // Réinitialiser la liste d'emails à chaque ouverture
-      if (defaultEmail) {
-        // Si defaultEmail contient plusieurs emails séparés par des virgules (cas de la circulaire)
-        const emailList = defaultEmail.split(',').map(e => e.trim()).filter(e => e && e.includes('@'));
-        setEmails(emailList);
-      } else {
-        setEmails([]);
-      }
-      setInputValue('');
+      setEmailsValue(defaultEmail || '');
     }
-  }, [isOpen, selectedTemplate, typeConvocation, dateDebut, heureDebut, numeroCourrier]); // Recalculer le message si le template change
-
-  const removeEmail = (index: number) => {
-    setEmails(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const addEmail = (email: string) => {
-    const trimmedEmail = email.trim();
-    if (trimmedEmail && trimmedEmail.includes('@') && !emails.includes(trimmedEmail)) {
-      setEmails(prev => [...prev, trimmedEmail]);
-      return true;
-    }
-    return false;
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === ',' || e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      if (addEmail(inputValue)) {
-        setInputValue('');
-      }
-    }
-  };
+  }, [isOpen, selectedTemplate, typeConvocation, dateDebut, heureDebut, numeroCourrier, defaultEmail]); // Recalculer le message si le template change
 
   const handleSend = () => {
-    // Ajouter l'email en cours de saisie s'il y en a un
-    if (inputValue.trim()) {
-      const added = addEmail(inputValue);
-      if (added) {
-        setInputValue('');
-      }
-    }
+    // Convertir la chaîne d'emails en tableau
+    const emailsList = emailsValue.split(',').map(e => e.trim()).filter(e => e && e.includes('@'));
 
-    // Vérifier après avoir ajouté l'email en cours
-    if (emails.length === 0 && !inputValue.trim()) {
-      alert('Veuillez entrer au moins une adresse email');
-      return;
-    }
-
-    // Si on a ajouté un email juste avant, utiliser la liste mise à jour
-    const finalEmails = inputValue.trim() && inputValue.includes('@')
-      ? [...emails, inputValue.trim()]
-      : emails;
-
-    if (finalEmails.length === 0) {
+    if (emailsList.length === 0) {
       alert('Veuillez entrer au moins une adresse email valide');
       return;
     }
 
-    onSend(finalEmails, message);
+    onSend(emailsList, message);
   };
+  
+  // Déterminer quels emails prédéfinis afficher selon le template
+  const predefinedEmails = selectedTemplate === 'convocations' 
+    ? CONVOCATION_EMAILS 
+    : selectedTemplate === 'circulaire'
+    ? PREDEFINED_EMAILS
+    : [];
 
   return (
     <BaseModal
@@ -325,40 +289,17 @@ FO METAUX`;
             />
           </div>
         )}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Destinataires</label>
-          <div
-            className="w-full p-3 bg-white border-2 border-gray-200 rounded-xl focus-within:border-[#a84383] transition-colors flex flex-wrap gap-2 cursor-text min-h-[52px]"
-            onClick={() => document.getElementById('email-input')?.focus()}
-          >
-
-            {/* Chips dynamiques */}
-            {emails.map((email, index) => (
-              <span key={index} className="bg-[#ffd8ec] text-[#a84383] px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 animate-[fadeIn_0.2s]">
-                {email}
-                <button
-                  type="button"
-                  className="material-icons text-sm cursor-pointer hover:text-[#8f366e] rounded-full hover:bg-[#a84383]/10 p-0.5 transition-colors flex items-center justify-center w-4 h-4"
-                  onClick={(e) => { e.stopPropagation(); removeEmail(index); }}
-                >
-                  close
-                </button>
-              </span>
-            ))}
-
-            <input
-              id="email-input"
-              type="text"
-              className="flex-1 outline-none min-w-[150px] bg-transparent text-[#1c1b1f]"
-              placeholder="Ajouter un email..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isSending}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">Séparez les emails par des virgules, espaces ou Entrée.</p>
-        </div>
+        
+        {/* Utilisation du composant MultiEmailInput avec les emails prédéfinis */}
+        <MultiEmailInput
+          label="Destinataires"
+          value={emailsValue}
+          onChange={setEmailsValue}
+          placeholder="Saisissez ou sélectionnez des emails..."
+          predefinedEmails={predefinedEmails}
+          helpText={selectedTemplate === 'convocations' ? "Les destinataires recevront l'email en copie cachée (BCC)" : undefined}
+          forceLightMode={true}
+        />
         <div>
            <label className="block text-sm font-bold text-gray-700 mb-2">Message personnalisé (optionnel)</label>
            <div className="relative">

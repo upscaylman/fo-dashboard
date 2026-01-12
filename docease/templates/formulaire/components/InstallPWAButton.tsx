@@ -20,7 +20,12 @@ export const InstallPWAButton: React.FC = () => {
   const hasPromptRef = useRef(false);
 
   useEffect(() => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    // Détection si l'app est déjà installée (Standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         (window.navigator as any).standalone === true;
+
+    if (isStandalone) {
+      console.log('📱 App is running in standalone mode (PWA installed)');
       setIsInstalled(true);
       return;
     }
@@ -32,11 +37,14 @@ export const InstallPWAButton: React.FC = () => {
     setIsIOS(isIOSDevice);
 
     if (isIOSDevice) {
+      // Sur iOS, on ne peut pas détecter si l'app est installée quand on est dans Safari
+      // On affiche la bannière après un délai si on n'est pas en standalone
       setTimeout(() => setShowBanner(true), 3000);
       return;
     }
 
     const handleBeforeInstall = (e: BeforeInstallPromptEvent) => {
+      console.log('👋 beforeinstallprompt fired');
       e.preventDefault();
       setDeferredPrompt(e);
       hasPromptRef.current = true;
@@ -44,6 +52,7 @@ export const InstallPWAButton: React.FC = () => {
     };
 
     const handleAppInstalled = () => {
+      console.log('✅ App installed');
       setIsInstalled(true);
       setShowBanner(false);
       setDeferredPrompt(null);
@@ -52,14 +61,13 @@ export const InstallPWAButton: React.FC = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    const fallbackTimer = setTimeout(() => {
-      if (!hasPromptRef.current) setShowBanner(true);
-    }, 5000);
+    // Suppression du fallback timer qui forçait l'affichage sur Android même si installé
+    // Sur Android, si l'app est installée, beforeinstallprompt ne se déclenche pas,
+    // donc on ne doit PAS afficher la bannière manuellement.
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      clearTimeout(fallbackTimer);
     };
   }, []);
 
