@@ -1148,7 +1148,7 @@ const App: React.FC = () => {
                           `}
                         >
                            <div className={`
-                             w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 shadow-sm z-10
+                             w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 shadow-sm z-10 flex-shrink-0
                              ${isActive
                                ? 'bg-[#2a2a2a] dark:bg-white text-white dark:text-[#2a2a2a] scale-100 rotate-0 shadow-md'
                                : isCompleted
@@ -1158,8 +1158,8 @@ const App: React.FC = () => {
                              {isCompleted ? <span className="material-icons text-lg animate-[fadeIn_0.3s]">check</span> : idx + 1}
                            </div>
 
-                           <div className={`flex flex-col items-start transition-all duration-500 overflow-hidden ${isActive ? 'max-w-[200px] opacity-100 translate-x-0' : 'max-w-0 opacity-0 -translate-x-4'}`}>
-                             <span className="font-bold text-sm text-[#2f2f2f] dark:text-white leading-none mb-1 whitespace-nowrap">
+                           <div className={`flex flex-col items-start transition-all duration-500 overflow-hidden ${isActive ? 'max-w-[120px] opacity-100 translate-x-0' : 'max-w-0 opacity-0 -translate-x-4'}`}>
+                             <span className="font-bold text-sm text-[#2f2f2f] dark:text-white leading-none mb-1 truncate w-full">
                                {step.label}
                              </span>
                              <span className="text-[10px] text-gray-500 dark:text-gray-300 font-medium whitespace-nowrap leading-none uppercase tracking-wide">
