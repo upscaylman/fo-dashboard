@@ -110,7 +110,7 @@ export const Footer: React.FC = () => {
                 }
               ></span>
               <span className="text-[10px] text-gray-300 font-mono transition-opacity duration-300">
-                v2.9.1 •{' '}
+                v3.0.0 •{' '}
                 {isOnline === null ? (
                   <span className="opacity-50">...</span>
                 ) : isChecking ? (

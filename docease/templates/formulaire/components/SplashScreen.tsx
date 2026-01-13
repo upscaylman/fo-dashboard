@@ -101,7 +101,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       {/* Version */}
       <div className="absolute bottom-8 left-0 right-0 text-center">
         <p className="text-gray-600 text-xs">
-          Version 2.0
+          Version 3.0.0
         </p>
       </div>
     </div>
