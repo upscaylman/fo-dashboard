@@ -34,15 +34,18 @@ export const Header: React.FC<HeaderProps> = ({ onPreview, onDownload, onShare, 
         {/* Logo Area */}
         <div className="flex items-center gap-4 group cursor-pointer">
           <div
-            className="w-12 h-12 bg-[#aa4584] rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300"
+            className="w-12 h-12 bg-gradient-to-br from-[#aa4584] to-[#e062b1] rounded-2xl flex items-center justify-center shadow-lg shadow-[#aa4584]/20 transform group-hover:scale-110 transition-transform duration-300"
             role="img"
             aria-label="Logo DocEase"
           >
-             <span className="material-icons text-white text-2xl" aria-hidden="true">description</span>
+             <span className="material-icons text-white text-2xl drop-shadow-lg" aria-hidden="true">description</span>
           </div>
           <div className="flex flex-col">
-            <h1 className="text-2xl font-bold tracking-tight text-[#aa4584] dark:text-[#e062b1]">DocEase</h1>
-            <span className="text-xs font-medium text-[#2f2f2f] dark:text-gray-400 uppercase tracking-widest hidden sm:block">by FO Métaux</span>
+            <h1 className="text-2xl font-bold tracking-tight">
+              <span className="text-gray-900 dark:text-white">Doc</span>
+              <span className="text-[#aa4584] dark:text-[#e062b1]">Ease</span>
+            </h1>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-widest hidden sm:block">by FO Métaux</span>
           </div>
         </div>
 
