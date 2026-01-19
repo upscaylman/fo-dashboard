@@ -144,12 +144,12 @@ const Header: React.FC = () => {
             </div>
             {/* Desktop: SignEase by FO Metaux */}
             <span className="hidden sm:inline text-xl font-bold whitespace-nowrap">
-              <span className="text-gradient-primary">SignEase</span>{" "}
+              Sign<span className="text-primary">Ease</span>{" "}
               <span className="text-onSurface">by FO Metaux</span>
             </span>
             {/* Mobile: juste SignEase */}
             <span className="sm:hidden text-xl font-bold whitespace-nowrap">
-              <span className="text-gradient-primary">SignEase</span>
+              Sign<span className="text-primary">Ease</span>
             </span>
           </Link>
           {/* Navigation Desktop - avec labels */}

@@ -12,37 +12,79 @@ declare global {
   }
 }
 
+type OSType = 'ios' | 'android' | 'desktop' | 'unknown';
+
+const detectOS = (): OSType => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  if (/ipad|iphone|ipod/.test(userAgent) && !(window as any).MSStream) {
+    return 'ios';
+  }
+  if (/android/.test(userAgent)) {
+    return 'android';
+  }
+  if (/windows|mac|linux/.test(userAgent)) {
+    return 'desktop';
+  }
+  return 'unknown';
+};
+
+const checkIfInstalled = (): boolean => {
+  // Méthode 1: display-mode standalone (PWA lancée)
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    return true;
+  }
+  
+  // Méthode 2: iOS standalone mode
+  if ((window.navigator as any).standalone === true) {
+    return true;
+  }
+  
+  // Méthode 3: Vérifier si déjà installé via getInstalledRelatedApps
+  if ('getInstalledRelatedApps' in navigator) {
+    (navigator as any).getInstalledRelatedApps().then((apps: any[]) => {
+      if (apps.length > 0) {
+        localStorage.setItem('fo-metaux-pwa-installed', 'true');
+      }
+    });
+  }
+  
+  // Méthode 4: localStorage flag (défini après installation)
+  return localStorage.getItem('fo-metaux-pwa-installed') === 'true';
+};
+
 export const InstallPWAButton: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [osType, setOsType] = useState<OSType>('unknown');
+  const [showInstructions, setShowInstructions] = useState(false);
   const hasPromptRef = useRef(false);
 
   useEffect(() => {
     // Vérifier si déjà installé
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (checkIfInstalled()) {
       setIsInstalled(true);
       return;
     }
 
-    // Vérifier si déjà fermé
+    // Vérifier si l'utilisateur a déjà refusé
     const dismissed = localStorage.getItem('fo-metaux-pwa-banner-dismissed');
     if (dismissed) {
       return;
     }
 
-    // Détecter iOS
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    setIsIOS(isIOSDevice);
+    // Détecter l'OS
+    const os = detectOS();
+    setOsType(os);
 
-    // Sur iOS, afficher le bandeau après 3 secondes
-    if (isIOSDevice) {
+    // Pour iOS, pas de beforeinstallprompt, afficher directement le banner
+    if (os === 'ios') {
       setTimeout(() => setShowBanner(true), 3000);
       return;
     }
 
+    // Pour Android/Desktop, attendre le beforeinstallprompt
     const handleBeforeInstall = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -53,15 +95,18 @@ export const InstallPWAButton: React.FC = () => {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setShowBanner(false);
+      setShowInstructions(false);
       setDeferredPrompt(null);
+      localStorage.setItem('fo-metaux-pwa-installed', 'true');
+      localStorage.removeItem('fo-metaux-pwa-banner-dismissed');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Afficher le bandeau après 5 secondes (fallback)
+    // Fallback: si pas de prompt après 5s sur desktop, afficher quand même
     const fallbackTimer = setTimeout(() => {
-      if (!hasPromptRef.current) {
+      if (!hasPromptRef.current && os !== 'ios') {
         setShowBanner(true);
       }
     }, 5000);
@@ -74,66 +119,110 @@ export const InstallPWAButton: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    // Sur iOS, afficher les instructions
-    if (isIOS) {
-      setShowIOSInstructions(true);
-      return;
-    }
-
-    if (!deferredPrompt) {
-      // Fallback: ouvrir dans un nouvel onglet pour suggérer l'installation manuelle
-      alert('Pour installer l\'application :\n\n1. Ouvrez le menu de votre navigateur (⋮)\n2. Sélectionnez "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"');
-      return;
-    }
-
-    try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
-        console.log('✅ Installation acceptée');
+    // Si on a un prompt natif (Chrome/Edge Android/Desktop), l'utiliser
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          console.log('✅ Installation acceptée');
+          setIsInstalled(true);
+          localStorage.setItem('fo-metaux-pwa-installed', 'true');
+        } else {
+          console.log('❌ Installation refusée');
+        }
+        
+        setDeferredPrompt(null);
+        setShowBanner(false);
+      } catch (error) {
+        console.error('Erreur installation:', error);
+        // En cas d'erreur, afficher les instructions manuelles
+        setShowInstructions(true);
       }
-    } catch (error) {
-      console.error('Erreur installation:', error);
+      return;
     }
-    
-    setDeferredPrompt(null);
-    setShowBanner(false);
+
+    // Sinon, afficher les instructions selon l'OS
+    setShowInstructions(true);
   };
 
   const handleDismiss = () => {
     setShowBanner(false);
-    setShowIOSInstructions(false);
+    setShowInstructions(false);
     localStorage.setItem('fo-metaux-pwa-banner-dismissed', 'true');
   };
 
+  // Ne rien afficher si déjà installé
   if (isInstalled) {
     return null;
   }
 
+  // Ne rien afficher si l'utilisateur a déjà fermé le banner
   if (!showBanner) {
     return null;
   }
 
-  if (localStorage.getItem('fo-metaux-pwa-banner-dismissed')) {
-    return null;
-  }
+  // Instructions détaillées selon l'OS
+  if (showInstructions) {
+    const instructions = {
+      ios: {
+        icon: <Smartphone className="w-6 h-6" />,
+        title: 'Installation sur iPhone/iPad',
+        steps: [
+          'Appuyez sur le bouton Partager en bas de Safari',
+          'Faites défiler et appuyez sur "Sur l\'écran d\'accueil"',
+          'Appuyez sur "Ajouter" en haut à droite',
+        ],
+      },
+      android: {
+        icon: '🤖',
+        title: 'Installation sur Android',
+        steps: [
+          'Ouvrez le menu du navigateur (⋮ en haut à droite)',
+          'Sélectionnez "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"',
+          'Confirmez l\'installation',
+        ],
+      },
+      desktop: {
+        icon: '💻',
+        title: 'Installation sur ordinateur',
+        steps: [
+          'Cliquez sur l\'icône d\'installation dans la barre d\'adresse',
+          'Ou ouvrez le menu du navigateur (⋮)',
+          'Sélectionnez "Installer FO Métaux"',
+        ],
+      },
+      unknown: {
+        icon: '📲',
+        title: 'Installation',
+        steps: [
+          'Ouvrez le menu de votre navigateur',
+          'Recherchez "Installer" ou "Ajouter à l\'écran d\'accueil"',
+          'Suivez les instructions à l\'écran',
+        ],
+      },
+    };
 
-  // Instructions spécifiques iOS
-  if (showIOSInstructions) {
+    const instruction = instructions[osType];
+
     return (
       <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-slide-up">
         <div className="bg-gradient-to-r from-fo-red to-red-700 rounded-2xl shadow-2xl p-4 text-white">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Smartphone className="w-6 h-6" />
+              {typeof instruction.icon === 'string' ? (
+                <span className="text-2xl">{instruction.icon}</span>
+              ) : (
+                instruction.icon
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg">Installation sur iPhone/iPad</h3>
-              <ol className="text-sm text-white/90 mt-2 space-y-1 list-decimal list-inside">
-                <li>Appuyez sur le bouton <strong>Partager</strong> <span className="inline-block w-5 h-5 bg-white/20 rounded text-center text-xs leading-5">↑</span></li>
-                <li>Faites défiler et appuyez sur <strong>"Sur l'écran d'accueil"</strong></li>
-                <li>Appuyez sur <strong>Ajouter</strong></li>
+              <h3 className="font-semibold text-lg">{instruction.title}</h3>
+              <ol className="text-sm text-white/90 mt-2 space-y-2 list-decimal list-inside">
+                {instruction.steps.map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
               </ol>
             </div>
             <button 
@@ -155,6 +244,7 @@ export const InstallPWAButton: React.FC = () => {
     );
   }
 
+  // Banner d'invitation à l'installation
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-slide-up">
       <div className="bg-gradient-to-r from-red-800 to-red-950 rounded-2xl shadow-2xl p-4 text-white">
@@ -188,7 +278,7 @@ export const InstallPWAButton: React.FC = () => {
             className="flex-1 px-4 py-2.5 bg-white text-fo-red rounded-xl text-sm font-semibold hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Installer
+            {deferredPrompt ? 'Installer maintenant' : 'Comment installer'}
           </button>
         </div>
       </div>
