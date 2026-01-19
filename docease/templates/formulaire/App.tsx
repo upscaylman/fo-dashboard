@@ -1095,7 +1095,7 @@ const App: React.FC = () => {
         />
 
         <main className="flex-1 overflow-y-auto pb-8 px-4 md:px-8 lg:px-12 scroll-smooth pt-20">
-          <PullToRefresh onRefresh={() => window.location.reload()}>
+          <PullToRefresh onRefresh={() => window.location.reload()} disabled={window.innerWidth < 768}>
             <div className="max-w-6xl mx-auto w-full pt-8">
 
               {/* Page Title */}

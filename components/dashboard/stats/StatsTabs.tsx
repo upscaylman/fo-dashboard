@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Users, FileStack, LayoutDashboard, Calendar, ChevronDown, FileText, BarChart3, PenTool } from 'lucide-react';
+import { LayoutGrid, Users, FileStack, LayoutDashboard, Calendar, ChevronDown, FileText, BarChart3, PenTool, Check } from 'lucide-react';
 import GlobalStatsGrid from './GlobalStatsGrid';
 import UserStatsTable from './UserStatsTable';
 import AnalyticsView from './AnalyticsView';
@@ -9,6 +9,7 @@ import { GlobalStat, UserStat, DocumentTypeStat, WeeklyActivity } from '../../..
 import { Skeleton } from '../../ui/Skeleton';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { TimeRange } from '../../../hooks/useStats';
+import BottomSheet from '../../ui/BottomSheet';
 
 type StatsTab = 'global' | 'users' | 'types' | 'docease' | 'signease';
 
@@ -69,6 +70,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
   // Si l'utilisateur n'est pas admin, on démarre sur l'onglet "Salariés"
   const defaultTab = (isAdmin || isSuperAdmin) ? 'global' : 'users';
   const [internalTab, setInternalTab] = useState<StatsTab>(activeTab || defaultTab);
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
   // Synchroniser avec l'onglet externe si fourni
   useEffect(() => {
@@ -86,6 +88,20 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
   const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const newValue = e.target.value as TimeRange;
       onTimeRangeChange?.(newValue);
+  };
+
+  // Gérer le changement de période via BottomSheet (mobile)
+  const handlePeriodSelect = (range: TimeRange) => {
+    onTimeRangeChange?.(range);
+    setIsBottomSheetOpen(false);
+  };
+
+  // Labels des périodes
+  const periodLabels: Record<TimeRange, string> = {
+    week: '7 jours',
+    month: '30 jours',
+    quarter: '3 mois',
+    year: '1 an'
   };
 
   if (loading || !stats) return <StatsSkeleton />;
@@ -131,28 +147,44 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
           
           {/* Onglets de navigation */}
           <div className="flex flex-col items-stretch gap-2 w-full xl:w-auto xl:flex-row xl:items-center" data-stats-tabs>
-            {/* Filtre de Date */}
-            {internalTab !== 'types' && (
-              <div className="relative group w-full xl:w-auto" data-period-selector>
-                 <label className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer w-full xl:w-auto">
-                     <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                     <span className="text-slate-500 dark:text-slate-300 text-xs">Période :</span>
-                     <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                       {timeRange === 'week' ? '7 jours' : timeRange === 'month' ? '30 jours' : timeRange === 'quarter' ? '3 mois' : '1 an'}
-                     </span>
-                     <select
-                        value={timeRange}
-                        onChange={handleTimeRangeChange}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                     >
-                        <option value="week">7 jours</option>
-                        <option value="month">30 jours</option>
-                        <option value="quarter">3 mois</option>
-                        <option value="year">1 an</option>
-                     </select>
-                     <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                 </label>
-              </div>
+            {/* Filtre de Date - Affiché partout sauf dans Types et Users */}
+            {internalTab !== 'types' && internalTab !== 'users' && (
+              <>
+                {/* Version Desktop - Select natif */}
+                <div className="relative group w-full xl:w-auto hidden md:block" data-period-selector>
+                  <label className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer w-full xl:w-auto">
+                    <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                    <span className="text-slate-500 dark:text-slate-300 text-xs">Période :</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                      {periodLabels[timeRange]}
+                    </span>
+                    <select
+                      value={timeRange}
+                      onChange={handleTimeRangeChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    >
+                      <option value="week">7 jours</option>
+                      <option value="month">30 jours</option>
+                      <option value="quarter">3 mois</option>
+                      <option value="year">1 an</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  </label>
+                </div>
+
+                {/* Version Mobile - Bottom Sheet */}
+                <button
+                  onClick={() => setIsBottomSheetOpen(true)}
+                  className="flex md:hidden items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-sm active:scale-95 transition-all w-full"
+                >
+                  <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                  <span className="text-slate-500 dark:text-slate-300 text-xs">Période :</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                    {periodLabels[timeRange]}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </button>
+              </>
             )}
             
             {/* Conteneur des onglets - scrollable horizontalement sur mobile */}
@@ -174,7 +206,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
                       `}
                     >
                       <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : tab.color}`} />
-                      <span className="truncate">{tab.label}</span>
+                      <span className="hidden md:inline truncate">{tab.label}</span>
                     </button>
                   );
                 })}
@@ -198,7 +230,7 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
                         `}
                       >
                         <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : tab.color}`} />
-                        <span className="truncate">{tab.label}</span>
+                        <span className="hidden md:inline truncate">{tab.label}</span>
                       </button>
                     );
                   })}
@@ -214,10 +246,36 @@ const StatsTabs: React.FC<StatsTabsProps> = ({ stats, loading, activeTab, onTabC
                 {internalTab === 'global' && (isAdmin || isSuperAdmin) && <GlobalStatsGrid stats={stats.global} />}
                 {internalTab === 'users' && <UserStatsTable users={stats.users} timeRange={timeRange} />}
                 {internalTab === 'types' && <AnalyticsView />}
-                {internalTab === 'docease' && (isAdmin || isSuperAdmin) && <DoceaseDocumentsTable />}
-                {internalTab === 'signease' && (isAdmin || isSuperAdmin) && <SigneaseActivityTable />}
+                {internalTab === 'docease' && (isAdmin || isSuperAdmin) && <DoceaseDocumentsTable timeRange={timeRange} />}
+                {internalTab === 'signease' && (isAdmin || isSuperAdmin) && <SigneaseActivityTable timeRange={timeRange} />}
             </>
       </div>
+
+      {/* Bottom Sheet pour sélection de période (Mobile) */}
+      <BottomSheet
+        isOpen={isBottomSheetOpen}
+        onClose={() => setIsBottomSheetOpen(false)}
+        title="Choisir une période"
+      >
+        <div className="space-y-2">
+          {(Object.keys(periodLabels) as TimeRange[]).map((range) => (
+            <button
+              key={range}
+              onClick={() => handlePeriodSelect(range)}
+              className={`
+                w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all
+                ${timeRange === range
+                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }
+              `}
+            >
+              <span className="font-medium">{periodLabels[range]}</span>
+              {timeRange === range && <Check className="w-5 h-5" />}
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
     </div>
   );
 };

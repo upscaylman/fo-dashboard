@@ -8,6 +8,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import SelectBottomSheet from '../ui/SelectBottomSheet';
 
 // Rôles administrateurs pouvant gérer les fichiers
 const ADMIN_ROLES = ['secretary_general', 'super_admin'];
@@ -409,32 +410,24 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
 
             {/* Filtres */}
             <div className="flex gap-2 flex-wrap">
-              <div className="relative">
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="appearance-none cursor-pointer pl-4 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0] [&>option]:bg-white [&>option]:dark:bg-slate-800 [&>option]:text-slate-900 [&>option]:dark:text-slate-100"
-                >
-                  {fileTypes.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-              </div>
+              <SelectBottomSheet
+                value={filterType}
+                onChange={setFilterType}
+                options={fileTypes.map(t => ({ value: t.value, label: t.label }))}
+                label="Filtrer par type"
+                buttonClassName="pl-4 pr-8 py-2 border rounded-full text-sm focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+              />
 
-              <div className="relative">
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="appearance-none cursor-pointer pl-4 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0] [&>option]:bg-white [&>option]:dark:bg-slate-800 [&>option]:text-slate-900 [&>option]:dark:text-slate-100"
-                >
-                  <option value="all">Toutes catégories</option>
-                  {categories.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-              </div>
+              <SelectBottomSheet
+                value={filterCategory}
+                onChange={setFilterCategory}
+                options={[
+                  { value: 'all', label: 'Toutes catégories' },
+                  ...categories.map(c => ({ value: c, label: c }))
+                ]}
+                label="Filtrer par catégorie"
+                buttonClassName="pl-4 pr-8 py-2 border rounded-full text-sm focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
+              />
 
               {(filterType !== 'all' || filterCategory !== 'all' || searchTerm !== '') && (
                 <button

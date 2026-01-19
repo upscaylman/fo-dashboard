@@ -3,6 +3,8 @@ import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCi
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
 import { SIGNEASE_URL } from '../../../constants';
+import SelectBottomSheet from '../../ui/SelectBottomSheet';
+import { TimeRange } from '../../../hooks/useStats';
 
 // Rôles qui ne voient que leurs propres données (secrétaire et secrétaire fédéral)
 const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
@@ -25,7 +27,11 @@ interface SigneaseActivity {
   created_at: string;
 }
 
-const SigneaseActivityTable: React.FC = () => {
+interface SigneaseActivityTableProps {
+  timeRange?: TimeRange;
+}
+
+const SigneaseActivityTable: React.FC<SigneaseActivityTableProps> = ({ timeRange = 'month' }) => {
   const [activities, setActivities] = useState<SigneaseActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -126,9 +132,51 @@ const SigneaseActivityTable: React.FC = () => {
     );
   }, [activities]);
 
+  // Helper pour obtenir la date de début selon la période
+  const getStartDateFromRange = (range: TimeRange): Date => {
+    const now = new Date();
+    switch (range) {
+      case 'week':
+        const weekAgo = new Date();
+        weekAgo.setDate(now.getDate() - 7);
+        weekAgo.setHours(0, 0, 0, 0);
+        return weekAgo;
+      case 'month':
+        const monthAgo = new Date();
+        monthAgo.setDate(now.getDate() - 30);
+        monthAgo.setHours(0, 0, 0, 0);
+        return monthAgo;
+      case 'quarter':
+        const quarterAgo = new Date();
+        quarterAgo.setDate(now.getDate() - 90);
+        quarterAgo.setHours(0, 0, 0, 0);
+        return quarterAgo;
+      case 'year':
+        const yearAgo = new Date();
+        yearAgo.setFullYear(now.getFullYear() - 1);
+        yearAgo.setHours(0, 0, 0, 0);
+        return yearAgo;
+      default:
+        const defaultAgo = new Date();
+        defaultAgo.setDate(now.getDate() - 30);
+        defaultAgo.setHours(0, 0, 0, 0);
+        return defaultAgo;
+    }
+  };
+
   // Filtrage des activités
   const filteredActivities = useMemo(() => {
-    const filtered = activities.filter(activity => {
+    let filtered = activities;
+
+    // Filtrer par période
+    const startDate = getStartDateFromRange(timeRange);
+    filtered = filtered.filter(activity => {
+      const activityDate = new Date(activity.created_at);
+      return activityDate >= startDate;
+    });
+
+    // Filtrer par recherche et autres critères
+    filtered = filtered.filter(activity => {
       const searchLower = searchTerm.toLowerCase();
       const matchSearch = searchTerm === '' || 
         activity.document_name?.toLowerCase().includes(searchLower) ||
@@ -152,7 +200,7 @@ const SigneaseActivityTable: React.FC = () => {
       const dateB = new Date(b.created_at).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-  }, [activities, searchTerm, filterType, filterUser, sortOrder]);
+  }, [activities, searchTerm, filterType, filterUser, sortOrder, timeRange]);
 
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
@@ -254,37 +302,32 @@ const SigneaseActivityTable: React.FC = () => {
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
           {/* Filtre par utilisateur - uniquement pour admin */}
           {!isRestrictedView && uniqueUsers.length > 1 && (
-            <div className="relative col-span-2 sm:col-span-1">
-              <select
-                value={filterUser}
-                onChange={(e) => setFilterUser(e.target.value)}
-                className="w-full appearance-none cursor-pointer pl-4 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-600"
-              >
-                <option value="all">Tous les utilisateurs</option>
-                {uniqueUsers.map(u => (
-                  <option key={u.email} value={u.email}>
-                    {u.name || u.email.split('@')[0]}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-            </div>
+            <SelectBottomSheet
+              value={filterUser}
+              onChange={setFilterUser}
+              options={[
+                { value: 'all', label: 'Tous les utilisateurs' },
+                ...uniqueUsers.map(u => ({ value: u.email, label: u.name || u.email.split('@')[0] }))
+              ]}
+              label="Filtrer par utilisateur"
+              className="col-span-2 sm:col-span-1"
+              buttonClassName="text-sm focus:ring-orange-500 dark:focus:ring-orange-600"
+            />
           )}
           
           {/* Filtre par type d'action */}
-          <div className="relative">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full appearance-none cursor-pointer pl-4 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-600"
-            >
-              <option value="all">Toutes actions</option>
-              <option value="document_sent">Envoyés</option>
-              <option value="document_signed">Signés</option>
-              <option value="document_rejected">Rejetés</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-          </div>
+          <SelectBottomSheet
+            value={filterType}
+            onChange={setFilterType}
+            options={[
+              { value: 'all', label: 'Toutes actions' },
+              { value: 'document_sent', label: 'Envoyés' },
+              { value: 'document_signed', label: 'Signés' },
+              { value: 'document_rejected', label: 'Rejetés' }
+            ]}
+            label="Filtrer par action"
+            buttonClassName="text-sm focus:ring-orange-500 dark:focus:ring-orange-600"
+          />
           
           {/* Bouton reset filtres (si filtres actifs) */}
           {(filterType !== 'all' || filterUser !== 'all' || searchTerm !== '') && (
@@ -305,26 +348,26 @@ const SigneaseActivityTable: React.FC = () => {
       </div>
 
       {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">{activities.length}</div>
-          <div className="text-sm text-slate-500 dark:text-slate-400">Total activités</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700/50 rounded-xl p-4">
+          <div className="text-2xl font-bold text-orange-700 dark:text-orange-400">{filteredActivities.length}</div>
+          <div className="text-sm text-orange-600 dark:text-orange-500">Total activités</div>
         </div>
-        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-xl p-4">
-          <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
-            {activities.filter(a => a.action_type === 'document_sent').length}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-xl p-4">
+          <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+            {filteredActivities.filter(a => a.action_type === 'document_sent').length}
           </div>
-          <div className="text-sm text-purple-600 dark:text-purple-500">Envoyés</div>
+          <div className="text-sm text-blue-600 dark:text-blue-500">Envoyés</div>
         </div>
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/50 rounded-xl p-4">
           <div className="text-2xl font-bold text-green-700 dark:text-green-400">
-            {activities.filter(a => a.action_type === 'document_signed').length}
+            {filteredActivities.filter(a => a.action_type === 'document_signed').length}
           </div>
           <div className="text-sm text-green-600 dark:text-green-500">Signés</div>
         </div>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl p-4">
           <div className="text-2xl font-bold text-red-700 dark:text-red-400">
-            {activities.filter(a => a.action_type === 'document_rejected').length}
+            {filteredActivities.filter(a => a.action_type === 'document_rejected').length}
           </div>
           <div className="text-sm text-red-600 dark:text-red-500">Rejetés</div>
         </div>

@@ -8,6 +8,7 @@ import {
 import { Card, CardHeader } from '../../ui/Card';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
+import SelectBottomSheet from '../../ui/SelectBottomSheet';
 
 // Rôles restreints qui ne voient que leurs propres données
 const RESTRICTED_ROLES = ['secretary_federal'];
@@ -469,53 +470,82 @@ const AnalyticsView: React.FC = () => {
           </div>
 
           {/* Filtre date */}
-          <div className="relative">
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-              className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            >
-              <option value="today">Aujourd'hui</option>
-              <option value="week">7 derniers jours</option>
-              <option value="month">30 derniers jours</option>
-              <option value="quarter">3 derniers mois</option>
-              <option value="year">12 derniers mois</option>
-              <option value="all">Tout</option>
-            </select>
-            <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
+          <SelectBottomSheet
+            value={dateFilter}
+            onChange={(value) => setDateFilter(value as DateFilter)}
+            options={[
+              { value: 'today', label: "Aujourd'hui" },
+              { value: 'week', label: '7 derniers jours' },
+              { value: 'month', label: '30 derniers jours' },
+              { value: 'quarter', label: '3 derniers mois' },
+              { value: 'year', label: '12 derniers mois' },
+              { value: 'all', label: 'Tout' }
+            ]}
+            label="Période"
+            renderTrigger={({ onClick, label }) => (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={onClick}
+                  className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {label}
+                </button>
+                <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            )}
+          />
 
           {/* Filtre source */}
-          <div className="relative">
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value as SourceFilter)}
-              className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            >
-              <option value="all">Toutes sources</option>
-              <option value="docease">DocEase</option>
-              <option value="signease">SignEase</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
+          <SelectBottomSheet
+            value={sourceFilter}
+            onChange={(value) => setSourceFilter(value as SourceFilter)}
+            options={[
+              { value: 'all', label: 'Toutes sources' },
+              { value: 'docease', label: 'DocEase' },
+              { value: 'signease', label: 'SignEase' }
+            ]}
+            label="Source"
+            renderTrigger={({ onClick, label }) => (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={onClick}
+                  className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {label}
+                </button>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            )}
+          />
 
           {/* Filtre par salarié - masqué pour les rôles restreints */}
           {!isRestrictedView && (
-            <div className="relative">
-              <select
-                value={selectedUser || ''}
-                onChange={(e) => setSelectedUser(e.target.value || null)}
-                className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors min-w-[180px]"
-              >
-                <option value="">👥 Tous les salariés</option>
-                {users.map(user => (
-                  <option key={user.email} value={user.email}>
-                    {user.name || user.email.split('@')[0]} ({user.doceaseCount + user.signaturesCount})
-                  </option>
-                ))}
-              </select>
-              <User className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            </div>
+            <SelectBottomSheet
+              value={selectedUser || ''}
+              onChange={(value) => setSelectedUser(value || null)}
+              options={[
+                { value: '', label: '👥 Tous les salariés' },
+                ...users.map(user => ({
+                  value: user.email,
+                  label: `${user.name || user.email.split('@')[0]} (${user.doceaseCount + user.signaturesCount})`
+                }))
+              ]}
+              label="Salarié"
+              renderTrigger={({ onClick, label }) => (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={onClick}
+                    className="appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 pr-8 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors min-w-[180px] text-left"
+                  >
+                    {label}
+                  </button>
+                  <User className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              )}
+            />
           )}
 
           {/* Recherche */}

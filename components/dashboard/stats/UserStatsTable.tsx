@@ -10,6 +10,7 @@ import { ROLE_COLORS, ROLE_LABELS, UserRole } from '../../../lib/permissions';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { TimeRange } from '../../../hooks/useStats';
 import { DASHBOARD_REGISTER_URL } from '../../../constants';
+import SelectBottomSheet from '../../ui/SelectBottomSheet';
 
 interface UserStatsTableProps {
   users: UserStat[];
@@ -530,30 +531,21 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                   <td className="px-6 py-4">
                     {/* Role Selector for Admins */}
                     {canManage ? (
-                      <div className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer hover:shadow-sm transition-all ${roleStyles.bg} ${roleStyles.text} ${roleStyles.border}`}>
-                        <span className="truncate max-w-[120px]">{ROLE_LABELS[currentRole] || user.role}</span>
-                        <ChevronDown className="w-3 h-3 opacity-70" />
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value, user.name)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer appearance-none"
-                          style={{ 
-                            paddingLeft: '12px',
-                            paddingRight: '12px'
-                          }}
-                          aria-label="Changer le rôle"
-                        >
-                          {availableRoles.map(role => (
-                            <option
-                              key={role.value}
-                              value={role.value}
-                              className="text-slate-900 bg-white dark:bg-slate-800 dark:text-slate-100 py-2 px-3"
-                            >
-                              {role.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <SelectBottomSheet
+                        value={user.role}
+                        onChange={(value) => handleRoleChange(user.id, value, user.name)}
+                        options={availableRoles}
+                        aria-label="Changer le rôle"
+                        renderTrigger={({ onClick }) => (
+                          <div 
+                            onClick={onClick}
+                            className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer hover:shadow-sm transition-all ${roleStyles.bg} ${roleStyles.text} ${roleStyles.border}`}
+                          >
+                            <span className="truncate max-w-[120px]">{ROLE_LABELS[currentRole] || user.role}</span>
+                            <ChevronDown className="w-3 h-3 opacity-70" />
+                          </div>
+                        )}
+                      />
                     ) : (
                       <Badge variant="slate" size="sm">{ROLE_LABELS[currentRole] || user.role}</Badge>
                     )}
@@ -688,20 +680,13 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                   Rôle <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <select
-                    value={newUser.role_level}
-                    onChange={(e) => setNewUser({ ...newUser, role_level: e.target.value as UserRole })}
-                    className="appearance-none cursor-pointer w-full px-4 py-2.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
-                  >
-                    {availableRoles.map(role => (
-                      <option key={role.value} value={role.value} className="py-2 px-3">
-                        {role.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                </div>
+                <SelectBottomSheet
+                  value={newUser.role_level}
+                  onChange={(value) => setNewUser({ ...newUser, role_level: value as UserRole })}
+                  options={availableRoles}
+                  label="Sélectionner un rôle"
+                  aria-label="Sélectionner un rôle"
+                />
               </div>
             </div>
 

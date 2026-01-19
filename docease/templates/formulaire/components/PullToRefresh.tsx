@@ -30,23 +30,28 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
       // On ne commence le pull que si on est tout en haut du scroll
       if (scrollContainer.scrollTop <= 0) {
         touchStartY.current = e.touches[0].clientY;
-        // On ne met pas encore isPulling à true, on attend le move
+        isPulling.current = false; // Reset pour détecter la direction
       } else {
         touchStartY.current = 0;
+        isPulling.current = false;
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (touchStartY.current === 0 || scrollContainer.scrollTop > 0) return;
+      // Si pas de touch start enregistré ou si on a scrollé, ne rien faire
+      if (touchStartY.current === 0) return;
       
       const touchY = e.touches[0].clientY;
       const dist = touchY - touchStartY.current;
 
-      if (dist > 0) {
-        // Si on tire vers le bas alors qu'on est en haut
-        isPulling.current = true;
+      // Seulement si on est en haut ET qu'on tire vers le bas (dist > 0)
+      if (dist > 5 && scrollContainer.scrollTop <= 0) {
+        // Active le pull uniquement si on tire vers le haut
+        if (!isPulling.current) {
+          isPulling.current = true;
+        }
         
-        // Empêcher le scroll natif (important sur Android Chrome pour éviter le conflit)
+        // Empêcher le scroll natif seulement quand on est en mode pull
         if (e.cancelable) {
           e.preventDefault();
         }
@@ -54,10 +59,11 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, childre
         // Résistance exponentielle pour un feeling naturel
         const dampedDist = Math.min(dist * 0.4, MAX_PULL);
         setPullDistance(dampedDist);
-      } else {
-        // On scrolle vers le bas, on laisse faire
+      } else if (dist < -5) {
+        // Si on scrolle vers le bas, désactiver le pull et laisser faire le scroll
         isPulling.current = false;
         setPullDistance(0);
+        touchStartY.current = 0; // Reset pour permettre le scroll normal
       }
     };
 

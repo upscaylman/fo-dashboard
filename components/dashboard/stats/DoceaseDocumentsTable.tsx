@@ -3,6 +3,8 @@ import { FileText, Download, Calendar, User, Users, Filter, Search, ChevronDown,
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
 import { DOCEASE_URL } from '../../../constants';
+import SelectBottomSheet from '../../ui/SelectBottomSheet';
+import { TimeRange } from '../../../hooks/useStats';
 
 // Rôles qui ne voient que leurs propres données
 const RESTRICTED_ROLES = ['secretary', 'secretary_federal'];
@@ -29,7 +31,11 @@ interface DoceaseDocument {
   };
 }
 
-const DoceaseDocumentsTable: React.FC = () => {
+interface DoceaseDocumentsTableProps {
+  timeRange?: TimeRange;
+}
+
+const DoceaseDocumentsTable: React.FC<DoceaseDocumentsTableProps> = ({ timeRange = 'month' }) => {
   const [documents, setDocuments] = useState<DoceaseDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,9 +144,51 @@ const DoceaseDocumentsTable: React.FC = () => {
     return !!(doc.file_url || doc.metadata?.file_url);
   };
 
+  // Helper pour obtenir la date de début selon la période
+  const getStartDateFromRange = (range: TimeRange): Date => {
+    const now = new Date();
+    switch (range) {
+      case 'week':
+        const weekAgo = new Date();
+        weekAgo.setDate(now.getDate() - 7);
+        weekAgo.setHours(0, 0, 0, 0);
+        return weekAgo;
+      case 'month':
+        const monthAgo = new Date();
+        monthAgo.setDate(now.getDate() - 30);
+        monthAgo.setHours(0, 0, 0, 0);
+        return monthAgo;
+      case 'quarter':
+        const quarterAgo = new Date();
+        quarterAgo.setDate(now.getDate() - 90);
+        quarterAgo.setHours(0, 0, 0, 0);
+        return quarterAgo;
+      case 'year':
+        const yearAgo = new Date();
+        yearAgo.setFullYear(now.getFullYear() - 1);
+        yearAgo.setHours(0, 0, 0, 0);
+        return yearAgo;
+      default:
+        const defaultAgo = new Date();
+        defaultAgo.setDate(now.getDate() - 30);
+        defaultAgo.setHours(0, 0, 0, 0);
+        return defaultAgo;
+    }
+  };
+
   // Filtrage des documents
   const filteredDocuments = useMemo(() => {
-    const filtered = documents.filter(doc => {
+    let filtered = documents;
+
+    // Filtrer par période
+    const startDate = getStartDateFromRange(timeRange);
+    filtered = filtered.filter(doc => {
+      const docDate = new Date(doc.created_at);
+      return docDate >= startDate;
+    });
+
+    // Filtrer par recherche et autres critères
+    filtered = filtered.filter(doc => {
       const searchLower = searchTerm.toLowerCase();
       // Gérer le cas où user peut être un tableau ou un objet
       const userName = Array.isArray(doc.user) ? doc.user[0]?.name : doc.user?.name;
@@ -167,7 +215,7 @@ const DoceaseDocumentsTable: React.FC = () => {
       const dateB = new Date(b.created_at).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-  }, [documents, searchTerm, filterType, filterFormat, filterUser, sortOrder]);
+  }, [documents, searchTerm, filterType, filterFormat, filterUser, sortOrder, timeRange]);
 
   // Helper pour obtenir les infos utilisateur (gère le cas tableau/objet)
   const getUserInfo = (doc: DoceaseDocument) => {
@@ -281,50 +329,64 @@ const DoceaseDocumentsTable: React.FC = () => {
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
           {/* Filtre par utilisateur (uniquement pour les admins) */}
           {!isRestrictedView && (
-            <div className="relative col-span-2 sm:col-span-1">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-              <select
-                value={filterUser}
-                onChange={(e) => setFilterUser(e.target.value)}
-                className="w-full appearance-none cursor-pointer pl-9 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
-              >
-                <option value="all">Tous utilisateurs</option>
-                {uniqueUsers.map(u => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-            </div>
+            <SelectBottomSheet
+              value={filterUser}
+              onChange={setFilterUser}
+              options={[
+                { value: 'all', label: 'Tous utilisateurs' },
+                ...uniqueUsers.map(u => ({ value: u.id, label: u.name }))
+              ]}
+              label="Filtrer par utilisateur"
+              className="col-span-2 sm:col-span-1"
+              renderTrigger={({ onClick, label }) => (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={onClick}
+                    className="w-full appearance-none cursor-pointer pl-9 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0] text-left"
+                  >
+                    {label}
+                  </button>
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                </div>
+              )}
+            />
           )}
 
-          <div className="relative">
-            <List className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full appearance-none cursor-pointer pl-9 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
-            >
-              <option value="all">Tous types</option>
-              {documentTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-          </div>
+          <SelectBottomSheet
+            value={filterType}
+            onChange={setFilterType}
+            options={[
+              { value: 'all', label: 'Tous types' },
+              ...documentTypes.map(type => ({ value: type, label: type }))
+            ]}
+            label="Filtrer par type"
+            renderTrigger={({ onClick, label }) => (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={onClick}
+                  className="w-full appearance-none cursor-pointer pl-9 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0] text-left"
+                >
+                  {label}
+                </button>
+                <List className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+              </div>
+            )}
+          />
 
-          <div className="relative">
-            <select
-              value={filterFormat}
-              onChange={(e) => setFilterFormat(e.target.value)}
-              className="w-full appearance-none cursor-pointer pl-4 pr-10 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#a84383] dark:focus:ring-[#dd60b0]"
-            >
-              <option value="all">Formats</option>
-              {documentFormats.map(format => (
-                <option key={format} value={format}>{format?.toUpperCase()}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
-          </div>
+          <SelectBottomSheet
+            value={filterFormat}
+            onChange={setFilterFormat}
+            options={[
+              { value: 'all', label: 'Formats' },
+              ...documentFormats.map(format => ({ value: format, label: format?.toUpperCase() }))
+            ]}
+            label="Filtrer par format"
+            buttonClassName="text-sm"
+          />
 
           {/* Bouton de réinitialisation des filtres */}
           {(filterType !== 'all' || filterFormat !== 'all' || filterUser !== 'all' || searchTerm !== '') && (

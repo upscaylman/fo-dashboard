@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
 import DocumentsManagementPanel from './DocumentsManagementPanel';
+import SelectBottomSheet from '../ui/SelectBottomSheet';
 
 // Rôles qui ne peuvent PAS ajouter/supprimer de documents
 const RESTRICTED_ROLES = ['secretary_federal'];
@@ -158,6 +159,9 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [showManagementPanel, setShowManagementPanel] = useState(false);
+  const [showAllDocsModal, setShowAllDocsModal] = useState(false);
+  const [selectedGroupType, setSelectedGroupType] = useState<string>('');
+  const INITIAL_DISPLAY_LIMIT = 5;
   
   // Rôles admin pour la gestion des fichiers
   const isAdminRole = ['secretary_general', 'super_admin'].includes(user?.role || '');
@@ -737,46 +741,42 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
               {/* Filtre par type */}
               <div className="flex items-center gap-2">
                 <File className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                <select
+                <SelectBottomSheet
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  {fileTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
+                  onChange={setFilterType}
+                  options={fileTypes.map(type => ({ value: type.value, label: type.label }))}
+                  label="Filtrer par type"
+                  buttonClassName="pl-3 pr-8 py-1.5 border rounded-full text-sm focus:ring-blue-500"
+                />
               </div>
               
               {/* Filtre par catégorie */}
               {categories.length > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500 dark:text-slate-400">Catégorie:</span>
-                  <select
+                  <SelectBottomSheet
                     value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  >
-                    <option value="all">Toutes</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                    onChange={setFilterCategory}
+                    options={[
+                      { value: 'all', label: 'Toutes' },
+                      ...categories.map(cat => ({ value: cat, label: cat }))
+                    ]}
+                    label="Filtrer par catégorie"
+                    buttonClassName="pl-3 pr-8 py-1.5 border rounded-full text-sm focus:ring-blue-500"
+                  />
                 </div>
               )}
               
               {/* Filtre par date */}
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                <select
+                <SelectBottomSheet
                   value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-1.5 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  {dateFilters.map(df => (
-                    <option key={df.value} value={df.value}>{df.label}</option>
-                  ))}
-                </select>
+                  onChange={setFilterDate}
+                  options={dateFilters.map(df => ({ value: df.value, label: df.label }))}
+                  label="Filtrer par date"
+                  buttonClassName="pl-3 pr-8 py-1.5 border rounded-full text-sm focus:ring-blue-500"
+                />
               </div>
               
               {/* Bouton réinitialiser */}
@@ -821,7 +821,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                   {/* Documents du groupe */}
                   <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : 'flex flex-col gap-2'}>
                     {/* Templates statiques */}
-                    {group.templates.map((template) => {
+                    {group.templates.slice(0, INITIAL_DISPLAY_LIMIT).map((template) => {
                       const isStarred = isBookmarked(template.id);
                       return (
                         <div 
@@ -875,7 +875,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                     })}
                     
                     {/* Documents partagés Supabase */}
-                    {group.shared.map((doc) => {
+                    {group.shared.slice(0, INITIAL_DISPLAY_LIMIT - group.templates.length).map((doc) => {
                       const isStarred = isBookmarked(`shared-${doc.id}`);
                       const { icon: Icon, color } = getFileIcon(doc.file_type);
                       return (
@@ -958,6 +958,20 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
                       );
                     })}
                   </div>
+                  
+                  {/* Bouton Voir plus si plus de 5 éléments */}
+                  {group.count > INITIAL_DISPLAY_LIMIT && (
+                    <button
+                      onClick={() => {
+                        setSelectedGroupType(group.type);
+                        setShowAllDocsModal(true);
+                      }}
+                      className="mt-3 w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                    >
+                      Voir plus ({group.count - INITIAL_DISPLAY_LIMIT} autres)
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               );
             })
@@ -1061,38 +1075,32 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type de fichier</label>
-                  <div className="relative">
-                    <select
-                      value={newDoc.file_type}
-                      onChange={(e) => setNewDoc({ ...newDoc, file_type: e.target.value })}
-                      className="appearance-none w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-                    >
-                      <option value="word">📄 Word</option>
-                      <option value="excel">📊 Excel</option>
-                      <option value="pdf">📕 PDF</option>
-                      <option value="image">🖼️ Image</option>
-                      <option value="video">🎬 Vidéo</option>
-                      <option value="audio">🎵 Audio</option>
-                      <option value="other">📁 Autre</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
+                  <SelectBottomSheet
+                    value={newDoc.file_type}
+                    onChange={(value) => setNewDoc({ ...newDoc, file_type: value })}
+                    options={[
+                      { value: 'word', label: '📄 Word' },
+                      { value: 'excel', label: '📊 Excel' },
+                      { value: 'pdf', label: '📕 PDF' },
+                      { value: 'image', label: '🖼️ Image' },
+                      { value: 'video', label: '🎬 Vidéo' },
+                      { value: 'audio', label: '🎵 Audio' },
+                      { value: 'other', label: '📁 Autre' }
+                    ]}
+                    label="Type de fichier"
+                    buttonClassName="w-full px-3 py-2 pr-10 border focus:ring-blue-500"
+                  />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Catégorie</label>
-                  <div className="relative">
-                    <select
-                      value={newDoc.category}
-                      onChange={(e) => setNewDoc({ ...newDoc, category: e.target.value })}
-                      className="appearance-none w-full px-3 py-2 pr-10 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-                    >
-                      {DOCUMENT_CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
+                  <SelectBottomSheet
+                    value={newDoc.category}
+                    onChange={(value) => setNewDoc({ ...newDoc, category: value })}
+                    options={DOCUMENT_CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+                    label="Catégorie"
+                    buttonClassName="w-full px-3 py-2 pr-10 border focus:ring-blue-500"
+                  />
                 </div>
               </div>
               
@@ -1260,6 +1268,186 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
           fetchStorageUsage();
         }} 
       />
+
+      {/* Modal pour afficher tous les documents d'un groupe */}
+      {showAllDocsModal && (() => {
+        const group = documentGroups.find(g => g.type === selectedGroupType);
+        if (!group) return null;
+        
+        const { icon: GroupIcon, color: groupColor } = getFileIcon(group.type);
+        
+        return (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/50 z-[100] transition-opacity duration-300"
+              onClick={() => setShowAllDocsModal(false)}
+              aria-hidden="true"
+            />
+            
+            {/* Modal */}
+            <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl max-h-[80vh] flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${groupColor}`}>
+                      <GroupIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                        {group.label}
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {group.count} document{group.count > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowAllDocsModal(false)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                    aria-label="Fermer"
+                  >
+                    <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                  </button>
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Templates */}
+                    {group.templates.map((template) => {
+                      const isStarred = isBookmarked(template.id);
+                      return (
+                        <div 
+                          key={`modal-template-${template.id}`} 
+                          className="flex items-center p-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-md hover:border-slate-200 dark:hover:border-slate-600 transition-all group"
+                        >
+                          <a 
+                            href={template.url} 
+                            download
+                            onClick={() => handleDownload(template.name)}
+                            className="flex items-center flex-1 min-w-0 cursor-pointer"
+                          >
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${template.type === 'word' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300' : 'bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-300'}`}>
+                              {template.type === 'word' ? <FileText className="w-5 h-5" /> : <FileSpreadsheet className="w-5 h-5" />}
+                            </div>
+                            <div className="ml-3 flex-1 min-w-0">
+                              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{template.name}</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500 uppercase font-semibold tracking-wide">{template.size}</p>
+                            </div>
+                          </a>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                toggleBookmark({
+                                  id: template.id,
+                                  type: 'template',
+                                  title: template.name,
+                                  url: template.url,
+                                  subtitle: template.size
+                                });
+                              }}
+                              className="p-2 text-slate-300 dark:text-slate-600 hover:text-amber-400 dark:hover:text-amber-400 transition-colors"
+                              title="Ajouter aux favoris"
+                            >
+                              <Star className={`w-4 h-4 transition-transform active:scale-125 ${isStarred ? 'fill-amber-400 text-amber-400' : ''}`} />
+                            </button>
+                            <a 
+                              href={template.url}
+                              download
+                              onClick={() => handleDownload(template.name)}
+                              className="p-2 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              title="Télécharger"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Documents partagés */}
+                    {group.shared.map((doc) => {
+                      const isStarred = isBookmarked(`shared-${doc.id}`);
+                      const { icon: Icon, color } = getFileIcon(doc.file_type);
+                      return (
+                        <div 
+                          key={`modal-shared-${doc.id}`} 
+                          className="flex items-center p-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 hover:shadow-md hover:border-slate-200 dark:hover:border-slate-600 transition-all group"
+                        >
+                          <a 
+                            href={doc.file_url} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => handleDownload(doc.name)}
+                            className="flex items-center flex-1 min-w-0 cursor-pointer"
+                          >
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${color}`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <div className="ml-3 flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{doc.name}</p>
+                                <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full flex-shrink-0">{doc.category}</span>
+                              </div>
+                              <p className="text-xs text-slate-400 dark:text-slate-500 uppercase font-semibold tracking-wide">{doc.file_size}</p>
+                            </div>
+                          </a>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                toggleBookmark({
+                                  id: `shared-${doc.id}`,
+                                  type: 'template',
+                                  title: doc.name,
+                                  url: doc.file_url,
+                                  subtitle: doc.file_size
+                                });
+                              }}
+                              className="p-2 text-slate-300 dark:text-slate-600 hover:text-amber-400 dark:hover:text-amber-400 transition-colors"
+                              title="Ajouter aux favoris"
+                            >
+                              <Star className={`w-4 h-4 transition-transform active:scale-125 ${isStarred ? 'fill-amber-400 text-amber-400' : ''}`} />
+                            </button>
+                            {canManageDocuments && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleDeleteDocument(doc.id, doc.name);
+                                }}
+                                className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                            <a 
+                              href={doc.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => handleDownload(doc.name)}
+                              className="p-2 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              title="Télécharger"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 };
