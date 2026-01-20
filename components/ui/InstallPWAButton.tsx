@@ -106,7 +106,7 @@ export const InstallPWAButton: React.FC = () => {
 
     // Fallback: si pas de prompt après 5s sur desktop, afficher quand même
     const fallbackTimer = setTimeout(() => {
-      if (!hasPromptRef.current && os !== 'ios') {
+      if (!hasPromptRef.current && (os === 'android' || os === 'desktop' || os === 'unknown')) {
         setShowBanner(true);
       }
     }, 5000);

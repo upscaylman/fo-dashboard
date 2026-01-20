@@ -1113,7 +1113,8 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Floating Navigation Bar - IMPROVED MD3 Expressive */}
+            {/* Floating Navigation Bar - IMPROVED MD3 Expressive - Masquée pour convocations sans type */}
+            {!(selectedTemplate === 'convocations' && currentStep.id === 'contenu' && !formData.typeConvocation) && (
             <div className="sticky top-6 z-30 mb-10 mx-auto max-w-6xl px-1">
                <div className="bg-white/90 dark:bg-[#2f2f2f]/90 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/40 dark:border-white/10 p-2.5 flex flex-col md:flex-row items-center justify-between gap-3 transition-all duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)] hover:scale-[1.005] ring-1 ring-black/5 dark:ring-white/5 transform-gpu will-change-transform overflow-hidden">
 
@@ -1173,10 +1174,13 @@ const App: React.FC = () => {
                     })}
                   </div>
 
-                  {/* Divider - Desktop Only */}
+                  {/* Divider - Desktop Only - Masqué aussi si la barre d'action est masquée */}
+                  {!(selectedTemplate === 'convocations' && currentStep.id === 'contenu' && !formData.typeConvocation) && (
                   <div className="hidden md:block w-px h-10 bg-gradient-to-b from-transparent via-[#9da3af] to-transparent mx-2"></div>
+                  )}
 
-                  {/* Actions Area */}
+                  {/* Actions Area - Masquée pour les convocations tant que le type n'est pas choisi */}
+                  {!(selectedTemplate === 'convocations' && currentStep.id === 'contenu' && !formData.typeConvocation) && (
                   <div className="flex items-center justify-between w-full md:w-auto gap-3 md:gap-4 pl-1 md:pl-0">
 
                      {/* Utilities Group */}
@@ -1254,8 +1258,10 @@ const App: React.FC = () => {
                        </button>
                      </div>
                   </div>
+                  )}
                </div>
             </div>
+            )}
 
             {/* Form Content */}
             <div className="max-w-5xl mx-auto min-h-[400px]">
