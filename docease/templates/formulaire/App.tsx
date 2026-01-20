@@ -94,6 +94,14 @@ const App: React.FC = () => {
       const renameExpStep = (step: typeof STEPS[0]) => 
         step.id === 'expediteur' ? { ...step, label: 'Destinataire(s)', icon: 'group', description: 'Email des destinataires' } : step;
       
+      // Renommer l'étape contenu si le type de convocation n'est pas encore sélectionné
+      const renameContentStep = (step: typeof STEPS[0]) => {
+        if (step.id === 'contenu' && !formData.typeConvocation) {
+          return { ...step, label: 'Type de convocation', icon: 'event', description: 'Sélectionnez le type de convocation' };
+        }
+        return step;
+      };
+      
       // Si CA Fédérale est sélectionné, ajouter les onglets jour1 et jour2
       if (formData.typeConvocation === 'CA Fédérale') {
         return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'ordreDuJourBureau').map(renameExpStep);
@@ -103,7 +111,9 @@ const App: React.FC = () => {
         return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2').map(renameExpStep);
       }
       // Pas encore sélectionné, pas d'onglets jour
-      return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau').map(renameExpStep);
+      return STEPS.filter(step => step.id !== 'coordonnees' && step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau')
+        .map(renameExpStep)
+        .map(renameContentStep);
     }
     if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
       // Pour designation, negociation et custom : coordonnées, contenu (avec codeDocument + signatureExp), destinataire(s)
