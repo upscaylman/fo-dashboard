@@ -521,6 +521,51 @@
       object-position: top center;
     }
 
+    /* Exception pour images de la section Objet */
+    .screenshot-container img[src*="objet_"] {
+      object-position: center;
+    }
+
+    /* Exception pour image mobile coordonnée */
+    .screenshot-container img[src*="coordonnee_mobile"] {
+      object-position: bottom center;
+    }
+
+    /* Exception pour image desktop de la section Navigation/Stepper */
+    .screenshot-container img[src*="stepper_desktop"] {
+      object-position: top left;
+    }
+
+    /* Exception pour image mobile de la section Contenu */
+    .screenshot-container img[src*="contenu_mobile"] {
+      object-position: center;
+    }
+
+    /* Exception pour images de la section Destinataire */
+    .screenshot-container img[src*="destinataire_desktop"] {
+      object-position: left;
+    }
+
+    /* Exception pour image mobile destinataire */
+    .screenshot-container img[src*="destinataire_mobile"] {
+      object-position: left bottom;
+    }
+
+    /* Exception pour image mobile de la section Partage */
+    .screenshot-container img[src*="partage_mobile"] {
+      object-position: center;
+    }
+
+    /* Exception pour image desktop téléchargement */
+    .screenshot-container img[src*="dl_desktop"] {
+      object-position: right;
+    }
+
+    /* Exception pour image mobile dans section téléchargement */
+    .screenshot-container img[src*="previsu_mobile"][alt*="Téléchargement"] {
+      object-position: bottom right;
+    }
+
     /* Images zoomables */
     .screenshot-container img {
       cursor: zoom-in;
@@ -1719,9 +1764,10 @@
         <div class="step-card">
           <p>
             Cliquez sur le bouton "Se connecter" sur la page d'accueil. 
-            Entrez votre email et votre mot de passe (comme pour Facebook ou Gmail).
+            Entrez votre email <strong>@fo-metaux.fr</strong> et votre Nom/Prenom (optionnel).
           </p>
           
+          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1766,6 +1812,7 @@
             <li><strong>Document Personnalisé</strong> : pour créer un document libre avec l'aide de l'IA</li>
           </ul>
           
+          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1799,13 +1846,17 @@
           <p>
             Des cases apparaissent. Remplissez-les une par une :
           </p>
-          <ul>
-            <li><strong>Titre</strong> : Le sujet principal (ex: "Réunion importante")</li>
-            <li><strong>Date</strong> : Quand ? (un calendrier s'ouvre pour choisir facilement)</li>
-            <li><strong>Contenu</strong> : Qu'est-ce que vous voulez dire ?</li>
-            <li><strong>Destinataires</strong> : À qui vous envoyez ce document ?</li>
-          </ul>
           
+          <div class="info-box" style="margin: 1rem 0;">
+            <span class="material-icons">info</span>
+            <div>
+              <strong>Nota bene :</strong> Les champs marqués d'un astérisque (*) sont obligatoires.
+              Vous devez les remplir pour pouvoir générer votre document.
+            </div>
+          </div>
+          
+          <h4 style="margin-top: 1.5rem;">Coordonnées : Vos informations (nom, prénom, fonction, adresse...)</h4>
+          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1813,8 +1864,8 @@
                 Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/formulaire_desktop.png" alt="Formulaire - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>desktop_windows</span><br>Capture bureau du formulaire</div>'">
-                <div class="screenshot-caption">Le formulaire sur ordinateur</div>
+                <img src="/assets/screenshots/coordonnee_desktop.png" alt="Champ Coordonnées - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>person</span><br>Capture bureau des coordonnées</div>'">
+                <div class="screenshot-caption">Coordonnées sur ordinateur</div>
               </div>
             </div>
             <div class="screenshot-item">
@@ -1823,13 +1874,119 @@
                 Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/formulaire_mobile.png" alt="Formulaire - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smartphone</span><br>Capture mobile du formulaire</div>'">
-                <div class="screenshot-caption">Le formulaire sur téléphone</div>
+                <img src="/assets/screenshots/coordonnee_mobile.png" alt="Champ Coordonnées - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>person</span><br>Capture mobile des coordonnées</div>'">
+                <div class="screenshot-caption">Coordonnées sur téléphone</div>
               </div>
             </div>
           </div>
           
-          <div class="success-box">
+          <h4 style="margin-top: 1.5rem;">Navigation entre les étapes</h4>
+          <p>
+            Le formulaire est divisé en plusieurs sections (Coordonnées, Contenu, Ordre du jour, Signataire...).
+            Vous voyez une barre de progression en haut qui vous indique où vous en êtes.
+            Cliquez sur "Suivant" pour passer à l'étape suivante, ou "Précédent" pour revenir en arrière.
+          </p>
+          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/stepper_desktop.png" alt="Navigation étapes - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>linear_scale</span><br>Capture bureau de la navigation</div>'">
+                <div class="screenshot-caption">Barre de progression sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/stepper_mobile.gif" alt="Navigation étapes - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>linear_scale</span><br>Capture mobile de la navigation</div>'">
+                <div class="screenshot-caption">Barre de progression sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <h4 style="margin-top: 1.5rem;">Date et heure : Quand ? (un calendrier s'ouvre pour choisir facilement)</h4>
+          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/date_desktop.png" alt="Champ Date - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>event</span><br>Capture bureau du champ Date</div>'">
+                <div class="screenshot-caption">Sélection de date sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/date_mobile.gif" alt="Champ Date - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>event</span><br>Capture mobile du champ Date</div>'">
+                <div class="screenshot-caption">Sélection de date sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <h4 style="margin-top: 1.5rem;">Contenu : Le message principal de votre document</h4>
+          <p>Écrivez ici le texte principal : convocation, information, demande... C'est le corps de votre document.</p>
+          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/contenu_desktop.png" alt="Champ Contenu - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>edit_note</span><br>Capture bureau du champ Contenu</div>'">
+                <div class="screenshot-caption">Zone de texte sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/contenu_mobile.png" alt="Champ Contenu - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>edit_note</span><br>Capture mobile du champ Contenu</div>'">
+                <div class="screenshot-caption">Zone de texte sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <h4 style="margin-top: 1.5rem;">Destinataires : À qui vous envoyez ce document ?</h4>
+          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/destinataire_desktop.png" alt="Champ Destinataires - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>people</span><br>Capture bureau des destinataires</div>'">
+                <div class="screenshot-caption">Sélection destinataires sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/destinataire_mobile.png" alt="Champ Destinataires - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>people</span><br>Capture mobile des destinataires</div>'">
+                <div class="screenshot-caption">Sélection destinataires sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="success-box" style="margin-top: 2rem;">
             <span class="material-icons">auto_awesome</span>
             <div>
               <strong>Astuce magique :</strong> 
@@ -1838,6 +1995,7 @@
             </div>
           </div>
           
+          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1845,7 +2003,7 @@
                 Bouton IA sur ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/ia_desktop.png" alt="Bouton IA - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>auto_awesome</span><br>Capture bureau du bouton IA</div>'">
+                <img src="/assets/screenshots/IA_desktop.png" alt="Bouton IA - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>auto_awesome</span><br>Capture bureau du bouton IA</div>'">
                 <div class="screenshot-caption">L'assistant IA sur ordinateur</div>
               </div>
             </div>
@@ -1855,7 +2013,7 @@
                 Bouton IA sur mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/ia_mobile.png" alt="Bouton IA - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>auto_awesome</span><br>Capture mobile du bouton IA</div>'">
+                <img src="/assets/screenshots/IA_mobile.gif" alt="Bouton IA - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>auto_awesome</span><br>Capture mobile du bouton IA</div>'">
                 <div class="screenshot-caption">L'assistant IA sur téléphone</div>
               </div>
             </div>
@@ -1869,6 +2027,15 @@
             Si quelque chose ne va pas, retournez en arrière et modifiez.
           </p>
           
+          <div class="info-box" style="margin: 1rem 0;">
+            <span class="material-icons">info</span>
+            <div>
+              <strong>Note :</strong> Sur mobile, la prévisualisation n'est pas disponible. 
+              Vous pouvez directement générer le document et le consulter ensuite.
+            </div>
+          </div>
+          
+          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1876,7 +2043,7 @@
                 Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/preview_desktop.png" alt="Prévisualisation - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>preview</span><br>Capture bureau de la prévisualisation</div>'">
+                <img src="/assets/screenshots/previsu_desktop.png" alt="Prévisualisation - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>preview</span><br>Capture bureau de la prévisualisation</div>'">
                 <div class="screenshot-caption">Prévisualisation sur ordinateur</div>
               </div>
             </div>
@@ -1886,8 +2053,8 @@
                 Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/preview_mobile.png" alt="Prévisualisation - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>preview</span><br>Capture mobile de la prévisualisation</div>'">
-                <div class="screenshot-caption">Prévisualisation sur téléphone</div>
+                <img src="/assets/screenshots/previsu_mobile.png" alt="Prévisualisation - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>preview</span><br>Capture mobile de la prévisualisation</div>'">
+                <div class="screenshot-caption">Bouton prévisualisation sur téléphone</div>
               </div>
             </div>
           </div>
@@ -1896,10 +2063,10 @@
         <h3>Étape 5 : Créer le document</h3>
         <div class="step-card">
           <p>
-            Cliquez sur le gros bouton "Générer le document". 
-            Patientez quelques secondes (le temps que le robot travaille).
+            Votre document est prêt ! Vous pouvez le télécharger sur votre ordinateur au format Word et PDF.
           </p>
           
+          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1907,8 +2074,8 @@
                 Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/generer_desktop.png" alt="Bouton Générer - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>play_circle</span><br>Capture bureau du bouton Générer</div>'">
-                <div class="screenshot-caption">Bouton Générer sur ordinateur</div>
+                <img src="/assets/screenshots/dl_desktop.png" alt="Téléchargement - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>download</span><br>Capture bureau du téléchargement</div>'">
+                <div class="screenshot-caption">Téléchargement sur ordinateur</div>
               </div>
             </div>
             <div class="screenshot-item">
@@ -1917,8 +2084,8 @@
                 Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/generer_mobile.png" alt="Bouton Générer - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>play_circle</span><br>Capture mobile du bouton Générer</div>'">
-                <div class="screenshot-caption">Bouton Générer sur téléphone</div>
+                <img src="/assets/screenshots/previsu_mobile.png" alt="Téléchargement - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>download</span><br>Capture mobile du téléchargement</div>'">
+                <div class="screenshot-caption">Téléchargement sur téléphone</div>
               </div>
             </div>
           </div>
@@ -1927,33 +2094,36 @@
             Votre document est prêt ! Vous pouvez :
           </p>
           <ul>
-            <li><strong>Le télécharger</strong> sur votre ordinateur</li>
             <li><strong>L'envoyer par email</strong> directement depuis DocEase</li>
-            <li><strong>Le retrouver plus tard</strong> dans votre historique</li>
           </ul>
           
+          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
                 <span class="material-icons">desktop_windows</span>
-                Résultat sur ordinateur
+                Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/resultat_desktop.png" alt="Document généré - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>description</span><br>Capture bureau du résultat</div>'">
-                <div class="screenshot-caption">Le document final sur ordinateur</div>
+                <img src="/assets/screenshots/partage_desktop.png" alt="Partage par email - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>email</span><br>Capture bureau du partage</div>'">
+                <div class="screenshot-caption">Envoi par email sur ordinateur</div>
               </div>
             </div>
             <div class="screenshot-item">
               <div class="screenshot-item-title">
                 <span class="material-icons">smartphone</span>
-                Résultat sur mobile
+                Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/resultat_mobile.png" alt="Document généré - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>description</span><br>Capture mobile du résultat</div>'">
-                <div class="screenshot-caption">Le document final sur téléphone</div>
+                <img src="/assets/screenshots/partage_mobile.png" alt="Partage par email - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>email</span><br>Capture mobile du partage</div>'">
+                <div class="screenshot-caption">Envoi par email sur téléphone</div>
               </div>
             </div>
           </div>
+          
+          <p style="margin-top: 1.5rem;">
+            Vous pouvez également <strong>le retrouver plus tard</strong> dans votre ordinateur ou vos documents mobile.
+          </p>
         </div>
 
         <div class="warning-box">
