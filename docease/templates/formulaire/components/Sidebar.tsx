@@ -307,7 +307,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
                transition: 'opacity 0.15s ease, max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.05s, margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) 0.05s'
              }}
            >
-             Templates
+             Modèles
            </span>
         </button>
       )}

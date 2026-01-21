@@ -1,0 +1,3725 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation - DocEase | FO Métaux</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.8;
+      color: #1a202c;
+      background: #f7fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Layout principal */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Header fixe */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      height: 64px;
+      gap: 0.5rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .header-logo svg {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: #667eea;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .logo-icon:hover {
+      transform: scale(1.05);
+    }
+
+    .logo-icon .material-icons {
+      color: white;
+      font-size: 22px;
+    }
+
+    .header-title {
+      font-size: 1.25rem;
+      color: #667eea;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-title-full {
+      display: inline;
+    }
+
+    .header-title-short {
+      display: none;
+    }
+
+    /* Boutons style DocEase app */
+    .btn-doc {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      white-space: nowrap;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-doc:active {
+      transform: scale(0.95);
+    }
+
+    .btn-doc:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Variante Primary (bleu plein) */
+    .btn-doc.btn-primary {
+      background: #667eea;
+      color: white;
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+    }
+
+    .btn-doc.btn-primary:hover {
+      background: #5a67d8;
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+      transform: translateY(-2px);
+    }
+
+    /* Variante Secondary (violet) */
+    .btn-doc.btn-secondary {
+      background: #764ba2;
+      color: white;
+      box-shadow: 0 4px 14px rgba(118, 75, 162, 0.35);
+    }
+
+    .btn-doc.btn-secondary:hover {
+      background: #653990;
+      box-shadow: 0 6px 20px rgba(118, 75, 162, 0.5);
+      transform: translateY(-2px);
+    }
+
+    /* Variante Outlined (bordure) */
+    .btn-doc.btn-outlined {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-doc.btn-outlined:hover {
+      background: rgba(102, 126, 234, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    /* Variante Tonal (fond clair) */
+    .btn-doc.btn-tonal {
+      background: rgba(102, 126, 234, 0.12);
+      color: #667eea;
+    }
+
+    .btn-doc.btn-tonal:hover {
+      background: rgba(102, 126, 234, 0.2);
+    }
+
+    .btn-doc .material-icons {
+      font-size: 1.125rem;
+    }
+
+    /* Bouton retour - même style que admin-btn (outlined) */
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      white-space: nowrap;
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .back-button:hover {
+      background: rgba(102, 126, 234, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .back-button:active {
+      transform: scale(0.95);
+    }
+
+    .back-button-text {
+      display: inline;
+    }
+
+    /* Sidebar navigation */
+    .sidebar {
+      position: fixed;
+      top: 64px;
+      left: 0;
+      width: 280px;
+      height: calc(100vh - 64px);
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      overflow-y: auto;
+      padding: 2rem 0;
+    }
+
+    .sidebar-nav {
+      list-style: none;
+    }
+
+    .nav-item {
+      margin-bottom: 0.25rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      color: #4a5568;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-link:hover {
+      background: #f7fafc;
+      color: #667eea;
+    }
+
+    .nav-link.active {
+      background: #edf2f7;
+      color: #667eea;
+      border-left-color: #667eea;
+      font-weight: 500;
+    }
+
+    .nav-link .material-icons {
+      font-size: 20px;
+    }
+
+    /* Contenu principal */
+    .main-content {
+      margin-left: 280px;
+      margin-top: 64px;
+      flex: 1;
+      padding: 3rem;
+      max-width: 900px;
+    }
+
+    .content-section {
+      display: none;
+    }
+
+    .content-section.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Typography */
+    h2 {
+      font-size: 2rem;
+      color: #1a202c;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      color: #2d3748;
+      margin: 2rem 0 1rem;
+      font-weight: 600;
+    }
+
+    h4 {
+      font-size: 1.125rem;
+      color: #2d3748;
+      margin: 1.5rem 0 0.75rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+      color: #4a5568;
+      font-size: 1.05rem;
+    }
+
+    ul, ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    li {
+      margin-bottom: 0.75rem;
+      color: #4a5568;
+      font-size: 1.05rem;
+    }
+
+    strong {
+      color: #2d3748;
+      font-weight: 600;
+    }
+
+    a {
+      color: #667eea;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #5568d3;
+    }
+
+    /* Cards et boxes */
+    .step-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .step-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .info-box {
+      background: #ebf4ff;
+      border-left: 4px solid #3182ce;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .info-box .material-icons {
+      color: #3182ce;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .success-box {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .success-box .material-icons {
+      color: #10b981;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .warning-box {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .warning-box .material-icons {
+      color: #f59e0b;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    /* Screenshots */
+    .screenshot-container {
+      margin: 1.5rem 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      border: 1px solid #e2e8f0;
+    }
+
+    .screenshot-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .screenshot-placeholder {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: white;
+    }
+
+    .screenshot-placeholder .material-icons {
+      font-size: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.8;
+    }
+
+    .screenshot-placeholder p {
+      color: white;
+      opacity: 0.9;
+      margin: 0;
+    }
+
+    .screenshot-caption {
+      background: #f7fafc;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: #4a5568;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    /* Grille pour screenshots desktop/mobile côte à côte */
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .screenshot-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screenshot-item-title {
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .screenshot-item-title .material-icons {
+      font-size: 20px;
+      color: #667eea;
+    }
+
+    /* Vignettes de même taille pour desktop et mobile */
+    .screenshot-grid .screenshot-container {
+      width: 100%;
+      height: 280px;
+      overflow: hidden;
+    }
+
+    .screenshot-grid .screenshot-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    /* Images zoomables */
+    .screenshot-container img {
+      cursor: zoom-in;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .screenshot-container img:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Modal zoom image */
+    .image-zoom-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      cursor: zoom-out;
+    }
+
+    .image-zoom-modal.active {
+      display: flex;
+    }
+
+    .image-zoom-modal img {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      cursor: zoom-out;
+    }
+
+    .image-zoom-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: white;
+      color: #1a202c;
+      border: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      z-index: 10000;
+    }
+
+    .image-zoom-close:hover {
+      background: #f7fafc;
+      transform: scale(1.1);
+    }
+
+    .image-zoom-close .material-icons {
+      font-size: 28px;
+    }
+
+    code {
+      background: #edf2f7;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+      color: #d946ef;
+    }
+
+    pre {
+      background: #1a202c;
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.875rem;
+      margin: 1rem 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: #e2e8f0;
+    }
+
+    .simple-list {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .simple-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid #f7fafc;
+    }
+
+    .simple-list-item:last-child {
+      border-bottom: none;
+    }
+
+    .simple-list-item .material-icons {
+      color: #667eea;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .tech-stack {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .tech-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .tech-item .material-icons {
+      color: #667eea;
+      font-size: 24px;
+    }
+
+    /* Mobile menu */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    .mobile-menu-btn .material-icons {
+      font-size: 24px;
+      color: #4a5568;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 50;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 2rem 1rem;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      header {
+        padding: 0.5rem 0.75rem;
+      }
+
+      .header-title {
+        font-size: 1rem;
+      }
+
+      .header-title-full {
+        display: none;
+      }
+
+      .header-title-short {
+        display: inline;
+      }
+
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+      }
+
+      .logo-icon .material-icons {
+        font-size: 18px;
+      }
+
+      .admin-indicator {
+        display: none !important;
+      }
+
+      /* Boutons compacts sur mobile mais toujours arrondis */
+      .admin-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+        margin-right: 0.25rem;
+      }
+
+      .admin-btn .material-icons {
+        font-size: 1rem;
+      }
+
+      .admin-btn span:not(.material-icons) {
+        display: none;
+      }
+
+      .back-button {
+        padding: 0.5rem 0.75rem;
+      }
+
+      .back-button .material-icons {
+        font-size: 1rem;
+      }
+
+      .back-button-text {
+        display: none;
+      }
+
+      .btn-doc {
+        padding: 0.5rem 0.75rem;
+      }
+
+      .btn-doc .material-icons {
+        font-size: 1rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      h3 {
+        font-size: 1.25rem;
+      }
+
+      .tech-stack {
+        grid-template-columns: 1fr;
+      }
+
+      .screenshot-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-title {
+        font-size: 0.9rem;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+
+      .logo-icon .material-icons {
+        font-size: 16px;
+      }
+
+      .header-left {
+        gap: 0.5rem;
+      }
+
+      .header-right {
+        gap: 0.25rem;
+      }
+    }
+
+    /* Overlay pour mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 64px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 40;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-overlay.active {
+        display: block;
+      }
+    }
+
+    /* ===== SYSTÈME D'ÉDITION ADMIN ===== */
+    
+    /* Bouton admin dans le header - style DocEase outlined */
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+      margin-right: 0.5rem;
+    }
+
+    .admin-btn:hover {
+      background: rgba(102, 126, 234, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .admin-btn:active {
+      transform: scale(0.95);
+    }
+
+    .admin-btn.logged-in {
+      background: #667eea;
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+    }
+
+    .admin-btn.logged-in:hover {
+      background: #5a67d8;
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+
+    /* Modal de connexion */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal h3 {
+      margin: 0 0 1.5rem;
+      color: #1a202c;
+      font-size: 1.25rem;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn.primary {
+      background: #667eea;
+      color: white;
+      border: none;
+    }
+
+    .modal-btn.primary:hover {
+      background: #5568d3;
+    }
+
+    .modal-btn.secondary {
+      background: white;
+      color: #4a5568;
+      border: 1px solid #e2e8f0;
+    }
+
+    .modal-btn.secondary:hover {
+      background: #f7fafc;
+    }
+
+    .modal-error {
+      background: #fed7d7;
+      color: #c53030;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .modal-error.active {
+      display: block;
+    }
+
+    /* Barre d'édition flottante */
+    .edit-toolbar {
+      display: none;
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      z-index: 150;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .edit-toolbar.active {
+      display: flex;
+    }
+
+    .edit-toolbar-btn {
+      background: transparent;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #4a5568;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .edit-toolbar-btn:hover {
+      background: #f7fafc;
+      color: #667eea;
+    }
+
+    .edit-toolbar-btn.active {
+      background: #667eea;
+      color: white;
+    }
+
+    .edit-toolbar-divider {
+      width: 1px;
+      height: 24px;
+      background: #e2e8f0;
+      margin: 0 0.5rem;
+    }
+
+    .edit-toolbar .save-btn {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .edit-toolbar .save-btn:hover {
+      background: #059669;
+    }
+
+    .edit-toolbar .cancel-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .edit-toolbar .cancel-btn:hover {
+      background: #dc2626;
+    }
+
+    /* Bouton d'édition par section */
+    .section-edit-btn {
+      display: none;
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      gap: 0.25rem;
+      align-items: center;
+      transition: all 0.2s ease;
+      z-index: 10;
+    }
+
+    .section-edit-btn:hover {
+      background: #5568d3;
+    }
+
+    .edit-mode .section-edit-btn {
+      display: flex;
+    }
+
+    .content-section {
+      position: relative;
+    }
+
+    /* Mode édition actif sur une section */
+    .section-editing {
+      background: #fffbeb;
+      border: 2px dashed #f59e0b;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: -1rem;
+    }
+
+    .section-editing [contenteditable="true"] {
+      outline: none;
+      min-height: 1em;
+      padding: 2px 4px;
+      margin: -2px -4px;
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .section-editing [contenteditable="true"]:hover {
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .section-editing [contenteditable="true"]:focus {
+      background: rgba(102, 126, 234, 0.15);
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Curseur texte pour les éléments éditables */
+    .section-editing [contenteditable="true"] {
+      cursor: text;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 6rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1a202c;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      z-index: 300;
+      opacity: 0;
+      transition: all 0.3s ease;
+      text-align: center;
+      max-width: calc(100% - 2rem);
+    }
+
+    .toast.active {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #10b981;
+    }
+
+    .toast.error {
+      background: #ef4444;
+    }
+
+    /* Indicateur admin connecté */
+    .admin-indicator {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #10b981;
+      background: #d1fae5;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      margin-right: 1rem;
+    }
+
+    .admin-indicator.active {
+      display: flex;
+    }
+
+    .admin-indicator .material-icons {
+      font-size: 14px;
+    }
+
+    /* Gestion des images en mode édition */
+    .edit-mode .screenshot-container {
+      position: relative;
+    }
+
+    .edit-mode .screenshot-container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: transparent;
+      transition: background 0.2s ease;
+      pointer-events: none;
+    }
+
+    .edit-mode .screenshot-container:hover::after {
+      background: rgba(102, 126, 234, 0.1);
+    }
+
+    .image-edit-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 20;
+      border-radius: 8px;
+    }
+
+    .edit-mode .screenshot-container:hover .image-edit-overlay {
+      display: flex;
+    }
+
+    .image-edit-btn {
+      background: white;
+      color: #1a202c;
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .image-edit-btn:hover {
+      background: #f7fafc;
+      transform: scale(1.05);
+    }
+
+    .image-edit-btn.delete {
+      background: #ef4444;
+      color: white;
+    }
+
+    .image-edit-btn.delete:hover {
+      background: #dc2626;
+    }
+
+    .image-edit-btn .material-icons {
+      font-size: 18px;
+    }
+
+    /* Modal upload image */
+    .image-upload-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .image-upload-modal.active {
+      display: flex;
+    }
+
+    .image-upload-content {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .image-upload-content h3 {
+      margin-bottom: 1.5rem;
+      color: #1a202c;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .image-upload-content h3 .material-icons {
+      color: #667eea;
+    }
+
+    .upload-zone {
+      border: 2px dashed #cbd5e0;
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 1rem;
+    }
+
+    .upload-zone:hover {
+      border-color: #667eea;
+      background: #f7fafc;
+    }
+
+    .upload-zone.dragover {
+      border-color: #667eea;
+      background: #eef2ff;
+    }
+
+    .upload-zone .material-icons {
+      font-size: 3rem;
+      color: #a0aec0;
+      margin-bottom: 1rem;
+    }
+
+    .upload-zone p {
+      color: #718096;
+      margin-bottom: 0.5rem;
+    }
+
+    .upload-zone small {
+      color: #a0aec0;
+      font-size: 0.75rem;
+    }
+
+    .upload-preview {
+      display: none;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .upload-preview.active {
+      display: block;
+    }
+
+    .upload-preview img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #f7fafc;
+    }
+
+    .upload-preview-remove {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: #ef4444;
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-progress {
+      display: none;
+      margin-bottom: 1rem;
+    }
+
+    .upload-progress.active {
+      display: block;
+    }
+
+    .upload-progress-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .upload-progress-fill {
+      height: 100%;
+      background: #667eea;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .upload-progress-text {
+      font-size: 0.75rem;
+      color: #718096;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+
+    .image-upload-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+
+    .image-upload-buttons button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .image-upload-buttons .cancel-btn {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      color: #4a5568;
+    }
+
+    .image-upload-buttons .cancel-btn:hover {
+      background: #edf2f7;
+    }
+
+    .image-upload-buttons .upload-btn {
+      background: #667eea;
+      border: none;
+      color: white;
+    }
+
+    .image-upload-buttons .upload-btn:hover {
+      background: #5568d3;
+    }
+
+    .image-upload-buttons .upload-btn:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header fixe -->
+  <header>
+    <div class="header-left">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <span class="material-icons">menu</span>
+      </button>
+      <div class="header-logo">
+        <!-- Logo DocEase style original avec couleur documentation -->
+        <div class="logo-icon">
+          <span class="material-icons">description</span>
+        </div>
+        <span class="header-title">
+          <span class="header-title-full">Documentation DocEase</span>
+          <span class="header-title-short">DocEase</span>
+        </span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="admin-indicator" id="adminIndicator">
+        <span class="material-icons">verified</span>
+        <span id="adminEmail">Admin</span>
+      </div>
+      <button class="admin-btn" id="adminBtn">
+        <span class="material-icons">edit</span>
+        <span id="adminBtnText">Modifier</span>
+      </button>
+      <a href="/" class="back-button">
+        <span class="material-icons">arrow_back</span>
+        <span class="back-button-text">Retour</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Modal de connexion admin -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal">
+      <h3>Connexion administrateur</h3>
+      <div class="modal-error" id="loginError">Email non autorisé</div>
+      <input type="email" id="adminEmailInput" placeholder="Votre adresse email" autocomplete="email">
+      <p style="font-size: 0.85rem; color: #718096; margin-bottom: 0;">
+        Seuls les administrateurs autorisés peuvent modifier cette documentation.
+      </p>
+      <div class="modal-buttons">
+        <button class="modal-btn secondary" id="loginCancel">Annuler</button>
+        <button class="modal-btn primary" id="loginSubmit">Se connecter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre d'outils d'édition -->
+  <div class="edit-toolbar" id="editToolbar">
+    <button class="edit-toolbar-btn" data-command="bold" title="Gras (Ctrl+B)">
+      <span class="material-icons">format_bold</span>
+    </button>
+    <button class="edit-toolbar-btn" data-command="italic" title="Italique (Ctrl+I)">
+      <span class="material-icons">format_italic</span>
+    </button>
+    <button class="edit-toolbar-btn" data-command="underline" title="Souligner (Ctrl+U)">
+      <span class="material-icons">format_underlined</span>
+    </button>
+    <div class="edit-toolbar-divider"></div>
+    <button class="edit-toolbar-btn" data-command="insertUnorderedList" title="Liste à puces">
+      <span class="material-icons">format_list_bulleted</span>
+    </button>
+    <button class="edit-toolbar-btn" data-command="insertOrderedList" title="Liste numérotée">
+      <span class="material-icons">format_list_numbered</span>
+    </button>
+    <div class="edit-toolbar-divider"></div>
+    <button class="edit-toolbar-btn" data-command="createLink" title="Ajouter un lien">
+      <span class="material-icons">link</span>
+    </button>
+    <button class="edit-toolbar-btn" id="manageImagesBtn" title="Gérer les images">
+      <span class="material-icons">image</span>
+    </button>
+    <div class="edit-toolbar-divider"></div>
+    <button class="save-btn" id="saveChanges">
+      <span class="material-icons">save</span>
+      Sauvegarder
+    </button>
+    <button class="cancel-btn" id="cancelChanges">
+      <span class="material-icons">close</span>
+      Annuler
+    </button>
+    <button class="edit-toolbar-btn" id="resetContent" title="Réinitialiser tout le contenu">
+      <span class="material-icons">restart_alt</span>
+    </button>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Modal zoom image -->
+  <div class="image-zoom-modal" id="imageZoomModal">
+    <button class="image-zoom-close" id="imageZoomClose">
+      <span class="material-icons">close</span>
+    </button>
+    <img id="zoomedImage" src="" alt="Image agrandie">
+  </div>
+
+  <!-- Modal upload image -->
+  <div class="image-upload-modal" id="imageUploadModal">
+    <div class="image-upload-content">
+      <h3>
+        <span class="material-icons">upload_file</span>
+        Modifier l'image
+      </h3>
+      <div class="upload-zone" id="uploadZone">
+        <span class="material-icons">cloud_upload</span>
+        <p>Glissez une image ici ou cliquez pour sélectionner</p>
+        <small>PNG, JPG, GIF - Max 5 Mo</small>
+        <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+      </div>
+      <div class="upload-preview" id="uploadPreview">
+        <img id="previewImage" src="" alt="Aperçu">
+        <button class="upload-preview-remove" id="previewRemove">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="upload-progress" id="uploadProgress">
+        <div class="upload-progress-bar">
+          <div class="upload-progress-fill" id="uploadProgressFill"></div>
+        </div>
+        <div class="upload-progress-text" id="uploadProgressText">Upload en cours...</div>
+      </div>
+      <div class="image-upload-buttons">
+        <button class="cancel-btn" id="uploadCancel">
+          <span class="material-icons">close</span>
+          Annuler
+        </button>
+        <button class="upload-btn" id="uploadSubmit" disabled>
+          <span class="material-icons">check</span>
+          Appliquer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="layout">
+    <!-- Sidebar navigation -->
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="sidebar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" data-section="introduction">
+              <span class="material-icons">home</span>
+              <span>Introduction</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="pourquoi">
+              <span class="material-icons">lightbulb</span>
+              <span>Pourquoi DocEase ?</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="guide">
+              <span class="material-icons">play_circle</span>
+              <span>Comment l'utiliser ?</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="fonctionnalites">
+              <span class="material-icons">stars</span>
+              <span>Fonctionnalités</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="faq">
+              <span class="material-icons">help</span>
+              <span>Questions fréquentes</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="technique">
+              <span class="material-icons">code</span>
+              <span>Détails techniques</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content">
+      
+      <!-- Section: Introduction -->
+      <section class="content-section active" id="introduction">
+        <h2>Bienvenue sur DocEase</h2>
+        
+        <div class="success-box">
+          <span class="material-icons">check_circle</span>
+          <div>
+            <strong>DocEase</strong> est un outil qui crée automatiquement vos documents professionnels. 
+            Plus besoin de tout taper à la main !
+          </div>
+        </div>
+
+        <p>
+          Imaginez que vous devez créer une lettre ou une convocation. 
+          Au lieu de passer des heures à tout écrire, DocEase le fait pour vous en quelques clics.
+        </p>
+
+        <h3>C'est quoi exactement ?</h3>
+        <div class="simple-list">
+          <div class="simple-list-item">
+            <span class="material-icons">edit</span>
+            <div>
+              <strong>Un formulaire simple</strong><br>
+              Vous remplissez les cases (comme un formulaire papier)
+            </div>
+          </div>
+          <div class="simple-list-item">
+            <span class="material-icons">auto_awesome</span>
+            <div>
+              <strong>Un robot intelligent</strong><br>
+              Le robot transforme vos réponses en un beau document
+            </div>
+          </div>
+          <div class="simple-list-item">
+            <span class="material-icons">download</span>
+            <div>
+              <strong>Un document prêt</strong><br>
+              Vous téléchargez votre document Word ou PDF terminé
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Pourquoi -->
+      <section class="content-section" id="pourquoi">
+        <h2>Pourquoi utiliser DocEase ?</h2>
+
+        <h3>Les avantages</h3>
+        
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h4>Gagner du temps</h4>
+          <p>
+            Au lieu de passer 30 minutes à écrire une lettre, vous le faites en 5 minutes. 
+            Le robot s'occupe de la mise en forme et de la structure.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h4>Éviter les erreurs</h4>
+          <p>
+            Plus besoin de vérifier si vous avez bien mis toutes les informations. 
+            DocEase vous guide étape par étape et n'oublie rien.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h4>Documents professionnels</h4>
+          <p>
+            Tous vos documents ont la même apparence, propre et professionnelle. 
+            C'est comme avoir un secrétaire personnel !
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <h4>Accessible partout</h4>
+          <p>
+            Sur votre ordinateur, votre tablette ou votre téléphone. 
+            Vous pouvez créer des documents de n'importe où.
+          </p>
+        </div>
+
+        <div class="info-box">
+          <span class="material-icons">info</span>
+          <div>
+            <strong>Exemple concret :</strong> 
+            Vous devez envoyer une convocation à 20 personnes. Avant, il fallait tout écrire à la main. 
+            Avec DocEase, vous remplissez le formulaire une fois et hop, c'est fait !
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Guide d'utilisation -->
+      <section class="content-section" id="guide">
+        <h2>Comment utiliser DocEase ?</h2>
+        
+        <p style="font-size: 1.125rem; color: #2d3748;">
+          Suivez ces étapes simples. C'est comme suivre une recette de cuisine !
+        </p>
+
+        <h3>Étape 1 : Se connecter</h3>
+        <div class="step-card">
+          <p>
+            Cliquez sur le bouton "Se connecter" sur la page d'accueil. 
+            Entrez votre email et votre mot de passe (comme pour Facebook ou Gmail).
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/login_desktop.png" alt="Page de connexion DocEase - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>desktop_windows</span><br>Capture bureau de la page de connexion</div>'">
+                <div class="screenshot-caption">Connexion sur ordinateur</div>
+              </div>
+            </div>
+            
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/login_mobile.png" alt="Page de connexion DocEase - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smartphone</span><br>Capture mobile de la page de connexion</div>'">
+                <div class="screenshot-caption">Connexion sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">security</span>
+            <div>
+              <strong>Pas de compte ?</strong> Demandez à votre responsable de vous en créer un ou contactez :<br>
+              <a href="mailto:bouvier.jul@gmail.com">bouvier.jul@gmail.com</a> ou <a href="mailto:contact@fo-metaux.fr">contact@fo-metaux.fr</a>
+            </div>
+          </div>
+        </div>
+
+        <h3>Étape 2 : Choisir le type de document</h3>
+        <div class="step-card">
+          <p>Vous verrez plusieurs choix de modèles professionnels :</p>
+          <ul>
+            <li><strong>Lettre de Désignation</strong> : pour désigner un délégué syndical</li>
+            <li><strong>Mandat de Négociation</strong> : pour mandater une négociation collective</li>
+            <li><strong>Convocations</strong> : pour inviter les membres au Bureau Fédéral ou au CA Fédérale</li>
+            <li><strong>Circulaire</strong> : pour informer tous les membres d'une nouveauté</li>
+            <li><strong>Document Personnalisé</strong> : pour créer un document libre avec l'aide de l'IA</li>
+          </ul>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/template_desktop.png" alt="Liste des modèles - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>desktop_windows</span><br>Capture bureau des modèles</div>'">
+                <div class="screenshot-caption">Les modèles sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/template_mobile.gif" alt="Liste des modèles - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smartphone</span><br>Capture mobile des modèles</div>'">
+                <div class="screenshot-caption">Les modèles sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <p>
+            <a href="/" style="font-weight: 600;">Cliquez sur celui dont vous avez besoin</a>.
+          </p>
+        </div>
+
+        <h3>Étape 3 : Remplir le formulaire</h3>
+        <div class="step-card">
+          <p>
+            Des cases apparaissent. Remplissez-les une par une :
+          </p>
+          <ul>
+            <li><strong>Titre</strong> : Le sujet principal (ex: "Réunion importante")</li>
+            <li><strong>Date</strong> : Quand ? (un calendrier s'ouvre pour choisir facilement)</li>
+            <li><strong>Contenu</strong> : Qu'est-ce que vous voulez dire ?</li>
+            <li><strong>Destinataires</strong> : À qui vous envoyez ce document ?</li>
+          </ul>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/formulaire_desktop.png" alt="Formulaire - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>desktop_windows</span><br>Capture bureau du formulaire</div>'">
+                <div class="screenshot-caption">Le formulaire sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/formulaire_mobile.png" alt="Formulaire - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smartphone</span><br>Capture mobile du formulaire</div>'">
+                <div class="screenshot-caption">Le formulaire sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="success-box">
+            <span class="material-icons">auto_awesome</span>
+            <div>
+              <strong>Astuce magique :</strong> 
+              Voyez-vous le bouton "IA" à côté des grandes zones de texte ? 
+              Cliquez dessus et le robot écrit pour vous ! Vous pouvez ensuite modifier si besoin.
+            </div>
+          </div>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Bouton IA sur ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/ia_desktop.png" alt="Bouton IA - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>auto_awesome</span><br>Capture bureau du bouton IA</div>'">
+                <div class="screenshot-caption">L'assistant IA sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Bouton IA sur mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/ia_mobile.png" alt="Bouton IA - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>auto_awesome</span><br>Capture mobile du bouton IA</div>'">
+                <div class="screenshot-caption">L'assistant IA sur téléphone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Étape 4 : Vérifier avant</h3>
+        <div class="step-card">
+          <p>
+            Cliquez sur "Prévisualiser". Vous verrez exactement à quoi ressemblera votre document. 
+            Si quelque chose ne va pas, retournez en arrière et modifiez.
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/preview_desktop.png" alt="Prévisualisation - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>preview</span><br>Capture bureau de la prévisualisation</div>'">
+                <div class="screenshot-caption">Prévisualisation sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/preview_mobile.png" alt="Prévisualisation - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>preview</span><br>Capture mobile de la prévisualisation</div>'">
+                <div class="screenshot-caption">Prévisualisation sur téléphone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Étape 5 : Créer le document</h3>
+        <div class="step-card">
+          <p>
+            Cliquez sur le gros bouton "Générer le document". 
+            Patientez quelques secondes (le temps que le robot travaille).
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/generer_desktop.png" alt="Bouton Générer - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>play_circle</span><br>Capture bureau du bouton Générer</div>'">
+                <div class="screenshot-caption">Bouton Générer sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/generer_mobile.png" alt="Bouton Générer - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>play_circle</span><br>Capture mobile du bouton Générer</div>'">
+                <div class="screenshot-caption">Bouton Générer sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <p>
+            Votre document est prêt ! Vous pouvez :
+          </p>
+          <ul>
+            <li><strong>Le télécharger</strong> sur votre ordinateur</li>
+            <li><strong>L'envoyer par email</strong> directement depuis DocEase</li>
+            <li><strong>Le retrouver plus tard</strong> dans votre historique</li>
+          </ul>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Résultat sur ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/resultat_desktop.png" alt="Document généré - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>description</span><br>Capture bureau du résultat</div>'">
+                <div class="screenshot-caption">Le document final sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Résultat sur mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/resultat_mobile.png" alt="Document généré - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>description</span><br>Capture mobile du résultat</div>'">
+                <div class="screenshot-caption">Le document final sur téléphone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="warning-box">
+          <span class="material-icons">tips_and_updates</span>
+          <div>
+            <strong>Conseil :</strong> 
+            La première fois, prenez votre temps. Après, ça deviendra automatique et vous irez super vite !
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Fonctionnalités -->
+      <section class="content-section" id="fonctionnalites">
+        <h2>Les super pouvoirs de DocEase</h2>
+
+        <h3>L'intelligence artificielle (IA)</h3>
+        <div class="step-card">
+          <p>
+            Vous savez, comme les assistants vocaux (Siri, Alexa) ? 
+            DocEase a le même genre de robot intelligent.
+          </p>
+          <p>
+            Quand vous ne savez pas quoi écrire, cliquez sur le bouton "IA" et le robot vous propose un texte. 
+            C'est comme avoir un collègue qui vous aide !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_ia_desktop.png" alt="IA - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smart_toy</span><br>Capture bureau de l\'IA</div>'">
+                <div class="screenshot-caption">L'IA sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_ia_mobile.png" alt="IA - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smart_toy</span><br>Capture mobile de l\'IA</div>'">
+                <div class="screenshot-caption">L'IA sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">info</span>
+            <div>
+              <strong>Note technique :</strong><br>
+              • <strong>Développement local</strong> : Ollama avec Mistral 7B (gratuit, tourne sur votre ordinateur)<br>
+              • <strong>Production</strong> : Grok de X.AI (plus puissant, rapide, accessible en ligne 24/7)
+            </div>
+          </div>
+        </div>
+
+        <h3>Création automatique de PDF</h3>
+        <div class="step-card">
+          <p>
+            DocEase crée d'abord un document Word (que vous pouvez modifier). 
+            Ensuite, il le transforme en PDF (qui ne peut plus être modifié, parfait pour l'envoyer officiellement).
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_pdf_desktop.png" alt="PDF - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>picture_as_pdf</span><br>Capture bureau du PDF</div>'">
+                <div class="screenshot-caption">Le PDF sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_pdf_mobile.png" alt="PDF - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>picture_as_pdf</span><br>Capture mobile du PDF</div>'">
+                <div class="screenshot-caption">Le PDF sur téléphone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Envoi d'emails</h3>
+        <div class="step-card">
+          <p>
+            Plus besoin d'ouvrir votre boîte mail ! 
+            DocEase peut envoyer le document directement à tous les destinataires. 
+            Vous écrivez un petit message d'accompagnement et hop, c'est envoyé !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_email_desktop.png" alt="Email - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>email</span><br>Capture bureau de l\'email</div>'">
+                <div class="screenshot-caption">L'envoi email sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_email_mobile.png" alt="Email - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>email</span><br>Capture mobile de l\'email</div>'">
+                <div class="screenshot-caption">L'envoi email sur téléphone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Historique des documents</h3>
+        <div class="step-card">
+          <p>
+            Tous vos anciens documents sont sauvegardés. 
+            Si vous voulez retrouver la convocation de la semaine dernière, c'est facile !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_historique_desktop.png" alt="Historique - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>history</span><br>Capture bureau de l\'historique</div>'">
+                <div class="screenshot-caption">L'historique sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_historique_mobile.png" alt="Historique - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>history</span><br>Capture mobile de l\'historique</div>'">
+                <div class="screenshot-caption">L'historique sur téléphone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Mode sombre / Mode clair</h3>
+        <div class="step-card">
+          <p>
+            Vous pouvez changer l'apparence de DocEase selon vos preferences :
+          </p>
+          <ul>
+            <li><strong>Mode clair</strong> : Fond blanc, texte sombre - ideal en journee</li>
+            <li><strong>Mode sombre</strong> : Fond sombre, texte clair - plus reposant pour les yeux le soir</li>
+          </ul>
+          <p>
+            Pour changer : cliquez sur l'icone <strong>soleil</strong> ou <strong>lune</strong> en haut a droite de l'ecran.
+            DocEase se souvient de votre choix !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">light_mode</span>
+                Mode clair
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/theme_light.png" alt="Theme clair" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>light_mode</span><br>Capture du mode clair</div>'">
+                <div class="screenshot-caption">L'interface en mode clair</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">dark_mode</span>
+                Mode sombre
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/theme_dark.png" alt="Theme sombre" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>dark_mode</span><br>Capture du mode sombre</div>'">
+                <div class="screenshot-caption">L'interface en mode sombre</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">tips_and_updates</span>
+            <div>
+              <strong>Conseil :</strong> Le mode sombre reduit la fatigue oculaire si vous travaillez longtemps sur ecran.
+            </div>
+          </div>
+        </div>
+
+        <h3>Panneau des modeles retractable</h3>
+        <div class="step-card">
+          <p>
+            Sur ordinateur, le panneau de gauche avec la liste des modeles peut se replier pour vous donner plus de place.
+          </p>
+          <ul>
+            <li><strong>Cliquez sur la fleche</strong> a cote du panneau pour le replier</li>
+            <li><strong>Cliquez a nouveau</strong> pour le reouvrir</li>
+          </ul>
+          <p>
+            C'est pratique quand vous remplissez un long formulaire et que vous voulez voir tout l'ecran !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">view_sidebar</span>
+                Panneau ouvert
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/sidebar_open.png" alt="Panneau ouvert" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>view_sidebar</span><br>Capture panneau ouvert</div>'">
+                <div class="screenshot-caption">Panneau des modeles visible</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">chevron_left</span>
+                Panneau ferme
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/sidebar_closed.png" alt="Panneau ferme" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>chevron_left</span><br>Capture panneau ferme</div>'">
+                <div class="screenshot-caption">Plus d'espace pour travailler</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="success-box">
+            <span class="material-icons">smartphone</span>
+            <div>
+              <strong>Sur mobile :</strong> Le panneau s'ouvre en plein ecran quand vous cliquez sur le menu, puis se ferme automatiquement quand vous choisissez un modele.
+            </div>
+          </div>
+        </div>
+
+        <h3>Utilisation sur telephone</h3>
+        <div class="step-card">
+          <p>
+            Vous pouvez installer DocEase sur votre téléphone comme une application normale. 
+            Ça marche exactement pareil que sur l'ordinateur !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_mobile_desktop.png" alt="Comparaison - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>desktop_windows</span><br>Capture bureau de la comparaison</div>'">
+                <div class="screenshot-caption">L'interface sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_mobile_mobile.png" alt="Comparaison - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smartphone</span><br>Capture mobile de la comparaison</div>'">
+                <div class="screenshot-caption">L'interface sur téléphone</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: FAQ -->
+      <section class="content-section" id="faq">
+        <h2>Questions fréquentes</h2>
+
+        <h3>Est-ce que c'est difficile à utiliser ?</h3>
+        <div class="step-card">
+          <p>
+            <strong>Non !</strong> Si vous savez utiliser Facebook ou Gmail, vous saurez utiliser DocEase. 
+            C'est même plus simple : vous suivez juste les étapes.
+          </p>
+        </div>
+
+        <h3>Et si je fais une erreur ?</h3>
+        <div class="step-card">
+          <p>
+            Pas de panique ! Vous pouvez toujours revenir en arrière et modifier. 
+            Vous pouvez aussi prévisualiser avant de créer le document final.
+          </p>
+        </div>
+
+        <h3>Mes documents sont-ils en sécurité ?</h3>
+        <div class="step-card">
+          <p>
+            <strong>Oui, totalement !</strong> Seul vous pouvez voir vos documents. 
+            C'est comme un coffre-fort numérique avec votre propre clé (votre mot de passe).
+          </p>
+        </div>
+
+        <h3>Ça marche sans Internet ?</h3>
+        <div class="step-card">
+          <p>
+            Pour créer un document, vous avez besoin d'Internet (le robot est en ligne). 
+            Mais vous pouvez installer l'application sur votre téléphone pour y accéder plus vite.
+          </p>
+        </div>
+
+        <h3>Le serveur est "Offline", c'est quoi ?</h3>
+        <div class="step-card">
+          <p>
+            En bas de la page, vous voyez un petit point vert ou rouge. 
+            Si c'est rouge et marqué "Offline", ça veut dire que le robot est en pause. 
+            Contactez votre responsable ou écrivez à :<br>
+            <a href="mailto:bouvier.jul@gmail.com">bouvier.jul@gmail.com</a> ou <a href="mailto:contact@fo-metaux.fr">contact@fo-metaux.fr</a>
+          </p>
+        </div>
+
+        <h3>L'IA me propose du texte bizarre</h3>
+        <div class="step-card">
+          <p>
+            L'IA fait de son mieux, mais parfois elle se trompe ! 
+            C'est normal. Vous pouvez toujours modifier ce qu'elle écrit. 
+            Considérez-la comme une aide, pas comme un expert.
+          </p>
+        </div>
+
+        <h3>Je veux créer un document différent</h3>
+        <div class="step-card">
+          <p>
+            Pour l'instant, DocEase propose quelques types de documents. 
+            Si vous avez besoin d'autre chose, demandez à votre responsable ou contactez <a href="mailto:bouvier.jul@gmail.com">bouvier.jul@gmail.com</a>. 
+            On peut ajouter de nouveaux modèles !
+          </p>
+        </div>
+
+        <div class="info-box">
+          <span class="material-icons">support_agent</span>
+          <div>
+            <strong>Besoin d'aide ?</strong><br>
+            N'hésitez pas à demander à un collègue ou à contacter :<br>
+            <a href="mailto:bouvier.jul@gmail.com">bouvier.jul@gmail.com</a> ou <a href="mailto:contact@fo-metaux.fr">contact@fo-metaux.fr</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Technique -->
+      <section class="content-section" id="technique">
+        <h2>Détails techniques</h2>
+        
+        <div class="warning-box">
+          <span class="material-icons">engineering</span>
+          <div>
+            Cette section est pour les personnes qui s'occupent de l'informatique. 
+            Si vous utilisez juste DocEase, vous pouvez ignorer cette partie !
+          </div>
+        </div>
+
+        <h3>Architecture du système</h3>
+        <p>
+          DocEase est construit sur une architecture moderne en 3 couches :
+        </p>
+
+        <div class="simple-list">
+          <div class="simple-list-item">
+            <span class="material-icons">web</span>
+            <div>
+              <strong>Frontend (Interface utilisateur)</strong><br>
+              Application React 18 avec TypeScript, déployée sur Netlify
+            </div>
+          </div>
+          <div class="simple-list-item">
+            <span class="material-icons">dns</span>
+            <div>
+              <strong>Backend (Serveur)</strong><br>
+              Workflows n8n pour l'automatisation, tunnelisés via ngrok
+            </div>
+          </div>
+          <div class="simple-list-item">
+            <span class="material-icons">storage</span>
+            <div>
+              <strong>Base de données</strong><br>
+              Supabase (PostgreSQL) avec authentification OAuth et stockage
+            </div>
+          </div>
+        </div>
+
+        <h3>Stack technique Frontend</h3>
+        <div class="tech-stack">
+          <div class="tech-item">
+            <span class="material-icons">code</span>
+            <div>
+              <strong>React 18</strong><br>
+              <small>Framework UI</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">integration_instructions</span>
+            <div>
+              <strong>TypeScript</strong><br>
+              <small>Typage statique</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">bolt</span>
+            <div>
+              <strong>Vite</strong><br>
+              <small>Build tool</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">palette</span>
+            <div>
+              <strong>Tailwind CSS</strong><br>
+              <small>Styling</small>
+            </div>
+          </div>
+        </div>
+
+        <h3>Stack technique Backend</h3>
+        <div class="tech-stack">
+          <div class="tech-item">
+            <span class="material-icons">account_tree</span>
+            <div>
+              <strong>n8n</strong><br>
+              <small>Workflow automation</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">psychology</span>
+            <div>
+              <strong>Ollama (local) / Grok (prod)</strong><br>
+              <small>IA générative</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">description</span>
+            <div>
+              <strong>Docxtemplater</strong><br>
+              <small>Génération Word</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">picture_as_pdf</span>
+            <div>
+              <strong>pdf-lib</strong><br>
+              <small>Manipulation PDF</small>
+            </div>
+          </div>
+        </div>
+
+        <h3>Services externes</h3>
+        <div class="tech-stack">
+          <div class="tech-item">
+            <span class="material-icons">cloud</span>
+            <div>
+              <strong>Supabase</strong><br>
+              <small>BaaS (Auth + DB + Storage)</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">public</span>
+            <div>
+              <strong>ngrok</strong><br>
+              <small>Tunnel sécurisé</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">rocket_launch</span>
+            <div>
+              <strong>Netlify</strong><br>
+              <small>Hébergement frontend</small>
+            </div>
+          </div>
+        </div>
+
+        <h3>Prérequis d'installation</h3>
+        <div class="step-card">
+          <h4>Serveur local requis</h4>
+          <ul>
+            <li><strong>Node.js</strong> 18+ et npm</li>
+            <li><strong>n8n</strong> : <code>npm install -g n8n</code></li>
+            <li><strong>Ollama</strong> (développement) : <a href="https://ollama.ai" target="_blank">ollama.ai</a></li>
+            <li><strong>ngrok</strong> : <a href="https://ngrok.com" target="_blank">ngrok.com</a></li>
+          </ul>
+          <div class="info-box">
+            <span class="material-icons">info</span>
+            <div>
+              <strong>IA :</strong><br>
+              • <strong>Ollama (Mistral 7B)</strong> : Développement local, gratuit<br>
+              • <strong>Grok (X.AI)</strong> : Production, performant, toujours disponible
+            </div>
+          </div>
+        </div>
+
+        <h3>Démarrage du serveur</h3>
+        <div class="step-card">
+          <h4>Windows</h4>
+          <p>Exécuter <code>start.bat</code> dans le dossier <code>docease/</code></p>
+          
+          <h4>Linux/Mac</h4>
+          <p>Exécuter <code>./scripts/start.sh</code></p>
+          
+          <p style="margin-top: 1rem;">
+            Le script démarre automatiquement :
+          </p>
+          <ol>
+            <li>Le serveur Ollama (port 11434) en local</li>
+            <li>n8n avec les workflows (port 5678)</li>
+            <li>ngrok pour exposer les webhooks</li>
+          </ol>
+        </div>
+
+        <h3>Variables d'environnement</h3>
+        <div class="step-card">
+          <p>Fichier <code>.env.local</code> requis :</p>
+          <pre><code>VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJxxx...
+VITE_N8N_WEBHOOK_URL=https://xxx.ngrok-free.app
+VITE_OLLAMA_API_URL=http://localhost:11434
+VITE_GROK_API_URL=https://api.x.ai/v1</code></pre>
+        </div>
+
+        <h3>Base de données Supabase</h3>
+        <div class="step-card">
+          <h4>Tables principales</h4>
+          <ul>
+            <li><code>users</code> : Profils utilisateurs avec niveaux de rôles</li>
+            <li><code>shared_documents</code> : Métadonnées des documents générés</li>
+            <li><code>notifications</code> : Système de notifications temps réel</li>
+            <li><code>active_sessions</code> : Tracking de présence utilisateur</li>
+          </ul>
+          
+          <h4>Bucket Storage</h4>
+          <ul>
+            <li><code>shared-documents</code> : Stockage des fichiers PDF/Word (1GB limite)</li>
+          </ul>
+          
+          <h4>Politiques RLS</h4>
+          <p>
+            Row Level Security activé pour sécuriser l'accès aux données. 
+            Chaque utilisateur ne voit que ses propres documents.
+          </p>
+        </div>
+
+        <h3>Workflows n8n</h3>
+        <div class="step-card">
+          <p>Emplacement : <code>docease/workflows/</code></p>
+          <ul>
+            <li><strong>convert-pdf.json</strong> : Conversion Word → PDF</li>
+            <li><strong>send-email.json</strong> : Envoi automatique d'emails</li>
+            <li><strong>ollama-generate.json</strong> : Génération de texte IA (local)</li>
+            <li><strong>grok-generate.json</strong> : Génération de texte IA (production)</li>
+          </ul>
+          <p>
+            Importer ces workflows dans l'interface n8n (localhost:5678) après installation.
+          </p>
+        </div>
+
+        <h3>Modèles de documents</h3>
+        <div class="step-card">
+          <p>Emplacement : <code>docease/templates/word/</code></p>
+          <p>
+            Les modèles utilisent la syntaxe Docxtemplater :
+          </p>
+          <ul>
+            <li><code>{variable}</code> : Insertion simple</li>
+            <li><code>{#items} ... {/items}</code> : Boucles</li>
+            <li><code>{?condition} ... {:} ... {/condition}</code> : Conditions</li>
+          </ul>
+          <p style="margin-top: 1rem;">
+            Pour créer un nouveau modèle, dupliquez un fichier .docx existant et modifiez les balises.
+          </p>
+        </div>
+
+        <h3>Sécurité</h3>
+        <div class="step-card">
+          <ul>
+            <li><strong>Authentification</strong> : OAuth Microsoft + Email/Password via Supabase</li>
+            <li><strong>Autorisation</strong> : Système de rôles hiérarchiques</li>
+            <li><strong>RLS</strong> : Politiques PostgreSQL au niveau des lignes</li>
+            <li><strong>HTTPS</strong> : Tous les échanges chiffrés (Netlify + ngrok)</li>
+            <li><strong>Tokens</strong> : JWT avec expiration automatique</li>
+          </ul>
+        </div>
+
+        <h3>Monitoring et logs</h3>
+        <div class="step-card">
+          <p>
+            Le statut du serveur est visible en bas de chaque page DocEase :
+          </p>
+          <ul>
+            <li><span style="color: #10b981;">●</span> <strong>Online</strong> : Serveur opérationnel</li>
+            <li><span style="color: #ef4444;">●</span> <strong>Offline</strong> : Serveur arrêté ou inaccessible</li>
+          </ul>
+          <p style="margin-top: 1rem;">
+            Logs accessibles via :
+          </p>
+          <ul>
+            <li>n8n : <code>http://localhost:5678</code> → Executions</li>
+            <li>Supabase : Console → Logs</li>
+            <li>Netlify : Dashboard → Functions</li>
+          </ul>
+        </div>
+
+        <div class="info-box">
+          <span class="material-icons">support_agent</span>
+          <div>
+            <strong>Support technique :</strong><br>
+            Pour toute question, contactez :<br>
+            <a href="mailto:bouvier.jul@gmail.com">bouvier.jul@gmail.com</a> ou <a href="mailto:contact@fo-metaux.fr">contact@fo-metaux.fr</a><br>
+            <br>
+            <strong>Documentation complète :</strong> Consultez les fichiers README.md dans le projet.
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // Navigation entre sections
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('.content-section');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+    // Fonction pour afficher une section
+    function showSection(sectionId, updateHistory = true) {
+      // Retirer active de tous les liens
+      navLinks.forEach(l => l.classList.remove('active'));
+      
+      // Masquer toutes les sections
+      sections.forEach(s => s.classList.remove('active'));
+      
+      // Trouver et activer le lien correspondant
+      const activeLink = document.querySelector(`.nav-link[data-section="${sectionId}"]`);
+      if (activeLink) {
+        activeLink.classList.add('active');
+      }
+      
+      // Afficher la section correspondante
+      const targetSection = document.getElementById(sectionId);
+      if (targetSection) {
+        targetSection.classList.add('active');
+        
+        // Sauvegarder dans localStorage et URL
+        if (updateHistory) {
+          try {
+            localStorage.setItem('docease_active_section', sectionId);
+          } catch (e) { /* ignore */ }
+          history.replaceState(null, '', '#' + sectionId);
+        }
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Fermer le menu mobile
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    }
+
+    // Restaurer la section active au chargement
+    function restoreActiveSection() {
+      // Priorité : hash URL > localStorage > défaut (introduction)
+      let sectionId = 'introduction';
+      
+      // Vérifier le hash de l'URL
+      if (window.location.hash) {
+        const hashSection = window.location.hash.substring(1);
+        if (document.getElementById(hashSection)) {
+          sectionId = hashSection;
+        }
+      } else {
+        // Sinon, vérifier localStorage
+        try {
+          const savedSection = localStorage.getItem('docease_active_section');
+          if (savedSection && document.getElementById(savedSection)) {
+            sectionId = savedSection;
+          }
+        } catch (e) { /* ignore */ }
+      }
+      
+      showSection(sectionId, true);
+    }
+
+    // Gestionnaire de clic sur les liens de navigation
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const sectionId = link.getAttribute('data-section');
+        showSection(sectionId);
+      });
+    });
+
+    // Restaurer la section au chargement
+    restoreActiveSection();
+
+    // Gérer le retour arrière du navigateur
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash) {
+        const sectionId = window.location.hash.substring(1);
+        if (document.getElementById(sectionId)) {
+          showSection(sectionId, false);
+        }
+      }
+    });
+
+    // Menu mobile
+    mobileMenuBtn.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('active');
+    });
+
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+    });
+
+    // Fermer le menu mobile au resize
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    });
+
+    // ===== SYSTÈME D'ÉDITION ADMIN =====
+    
+    // Configuration Supabase
+    const SUPABASE_URL = 'https://ikihhwswxvxbahmnasqk.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlraWhod3N3eHZ4YmFobW5hc3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2OTc0ODgsImV4cCI6MjA1MjI3MzQ4OH0.F-9kVYfZIKzPG63OKaNreTKw1v2WD6CWXGV8A4xzCL8';
+    
+    // Configuration des emails autorisés
+    const AUTHORIZED_ADMINS = [
+      'contact@fo-metaux.fr',
+      'contact@fometaux.fr',
+      'bouvier.jul@gmail.com',
+      'aguillermin@fo-metaux.fr'
+    ];
+
+    // État de l'application
+    let isLoggedIn = false;
+    let isEditMode = false;
+    let currentAdmin = null;
+    let originalContent = {};
+    let editingSection = null;
+    let isSaving = false;
+
+    // Éléments DOM
+    const adminBtn = document.getElementById('adminBtn');
+    const adminBtnText = document.getElementById('adminBtnText');
+    const adminIndicator = document.getElementById('adminIndicator');
+    const adminEmail = document.getElementById('adminEmail');
+    const loginModal = document.getElementById('loginModal');
+    const loginError = document.getElementById('loginError');
+    const adminEmailInput = document.getElementById('adminEmailInput');
+    const loginSubmit = document.getElementById('loginSubmit');
+    const loginCancel = document.getElementById('loginCancel');
+    const editToolbar = document.getElementById('editToolbar');
+    const saveChanges = document.getElementById('saveChanges');
+    const cancelChanges = document.getElementById('cancelChanges');
+    const toast = document.getElementById('toast');
+
+    // ===== FONCTIONS SUPABASE =====
+    
+    // Charger le contenu depuis Supabase
+    async function loadContentFromSupabase() {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/documentation_content?select=section_id,content,updated_by,updated_at`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          console.warn('Table documentation_content non disponible, utilisation du localStorage');
+          return null;
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.warn('Timeout chargement Supabase, utilisation du localStorage');
+        } else {
+          console.error('Erreur chargement Supabase:', error);
+        }
+        return null;
+      }
+    }
+    
+    // Sauvegarder le contenu dans Supabase
+    async function saveContentToSupabase(sectionId, content, adminEmail) {
+      try {
+        // Utiliser la fonction RPC pour sauvegarder avec historique
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/save_documentation_content`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            p_section_id: sectionId,
+            p_content: content,
+            p_updated_by: adminEmail
+          })
+        });
+        
+        if (!response.ok) {
+          // Fallback: UPSERT direct si la fonction RPC n'existe pas
+          // D'abord vérifier si l'enregistrement existe
+          const checkResponse = await fetch(`${SUPABASE_URL}/rest/v1/documentation_content?section_id=eq.${encodeURIComponent(sectionId)}&select=id`, {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          });
+          
+          const existing = await checkResponse.json();
+          
+          let fallbackResponse;
+          if (existing && existing.length > 0) {
+            // UPDATE
+            fallbackResponse = await fetch(`${SUPABASE_URL}/rest/v1/documentation_content?section_id=eq.${encodeURIComponent(sectionId)}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify({
+                content: content,
+                updated_by: adminEmail,
+                updated_at: new Date().toISOString()
+              })
+            });
+          } else {
+            // INSERT
+            fallbackResponse = await fetch(`${SUPABASE_URL}/rest/v1/documentation_content`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify({
+                section_id: sectionId,
+                content: content,
+                updated_by: adminEmail,
+                updated_at: new Date().toISOString()
+              })
+            });
+          }
+          
+          if (!fallbackResponse.ok) {
+            const errorText = await fallbackResponse.text();
+            console.error('Erreur Supabase:', errorText);
+            throw new Error('Échec de la sauvegarde Supabase');
+          }
+          
+          return await fallbackResponse.json();
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Erreur sauvegarde Supabase:', error);
+        throw error;
+      }
+    }
+    
+    // Supprimer tout le contenu de Supabase (réinitialisation)
+    async function resetSupabaseContent() {
+      try {
+        // Supprimer tous les enregistrements (section_id non null)
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/documentation_content?section_id=not.is.null`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=minimal'
+          }
+        });
+        
+        return response.ok;
+      } catch (error) {
+        console.error('Erreur réinitialisation Supabase:', error);
+        return false;
+      }
+    }
+
+    // Vérifier si un admin est déjà connecté (localStorage)
+    function checkStoredLogin() {
+      const storedAdmin = localStorage.getItem('docease_admin');
+      if (storedAdmin && AUTHORIZED_ADMINS.includes(storedAdmin)) {
+        loginAdmin(storedAdmin);
+      }
+    }
+
+    // Connexion admin
+    function loginAdmin(email) {
+      isLoggedIn = true;
+      currentAdmin = email;
+      localStorage.setItem('docease_admin', email);
+      
+      adminBtn.classList.add('logged-in');
+      adminBtnText.textContent = 'Mode édition';
+      adminIndicator.classList.add('active');
+      adminEmail.textContent = email.split('@')[0];
+      
+      showToast('Connecté en tant qu\'administrateur', 'success');
+    }
+
+    // Déconnexion admin
+    function logoutAdmin() {
+      // D'abord désactiver le mode édition proprement
+      if (isEditMode) {
+        disableEditMode();
+      }
+      
+      isLoggedIn = false;
+      currentAdmin = null;
+      localStorage.removeItem('docease_admin');
+      
+      adminBtn.classList.remove('logged-in');
+      adminBtnText.textContent = 'Modifier';
+      adminIndicator.classList.remove('active');
+      
+      showToast('Déconnecté', 'success');
+    }
+
+    // Afficher le toast
+    function showToast(message, type = 'info') {
+      toast.textContent = message;
+      toast.className = 'toast active ' + type;
+      
+      setTimeout(() => {
+        toast.classList.remove('active');
+      }, 3000);
+    }
+
+    // Activer le mode édition
+    function enableEditMode() {
+      if (!isLoggedIn) return;
+      
+      isEditMode = true;
+      document.body.classList.add('edit-mode');
+      editToolbar.classList.add('active');
+      adminBtnText.textContent = 'Quitter édition';
+      
+      // Ajouter les boutons d'édition sur chaque section
+      sections.forEach(section => {
+        addEditButtonToSection(section);
+      });
+      
+      showToast('Mode édition activé - Cliquez sur une section pour la modifier');
+    }
+
+    // Désactiver le mode édition
+    function disableEditMode() {
+      isEditMode = false;
+      document.body.classList.remove('edit-mode');
+      editToolbar.classList.remove('active');
+      adminBtnText.textContent = 'Mode édition';
+      
+      // Retirer tous les boutons d'édition
+      document.querySelectorAll('.section-edit-btn').forEach(btn => btn.remove());
+      
+      // Retirer l'édition de toutes les sections
+      sections.forEach(section => {
+        section.classList.remove('section-editing');
+        makeNonEditable(section);
+      });
+      
+      editingSection = null;
+    }
+
+    // Commencer l'édition d'une section
+    function startEditingSection(section) {
+      // Sauvegarder le contenu original (sans le bouton d'édition)
+      const sectionClone = section.cloneNode(true);
+      const existingBtn = sectionClone.querySelector('.section-edit-btn');
+      if (existingBtn) existingBtn.remove();
+      originalContent[section.id] = sectionClone.innerHTML;
+      
+      // Retirer l'édition des autres sections
+      sections.forEach(s => {
+        if (s !== section) {
+          s.classList.remove('section-editing');
+          makeNonEditable(s);
+        }
+      });
+      
+      // Activer l'édition sur cette section
+      section.classList.add('section-editing');
+      editingSection = section;
+      
+      // Rendre les éléments éditables
+      makeEditable(section);
+      
+      showToast('Modifiez le contenu puis cliquez sur Sauvegarder');
+    }
+
+    // Rendre une section éditable
+    function makeEditable(section) {
+      // Sélectionner uniquement les éléments de texte directs, pas les conteneurs
+      const editableSelectors = [
+        'h2:not(:has(*))', 
+        'h3:not(:has(*))', 
+        'h4:not(:has(*))',
+        'p',
+        'li',
+        '.info-box > div',
+        '.warning-box > div', 
+        '.success-box > div',
+        '.step-card > p',
+        '.step-card > h4',
+        '.simple-list-item > div',
+        '.tech-item > div'
+      ];
+      
+      editableSelectors.forEach(selector => {
+        try {
+          const elements = section.querySelectorAll(selector);
+          elements.forEach(el => {
+            // Ne pas rendre les boutons ou icônes éditables
+            if (el.tagName === 'BUTTON' || 
+                el.classList.contains('section-edit-btn') ||
+                el.classList.contains('material-icons') ||
+                el.closest('.screenshot-container')) return;
+            
+            // Éviter les éléments déjà éditables (parents/enfants)
+            if (!el.closest('[contenteditable="true"]') || el.getAttribute('contenteditable') === 'true') {
+              el.setAttribute('contenteditable', 'true');
+            }
+          });
+        } catch (e) {
+          // Ignorer les erreurs de sélecteur non supporté
+        }
+      });
+      
+      // Solution de secours : rendre éditables les éléments texte simples
+      const fallbackElements = section.querySelectorAll('h2, h3, h4, p, li');
+      fallbackElements.forEach(el => {
+        if (!el.querySelector('[contenteditable="true"]') && 
+            !el.closest('[contenteditable="true"]') &&
+            !el.classList.contains('section-edit-btn') &&
+            el.tagName !== 'BUTTON') {
+          el.setAttribute('contenteditable', 'true');
+        }
+      });
+    }
+
+    // Retirer l'édition d'une section
+    function makeNonEditable(section) {
+      const editableElements = section.querySelectorAll('[contenteditable="true"]');
+      editableElements.forEach(el => {
+        el.removeAttribute('contenteditable');
+      });
+    }
+
+    // Sauvegarder les modifications
+    async function saveAllChanges() {
+      if (!editingSection) {
+        showToast('Aucune section en cours d\'édition', 'error');
+        return;
+      }
+      
+      if (isSaving) {
+        showToast('Sauvegarde en cours...', 'info');
+        return;
+      }
+      
+      isSaving = true;
+      const saveBtnOriginalText = saveChanges.innerHTML;
+      saveChanges.innerHTML = '<span class="material-icons" style="animation: spin 1s linear infinite;">sync</span> Sauvegarde...';
+      saveChanges.disabled = true;
+      
+      try {
+        // Retirer contenteditable pour sauvegarder proprement
+        makeNonEditable(editingSection);
+        
+        // Sauvegarder le HTML de la section (sans le bouton d'édition)
+        const sectionClone = editingSection.cloneNode(true);
+        const editBtn = sectionClone.querySelector('.section-edit-btn');
+        if (editBtn) editBtn.remove();
+        
+        const sectionContent = sectionClone.innerHTML;
+        const sectionId = editingSection.id;
+        
+        // Sauvegarder dans Supabase
+        try {
+          await saveContentToSupabase(sectionId, sectionContent, currentAdmin);
+          showToast('Modifications sauvegardées dans la base de données !', 'success');
+        } catch (supabaseError) {
+          console.warn('Fallback localStorage:', supabaseError);
+          // Fallback: sauvegarder dans localStorage
+          const savedContent = localStorage.getItem('docease_doc_content') || '{}';
+          const content = JSON.parse(savedContent);
+          content[sectionId] = sectionContent;
+          localStorage.setItem('docease_doc_content', JSON.stringify(content));
+          showToast('Sauvegardé localement (base de données non disponible)', 'success');
+        }
+        
+        // Également sauvegarder en cache local
+        const savedContent = localStorage.getItem('docease_doc_content') || '{}';
+        const content = JSON.parse(savedContent);
+        content[sectionId] = sectionContent;
+        localStorage.setItem('docease_doc_content', JSON.stringify(content));
+        
+        // Enregistrer le log local
+        const logs = JSON.parse(localStorage.getItem('docease_doc_logs') || '[]');
+        logs.push({
+          section: sectionId,
+          admin: currentAdmin,
+          date: new Date().toISOString()
+        });
+        localStorage.setItem('docease_doc_logs', JSON.stringify(logs));
+        
+        editingSection.classList.remove('section-editing');
+        
+        // Re-ajouter le bouton d'édition si on est toujours en mode édition
+        if (isEditMode && !editingSection.querySelector('.section-edit-btn')) {
+          addEditButtonToSection(editingSection);
+        }
+        
+        editingSection = null;
+        originalContent = {};
+        
+      } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        showToast('Erreur lors de la sauvegarde', 'error');
+        // Remettre en mode édition
+        if (editingSection) {
+          makeEditable(editingSection);
+        }
+      } finally {
+        isSaving = false;
+        saveChanges.innerHTML = saveBtnOriginalText;
+        saveChanges.disabled = false;
+      }
+    }
+
+    // Annuler les modifications
+    function cancelAllChanges() {
+      if (editingSection && originalContent[editingSection.id]) {
+        // Restaurer le contenu original
+        editingSection.innerHTML = originalContent[editingSection.id];
+        
+        // Re-ajouter le bouton d'édition si on est en mode édition
+        if (isEditMode) {
+          addEditButtonToSection(editingSection);
+        }
+      }
+      
+      sections.forEach(section => {
+        section.classList.remove('section-editing');
+        makeNonEditable(section);
+      });
+      
+      editingSection = null;
+      originalContent = {};
+      
+      showToast('Modifications annulées');
+    }
+
+    // Ajouter un bouton d'édition à une section
+    function addEditButtonToSection(section) {
+      if (section.querySelector('.section-edit-btn')) return;
+      
+      const editBtn = document.createElement('button');
+      editBtn.className = 'section-edit-btn';
+      editBtn.innerHTML = '<span class="material-icons" style="font-size: 16px;">edit</span> Modifier cette section';
+      editBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        startEditingSection(section);
+      };
+      section.insertBefore(editBtn, section.firstChild);
+    }
+
+    // Charger le contenu sauvegardé (Supabase prioritaire, puis localStorage)
+    async function loadSavedContent() {
+      try {
+        // D'abord essayer de charger depuis Supabase
+        const supabaseContent = await loadContentFromSupabase();
+        
+        if (supabaseContent && supabaseContent.length > 0) {
+          // Appliquer le contenu de Supabase
+          supabaseContent.forEach(item => {
+            const section = document.getElementById(item.section_id);
+            if (section) {
+              section.innerHTML = item.content;
+            }
+          });
+          
+          // Mettre à jour le cache localStorage
+          const contentMap = {};
+          supabaseContent.forEach(item => {
+            contentMap[item.section_id] = item.content;
+          });
+          localStorage.setItem('docease_doc_content', JSON.stringify(contentMap));
+          
+          console.log('Contenu chargé depuis Supabase:', supabaseContent.length, 'sections');
+          return;
+        }
+      } catch (error) {
+        console.warn('Impossible de charger depuis Supabase, utilisation du cache local:', error);
+      }
+      
+      // Fallback: charger depuis localStorage
+      const savedContent = localStorage.getItem('docease_doc_content');
+      if (savedContent) {
+        try {
+          const content = JSON.parse(savedContent);
+          
+          Object.keys(content).forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+              section.innerHTML = content[sectionId];
+            }
+          });
+          
+          console.log('Contenu chargé depuis le cache local');
+        } catch (e) {
+          console.error('Erreur lors du chargement du contenu local:', e);
+        }
+      }
+    }
+
+    // Commandes de formatage
+    const toolbarBtns = document.querySelectorAll('.edit-toolbar-btn[data-command]');
+    toolbarBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const command = btn.getAttribute('data-command');
+        
+        if (command === 'createLink') {
+          const url = prompt('Entrez l\'URL du lien:');
+          if (url) {
+            document.execCommand(command, false, url);
+          }
+        } else {
+          document.execCommand(command, false, null);
+        }
+      });
+    });
+
+    // Event listeners
+    let clickTimeout = null;
+    adminBtn.addEventListener('click', (e) => {
+      // Éviter le conflit avec le double-clic
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+        return;
+      }
+      
+      clickTimeout = setTimeout(() => {
+        clickTimeout = null;
+        if (!isLoggedIn) {
+          loginModal.classList.add('active');
+          adminEmailInput.focus();
+        } else if (isEditMode) {
+          disableEditMode();
+        } else {
+          enableEditMode();
+        }
+      }, 200);
+    });
+
+    // Double-clic pour déconnexion
+    adminBtn.addEventListener('dblclick', (e) => {
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+      }
+      if (isLoggedIn) {
+        if (confirm('Voulez-vous vous déconnecter ?')) {
+          logoutAdmin();
+        }
+      }
+    });
+
+    loginCancel.addEventListener('click', () => {
+      loginModal.classList.remove('active');
+      loginError.classList.remove('active');
+      adminEmailInput.value = '';
+    });
+
+    loginSubmit.addEventListener('click', () => {
+      const email = adminEmailInput.value.trim().toLowerCase();
+      
+      if (AUTHORIZED_ADMINS.includes(email)) {
+        loginModal.classList.remove('active');
+        loginError.classList.remove('active');
+        adminEmailInput.value = '';
+        loginAdmin(email);
+      } else {
+        loginError.textContent = 'Cet email n\'est pas autorisé à modifier la documentation.';
+        loginError.classList.add('active');
+      }
+    });
+
+    // Validation par Enter
+    adminEmailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        loginSubmit.click();
+      }
+    });
+
+    // Fermer modal en cliquant à l'extérieur
+    loginModal.addEventListener('click', (e) => {
+      if (e.target === loginModal) {
+        loginCancel.click();
+      }
+    });
+
+    saveChanges.addEventListener('click', saveAllChanges);
+    cancelChanges.addEventListener('click', cancelAllChanges);
+    
+    // Bouton de réinitialisation
+    const resetContent = document.getElementById('resetContent');
+    resetContent.addEventListener('click', async () => {
+      if (confirm('Voulez-vous réinitialiser TOUT le contenu de la documentation à son état original ?\n\nCette action supprimera toutes les modifications dans la base de données ET le cache local.\n\nCette action est irréversible.')) {
+        showToast('Réinitialisation en cours...', 'info');
+        
+        try {
+          // Supprimer de Supabase
+          await resetSupabaseContent();
+        } catch (e) {
+          console.warn('Erreur réinitialisation Supabase:', e);
+        }
+        
+        // Supprimer du localStorage
+        localStorage.removeItem('docease_doc_content');
+        localStorage.removeItem('docease_doc_logs');
+        
+        showToast('Contenu réinitialisé. Rechargement...', 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+    });
+
+    // Ajouter le style pour l'animation de chargement
+    const spinStyle = document.createElement('style');
+    spinStyle.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+    document.head.appendChild(spinStyle);
+
+    // ===== SYSTÈME DE ZOOM D'IMAGES =====
+    const imageZoomModal = document.getElementById('imageZoomModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+    const imageZoomClose = document.getElementById('imageZoomClose');
+
+    // ===== GESTION DES IMAGES EN MODE ÉDITION =====
+    
+    const imageUploadModal = document.getElementById('imageUploadModal');
+    const uploadZone = document.getElementById('uploadZone');
+    const imageFileInput = document.getElementById('imageFileInput');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const previewImage = document.getElementById('previewImage');
+    const previewRemove = document.getElementById('previewRemove');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const uploadProgressFill = document.getElementById('uploadProgressFill');
+    const uploadProgressText = document.getElementById('uploadProgressText');
+    const uploadCancel = document.getElementById('uploadCancel');
+    const uploadSubmit = document.getElementById('uploadSubmit');
+    const manageImagesBtn = document.getElementById('manageImagesBtn');
+    
+    let currentImageContainer = null;
+    let selectedFile = null;
+    
+    // Ajouter les overlays sur les images en mode édition
+    function addImageEditOverlays() {
+      const screenshotContainers = document.querySelectorAll('.screenshot-container');
+      screenshotContainers.forEach(container => {
+        // Éviter les doublons
+        if (container.querySelector('.image-edit-overlay')) return;
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'image-edit-overlay';
+        overlay.innerHTML = `
+          <button class="image-edit-btn upload" title="Remplacer l'image">
+            <span class="material-icons">upload</span>
+            Remplacer
+          </button>
+          <button class="image-edit-btn delete" title="Supprimer l'image">
+            <span class="material-icons">delete</span>
+            Supprimer
+          </button>
+        `;
+        container.appendChild(overlay);
+        
+        // Gérer les clics sur les boutons
+        const uploadBtn = overlay.querySelector('.upload');
+        const deleteBtn = overlay.querySelector('.delete');
+        
+        uploadBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          openImageUploadModal(container);
+        });
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          deleteImage(container);
+        });
+      });
+    }
+    
+    // Retirer les overlays
+    function removeImageEditOverlays() {
+      const overlays = document.querySelectorAll('.image-edit-overlay');
+      overlays.forEach(overlay => overlay.remove());
+    }
+    
+    // Ouvrir la modal d'upload
+    function openImageUploadModal(container) {
+      currentImageContainer = container;
+      selectedFile = null;
+      
+      // Reset
+      uploadPreview.classList.remove('active');
+      uploadProgress.classList.remove('active');
+      uploadZone.style.display = 'block';
+      uploadSubmit.disabled = true;
+      previewImage.src = '';
+      imageFileInput.value = '';
+      
+      imageUploadModal.classList.add('active');
+    }
+    
+    // Fermer la modal d'upload
+    function closeImageUploadModal() {
+      imageUploadModal.classList.remove('active');
+      currentImageContainer = null;
+      selectedFile = null;
+    }
+    
+    // Gérer la sélection de fichier
+    function handleFileSelect(file) {
+      if (!file) return;
+      
+      // Vérifier le type
+      if (!file.type.startsWith('image/')) {
+        showToast('Veuillez sélectionner une image', 'error');
+        return;
+      }
+      
+      // Vérifier la taille (5 Mo max)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('L\'image ne doit pas dépasser 5 Mo', 'error');
+        return;
+      }
+      
+      selectedFile = file;
+      
+      // Afficher l'aperçu
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        uploadPreview.classList.add('active');
+        uploadZone.style.display = 'none';
+        uploadSubmit.disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    // Supprimer une image
+    function deleteImage(container) {
+      const img = container.querySelector('img');
+      if (!img) return;
+      
+      if (confirm('Supprimer cette image ?')) {
+        // Remplacer par un placeholder
+        const placeholder = document.createElement('div');
+        placeholder.className = 'screenshot-placeholder';
+        placeholder.innerHTML = `
+          <span class="material-icons" style="font-size: 3rem; margin-bottom: 0.5rem;">image</span>
+          <br>Image supprimée
+        `;
+        
+        // Sauvegarder l'ancien src pour référence
+        const caption = container.querySelector('.screenshot-caption');
+        const captionText = caption ? caption.textContent : 'Image';
+        
+        // Remplacer le contenu
+        container.innerHTML = '';
+        container.appendChild(placeholder);
+        
+        // Ré-ajouter l'overlay pour permettre l'upload
+        const overlay = document.createElement('div');
+        overlay.className = 'image-edit-overlay';
+        overlay.innerHTML = `
+          <button class="image-edit-btn upload" title="Ajouter une image">
+            <span class="material-icons">add_photo_alternate</span>
+            Ajouter
+          </button>
+        `;
+        container.appendChild(overlay);
+        
+        overlay.querySelector('.upload').addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          openImageUploadModal(container);
+        });
+        
+        showToast('Image supprimée. N\'oubliez pas de sauvegarder.', 'info');
+      }
+    }
+    
+    // Upload l'image vers Supabase Storage
+    async function uploadImageToSupabase(file) {
+      const timestamp = Date.now();
+      const filename = `doc_${timestamp}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      
+      try {
+        // Upload vers Supabase Storage
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/documentation-images/${filename}`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: file
+        });
+        
+        if (!response.ok) {
+          throw new Error('Échec de l\'upload');
+        }
+        
+        // Retourner l'URL publique
+        return `${SUPABASE_URL}/storage/v1/object/public/documentation-images/${filename}`;
+      } catch (error) {
+        console.error('Erreur upload:', error);
+        throw error;
+      }
+    }
+    
+    // Appliquer l'image uploadée
+    async function applyUploadedImage() {
+      if (!selectedFile || !currentImageContainer) return;
+      
+      uploadSubmit.disabled = true;
+      uploadProgress.classList.add('active');
+      uploadPreview.classList.remove('active');
+      uploadProgressFill.style.width = '30%';
+      uploadProgressText.textContent = 'Upload en cours...';
+      
+      try {
+        // Essayer d'uploader vers Supabase
+        let imageUrl;
+        
+        try {
+          imageUrl = await uploadImageToSupabase(selectedFile);
+          uploadProgressFill.style.width = '70%';
+        } catch (uploadError) {
+          console.warn('Supabase Storage non disponible, utilisation de base64');
+          // Fallback: utiliser le data URL (base64)
+          imageUrl = previewImage.src;
+          uploadProgressFill.style.width = '70%';
+        }
+        
+        uploadProgressText.textContent = 'Application de l\'image...';
+        uploadProgressFill.style.width = '90%';
+        
+        // Remplacer l'image dans le container
+        const existingImg = currentImageContainer.querySelector('img');
+        const existingPlaceholder = currentImageContainer.querySelector('.screenshot-placeholder');
+        const existingCaption = currentImageContainer.querySelector('.screenshot-caption');
+        const captionText = existingCaption ? existingCaption.textContent : 'Nouvelle image';
+        
+        // Créer la nouvelle image
+        const newImg = document.createElement('img');
+        newImg.src = imageUrl;
+        newImg.alt = captionText;
+        newImg.onerror = function() {
+          this.parentElement.innerHTML = `<div class='screenshot-placeholder'><span class='material-icons' style='font-size: 3rem; margin-bottom: 0.5rem;'>broken_image</span><br>Erreur de chargement</div>`;
+        };
+        
+        // Nettoyer et reconstruire le container
+        const overlay = currentImageContainer.querySelector('.image-edit-overlay');
+        currentImageContainer.innerHTML = '';
+        currentImageContainer.appendChild(newImg);
+        
+        // Ré-ajouter le caption
+        const caption = document.createElement('div');
+        caption.className = 'screenshot-caption';
+        caption.textContent = captionText;
+        currentImageContainer.appendChild(caption);
+        
+        // Ré-ajouter l'overlay
+        if (overlay) {
+          currentImageContainer.appendChild(overlay);
+        }
+        
+        uploadProgressFill.style.width = '100%';
+        uploadProgressText.textContent = 'Terminé !';
+        
+        setTimeout(() => {
+          closeImageUploadModal();
+          showToast('Image mise à jour. N\'oubliez pas de sauvegarder !', 'success');
+          
+          // Réinitialiser le zoom
+          initImageZoom();
+        }, 500);
+        
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de l\'upload', 'error');
+        uploadProgress.classList.remove('active');
+        uploadPreview.classList.add('active');
+        uploadSubmit.disabled = false;
+      }
+    }
+    
+    // Event listeners pour l'upload
+    uploadZone.addEventListener('click', () => imageFileInput.click());
+    
+    imageFileInput.addEventListener('change', (e) => {
+      handleFileSelect(e.target.files[0]);
+    });
+    
+    // Drag & Drop
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      handleFileSelect(e.dataTransfer.files[0]);
+    });
+    
+    previewRemove.addEventListener('click', () => {
+      selectedFile = null;
+      previewImage.src = '';
+      uploadPreview.classList.remove('active');
+      uploadZone.style.display = 'block';
+      uploadSubmit.disabled = true;
+      imageFileInput.value = '';
+    });
+    
+    uploadCancel.addEventListener('click', closeImageUploadModal);
+    uploadSubmit.addEventListener('click', applyUploadedImage);
+    
+    // Fermer avec clic en dehors
+    imageUploadModal.addEventListener('click', (e) => {
+      if (e.target === imageUploadModal) {
+        closeImageUploadModal();
+      }
+    });
+    
+    // Bouton dans la toolbar
+    manageImagesBtn.addEventListener('click', () => {
+      showToast('Survolez une image pour la modifier ou la supprimer', 'info');
+    });
+    
+    // Modifier enableEditMode pour ajouter les overlays
+    const originalEnableEditMode = enableEditMode;
+    enableEditMode = function() {
+      originalEnableEditMode();
+      addImageEditOverlays();
+    };
+    
+    // Modifier disableEditMode pour retirer les overlays
+    const originalDisableEditMode = disableEditMode;
+    disableEditMode = function() {
+      removeImageEditOverlays();
+      originalDisableEditMode();
+    };
+
+    // Rendre toutes les images cliquables pour zoom (délégation d'événements)
+    document.addEventListener('click', function(e) {
+      // Vérifier si le clic est sur une image dans un screenshot-container
+      const img = e.target.closest('.screenshot-container img');
+      if (!img) return;
+      
+      // Ne pas zoomer en mode édition
+      if (document.body.classList.contains('edit-mode')) {
+        return;
+      }
+      
+      // Vérifier que l'image a une source valide et est chargée
+      if (img.src && img.naturalWidth > 0) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        zoomedImage.src = img.src;
+        zoomedImage.alt = img.alt || 'Image agrandie';
+        imageZoomModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+    
+    // Ajouter le style cursor zoom-in aux images
+    function styleZoomableImages() {
+      const screenshots = document.querySelectorAll('.screenshot-container img');
+      screenshots.forEach(img => {
+        img.style.cursor = 'zoom-in';
+      });
+    }
+    
+    // Appliquer le style au chargement
+    styleZoomableImages();
+
+    // Fermer le modal
+    function closeImageZoom() {
+      imageZoomModal.classList.remove('active');
+      document.body.style.overflow = '';
+      zoomedImage.src = '';
+    }
+
+    imageZoomClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeImageZoom();
+    });
+
+    imageZoomModal.addEventListener('click', closeImageZoom);
+
+    // Fermer avec Échap
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && imageZoomModal.classList.contains('active')) {
+        closeImageZoom();
+      }
+    });
+
+    // Empêcher la propagation du clic sur l'image zoomée
+    zoomedImage.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Re-appliquer le style après le chargement du contenu
+    const originalLoadSavedContent = loadSavedContent;
+    loadSavedContent = async function() {
+      await originalLoadSavedContent();
+      setTimeout(styleZoomableImages, 100);
+    };
+
+    // Initialisation
+    checkStoredLogin();
+    loadSavedContent();
+  </script>
+</body>
+</html>

@@ -85,6 +85,16 @@ export const Footer: React.FC = () => {
               <span className="material-icons text-[14px]">copyright</span>
               {currentYear} FO Métaux. Tous droits réservés
             </span>
+            <span className="hidden md:inline text-white/20">•</span>
+            <a 
+              href="/documentation.html" 
+              className="text-[#a84383] dark:text-[#e062b1] hover:text-[#8f366e] dark:hover:text-[#ff8dd7] transition-colors flex items-center gap-1"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className="material-icons text-[14px]">description</span>
+              Documentation
+            </a>
           </div>
 
           <div className="flex items-center gap-4">
