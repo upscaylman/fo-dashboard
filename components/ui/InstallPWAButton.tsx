@@ -62,8 +62,11 @@ export const InstallPWAButton: React.FC = () => {
   const hasPromptRef = useRef(false);
 
   useEffect(() => {
+    console.log('🔧 InstallPWAButton: useEffect initial');
+    
     // Vérifier si déjà installé
     if (checkIfInstalled()) {
+      console.log('✅ PWA déjà installée');
       setIsInstalled(true);
       return;
     }
@@ -71,28 +74,36 @@ export const InstallPWAButton: React.FC = () => {
     // Vérifier si l'utilisateur a déjà refusé
     const dismissed = localStorage.getItem('fo-metaux-pwa-banner-dismissed');
     if (dismissed) {
+      console.log('🚫 Banner déjà fermé par l\'utilisateur');
       return;
     }
 
     // Détecter l'OS
     const os = detectOS();
+    console.log('🖥️ OS détecté:', os);
     setOsType(os);
 
     // Pour iOS, pas de beforeinstallprompt, afficher directement le banner
     if (os === 'ios') {
+      console.log('📱 iOS détecté, affichage du banner dans 3s');
       setTimeout(() => setShowBanner(true), 3000);
       return;
     }
 
     // Pour Android/Desktop, attendre le beforeinstallprompt
     const handleBeforeInstall = (e: BeforeInstallPromptEvent) => {
+      console.log('🎯 Event beforeinstallprompt reçu');
       e.preventDefault();
       setDeferredPrompt(e);
       hasPromptRef.current = true;
-      setTimeout(() => setShowBanner(true), 3000);
+      setTimeout(() => {
+        console.log('📢 Affichage du banner');
+        setShowBanner(true);
+      }, 3000);
     };
 
     const handleAppInstalled = () => {
+      console.log('🎉 App installée avec succès');
       setIsInstalled(true);
       setShowBanner(false);
       setShowInstructions(false);
@@ -107,6 +118,7 @@ export const InstallPWAButton: React.FC = () => {
     // Fallback: si pas de prompt après 5s sur desktop, afficher quand même
     const fallbackTimer = setTimeout(() => {
       if (!hasPromptRef.current && (os === 'android' || os === 'desktop' || os === 'unknown')) {
+        console.log('⏰ Fallback: pas de beforeinstallprompt après 5s, affichage du banner');
         setShowBanner(true);
       }
     }, 5000);
@@ -119,8 +131,16 @@ export const InstallPWAButton: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
+    console.log('🔘 InstallPWAButton: handleInstallClick appelé', {
+      hasDeferredPrompt: !!deferredPrompt,
+      osType,
+      showBanner,
+      isInstalled
+    });
+
     // Si on a un prompt natif (Chrome/Edge Android/Desktop), l'utiliser
     if (deferredPrompt) {
+      console.log('📲 Tentative d\'installation via deferredPrompt...');
       try {
         await deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
@@ -136,18 +156,21 @@ export const InstallPWAButton: React.FC = () => {
         setDeferredPrompt(null);
         setShowBanner(false);
       } catch (error) {
-        console.error('Erreur installation:', error);
+        console.error('❌ Erreur installation:', error);
         // En cas d'erreur, afficher les instructions manuelles
+        console.log('📖 Affichage des instructions manuelles suite à l\'erreur');
         setShowInstructions(true);
       }
       return;
     }
 
     // Sinon, afficher les instructions selon l'OS
+    console.log('📖 Pas de deferredPrompt, affichage des instructions pour', osType);
     setShowInstructions(true);
   };
 
   const handleDismiss = () => {
+    console.log('❌ InstallPWAButton: handleDismiss appelé');
     setShowBanner(false);
     setShowInstructions(false);
     localStorage.setItem('fo-metaux-pwa-banner-dismissed', 'true');
@@ -155,6 +178,7 @@ export const InstallPWAButton: React.FC = () => {
 
   // Ne rien afficher si déjà installé
   if (isInstalled) {
+    console.log('ℹ️ InstallPWAButton: return null (déjà installé)');
     return null;
   }
 
@@ -162,6 +186,8 @@ export const InstallPWAButton: React.FC = () => {
   if (!showBanner) {
     return null;
   }
+
+  console.log('🎨 InstallPWAButton: render', { showInstructions, osType, hasDeferredPrompt: !!deferredPrompt });
 
   // Instructions détaillées selon l'OS
   if (showInstructions) {
