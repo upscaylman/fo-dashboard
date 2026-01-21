@@ -2196,6 +2196,54 @@
           </div>
         </div>
 
+        <h3>Autocompletion d'adresse intelligente</h3>
+        <div class="step-card">
+          <p>
+            Quand vous tapez une adresse dans le champ "Adresse", DocEase vous propose automatiquement des suggestions !
+            C'est comme Google Maps : vous commencez a taper et les adresses apparaissent.
+          </p>
+          <ul>
+            <li><strong>Tapez au moins 3 caracteres</strong> pour voir les suggestions</li>
+            <li><strong>Cliquez sur une suggestion</strong> pour la selectionner</li>
+            <li><strong>Le code postal se remplit automatiquement</strong> dans le champ "Code postal + Ville"</li>
+          </ul>
+          <p>
+            Plus besoin de chercher le code postal vous-meme, DocEase le fait pour vous !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_adresse_desktop.png" alt="Autocompletion adresse - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>location_on</span><br>Capture bureau autocompletion</div>'">
+                <div class="screenshot-caption">Suggestions d'adresse sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/fonc_adresse_mobile.png" alt="Autocompletion adresse - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>location_on</span><br>Capture mobile autocompletion</div>'">
+                <div class="screenshot-caption">Suggestions d'adresse sur telephone</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">public</span>
+            <div>
+              <strong>Note technique :</strong><br>
+              Cette fonctionnalite utilise l'API officielle du gouvernement francais <strong>adresse.data.gouv.fr</strong>.
+              Elle fournit des adresses francaises precises et a jour, gratuitement.
+            </div>
+          </div>
+        </div>
+
         <h3>Utilisation sur telephone</h3>
         <div class="step-card">
           <p>
@@ -2401,8 +2449,8 @@
           <div class="tech-item">
             <span class="material-icons">picture_as_pdf</span>
             <div>
-              <strong>pdf-lib</strong><br>
-              <small>Manipulation PDF</small>
+              <strong>PowerShell + Word COM</strong><br>
+              <small>Conversion Word → PDF</small>
             </div>
           </div>
         </div>
@@ -2420,14 +2468,21 @@
             <span class="material-icons">public</span>
             <div>
               <strong>ngrok</strong><br>
-              <small>Tunnel sécurisé</small>
+              <small>Tunnel securise</small>
             </div>
           </div>
           <div class="tech-item">
             <span class="material-icons">rocket_launch</span>
             <div>
               <strong>Netlify</strong><br>
-              <small>Hébergement frontend</small>
+              <small>Hebergement frontend</small>
+            </div>
+          </div>
+          <div class="tech-item">
+            <span class="material-icons">location_on</span>
+            <div>
+              <strong>API Adresse (data.gouv.fr)</strong><br>
+              <small>Autocompletion adresses FR</small>
             </div>
           </div>
         </div>
@@ -2522,10 +2577,20 @@ VITE_GROK_API_URL=https://api.x.ai/v1</code></pre>
             Les modèles utilisent la syntaxe Docxtemplater :
           </p>
           <ul>
-            <li><code>{variable}</code> : Insertion simple</li>
-            <li><code>{#items} ... {/items}</code> : Boucles</li>
-            <li><code>{?condition} ... {:} ... {/condition}</code> : Conditions</li>
+            <li><code>{variable}</code> : Insertion simple (ex: <code>{entreprise}</code>)</li>
+            <li><code>{-w:p variable}...{/variable}</code> : Paragraphe conditionnel - supprime la ligne entiere si la variable est vide</li>
           </ul>
+          <h4>Exemple concret</h4>
+          <pre><code>{entreprise}
+{-w:p nomDestinataire}{civiliteDestinataire} {nomDestinataire}{/nomDestinataire}
+{-w:p statutDestinataire}{statutDestinataire}{/statutDestinataire}
+{-w:p batiment}{batiment}{/batiment}
+{-w:p adresse}{adresse}{/adresse}
+{-w:p cpVille}{cpVille}{/cpVille}</code></pre>
+          <p style="margin-top: 1rem;">
+            <strong>Explication :</strong> Si <code>batiment</code> est vide, toute la ligne disparait du document final. 
+            Cela evite les lignes vides inutiles.
+          </p>
           <p style="margin-top: 1rem;">
             Pour créer un nouveau modèle, dupliquez un fichier .docx existant et modifiez les balises.
           </p>

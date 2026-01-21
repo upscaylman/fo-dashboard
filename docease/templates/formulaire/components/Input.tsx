@@ -52,8 +52,8 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const [internalError, setInternalError] = useState<string | undefined>();
   const [touched, setTouched] = useState(false);
-  // 'upper' = majuscules, 'lower' = minuscules
-  const [caseMode, setCaseMode] = useState<'upper' | 'lower'>('lower');
+  // 'none' = pas de transformation, 'upper' = majuscules, 'lower' = minuscules
+  const [caseMode, setCaseMode] = useState<'none' | 'upper' | 'lower'>('none');
   // État pour le DatePicker personnalisé
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   // État pour le TimePicker personnalisé
@@ -258,16 +258,16 @@ export const Input: React.FC<InputProps> = ({
     );
   }
 
-  // Gestion du toggle majuscules/minuscules (alterne entre upper et lower)
+  // Gestion du toggle majuscules/minuscules (alterne entre none -> upper -> lower -> none)
   const handleCaseToggle = () => {
-    const newMode = caseMode === 'upper' ? 'lower' : 'upper';
-    setCaseMode(newMode);
-    onUppercaseChange?.(newMode === 'upper');
+    const nextMode = caseMode === 'none' ? 'upper' : caseMode === 'upper' ? 'lower' : 'none';
+    setCaseMode(nextMode);
+    onUppercaseChange?.(nextMode === 'upper');
     
-    // Transformer la valeur actuelle
-    if (props.onChange && props.value) {
+    // Transformer la valeur actuelle seulement si on passe à upper ou lower
+    if (props.onChange && props.value && nextMode !== 'none') {
       const currentValue = String(props.value);
-      const transformedValue = newMode === 'upper' 
+      const transformedValue = nextMode === 'upper' 
         ? currentValue.toUpperCase() 
         : currentValue.toLowerCase();
       const syntheticEvent = {
@@ -282,7 +282,7 @@ export const Input: React.FC<InputProps> = ({
     // ForceUppercase a la priorité
     if (forceUppercase) {
       e.target.value = e.target.value.toUpperCase();
-    } else if (hasUppercaseToggle) {
+    } else if (hasUppercaseToggle && caseMode !== 'none') {
       if (caseMode === 'upper') {
         e.target.value = e.target.value.toUpperCase();
       } else if (caseMode === 'lower') {
@@ -320,11 +320,21 @@ export const Input: React.FC<InputProps> = ({
   };
 
   // Obtenir l'icône et le label selon le mode
-  const getCaseIcon = () => caseMode === 'upper' ? 'keyboard_arrow_up' : 'keyboard_arrow_down';
-  const getCaseLabel = () => caseMode === 'upper' ? 'ABC' : 'abc';
-  const getCaseTitle = () => caseMode === 'upper' 
-    ? 'Majuscules - Cliquer pour minuscules' 
-    : 'Minuscules - Cliquer pour majuscules';
+  const getCaseIcon = () => {
+    if (caseMode === 'upper') return 'keyboard_arrow_up';
+    if (caseMode === 'lower') return 'keyboard_arrow_down';
+    return 'text_format'; // Mode 'none' - icône neutre
+  };
+  const getCaseLabel = () => {
+    if (caseMode === 'upper') return 'ABC';
+    if (caseMode === 'lower') return 'abc';
+    return 'Aa'; // Mode 'none' - mixte
+  };
+  const getCaseTitle = () => {
+    if (caseMode === 'upper') return 'Majuscules - Cliquer pour minuscules';
+    if (caseMode === 'lower') return 'Minuscules - Cliquer pour desactiver';
+    return 'Casse libre - Cliquer pour majuscules';
+  };
 
   // Déterminer le handler onChange approprié
   const getOnChangeHandler = () => {
@@ -480,7 +490,9 @@ export const Input: React.FC<InputProps> = ({
               flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200
               ${caseMode === 'upper'
                 ? 'bg-[#a84383] text-white shadow-sm' 
-                : 'bg-blue-500 text-white shadow-sm'
+                : caseMode === 'lower'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200'
               }
             `}
             title={getCaseTitle()}
