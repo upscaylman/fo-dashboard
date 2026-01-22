@@ -15,6 +15,18 @@ interface SidebarProps {
 const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate, onSelect, isOpenMobile, setIsOpenMobile, onDesktopCollapseChange, showSuccess }) => {
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
   const [isButtonCompact, setIsButtonCompact] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Détecter le thème (light/dark)
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    checkTheme();
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Notifier le parent quand l'état collapse change
   const handleToggleCollapse = () => {
@@ -182,7 +194,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
                   : ''}
               `}
               style={isDesktopCollapsed && selectedTemplate !== template.id ? {
-                '--tw-ring-color': 'rgb(229 231 235 / var(--tw-border-opacity, 1))'
+                '--tw-ring-color': isDarkMode ? 'rgb(229 231 235 / var(--tw-border-opacity, 1))' : 'rgba(0, 0, 0, 0.2)'
               } as React.CSSProperties : undefined}>
                 <OptimizedImage
                   src={template.image}
@@ -257,7 +269,7 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
           /* Logo FO Métaux si fermé */
           <div className="p-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] flex items-center justify-center">
             <img
-              src="/assets/img/navBar_titleImage@2x (2).png"
+              src={isDarkMode ? "/assets/img/navBar_titleImage@2x (2).png" : "/assets/img/navBar_titleImage@2x_nb.png"}
               alt="FO Métaux"
               className="w-10 h-10 object-contain"
             />

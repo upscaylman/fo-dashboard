@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" style="overflow-x: hidden;">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Documentation - DocEase | FO Métaux</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     * {
@@ -12,19 +13,33 @@
       box-sizing: border-box;
     }
 
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
+    }
+
+    /* Règles globales pour éviter le débordement */
+    img, video, iframe, embed, object {
+      max-width: 100%;
+      height: auto;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-family: 'Roboto', sans-serif;
       line-height: 1.8;
       color: #1a202c;
       background: #f7fafc;
       min-height: 100vh;
-      overflow-x: hidden;
     }
 
     /* Layout principal */
     .layout {
       display: flex;
       min-height: 100vh;
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
     }
 
     /* Header fixe */
@@ -33,15 +48,18 @@
       top: 0;
       left: 0;
       right: 0;
-      background: white;
-      border-bottom: 1px solid #e2e8f0;
-      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       z-index: 100;
-      height: 64px;
+      height: 80px;
       gap: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .header-left {
@@ -73,34 +91,50 @@
     }
 
     .logo-icon {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       background: #667eea;
-      border-radius: 12px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
       flex-shrink: 0;
-      transition: transform 0.2s ease;
+      transition: transform 0.3s ease;
     }
 
     .logo-icon:hover {
-      transform: scale(1.05);
+      transform: scale(1.1);
     }
 
     .logo-icon .material-icons {
       color: white;
-      font-size: 22px;
+      font-size: 24px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
     }
 
     .header-title {
-      font-size: 1.25rem;
-      color: #667eea;
-      font-weight: 600;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .header-title .doc-text {
+      color: #1a202c;
+    }
+
+    .header-title .ease-text {
+      color: #667eea;
+    }
+
+    .header-title .suffix-text {
+      color: #718096;
+      font-weight: 400;
+      font-size: 1.25rem;
     }
 
     .header-title-full {
@@ -139,7 +173,7 @@
       cursor: not-allowed;
     }
 
-    /* Variante Primary (bleu plein) */
+    /* Variante Primary (bleu) */
     .btn-doc.btn-primary {
       background: #667eea;
       color: white;
@@ -165,7 +199,7 @@
       transform: translateY(-2px);
     }
 
-    /* Variante Outlined (bordure) */
+    /* Variante Outlined (bordure bleue) */
     .btn-doc.btn-outlined {
       background: white;
       color: #667eea;
@@ -178,7 +212,7 @@
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
     }
 
-    /* Variante Tonal (fond clair) */
+    /* Variante Tonal (fond clair bleu) */
     .btn-doc.btn-tonal {
       background: rgba(102, 126, 234, 0.12);
       color: #667eea;
@@ -192,7 +226,7 @@
       font-size: 1.125rem;
     }
 
-    /* Bouton retour - même style que admin-btn (outlined) */
+    /* Bouton retour - style bleu */
     .back-button {
       display: inline-flex;
       align-items: center;
@@ -228,22 +262,30 @@
     /* Sidebar navigation */
     .sidebar {
       position: fixed;
-      top: 64px;
+      top: 80px;
       left: 0;
       width: 280px;
-      height: calc(100vh - 64px);
+      height: calc(100vh - 80px);
       background: white;
       border-right: 1px solid #e2e8f0;
       overflow-y: auto;
-      padding: 2rem 0;
+      padding: 1.5rem 0;
+    }
+
+    .sidebar nav {
+      width: 100%;
     }
 
     .sidebar-nav {
       list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
     }
 
     .nav-item {
       margin-bottom: 0.25rem;
+      list-style: none;
     }
 
     .nav-link {
@@ -260,12 +302,12 @@
     }
 
     .nav-link:hover {
-      background: #f7fafc;
+      background: rgba(102, 126, 234, 0.05);
       color: #667eea;
     }
 
     .nav-link.active {
-      background: #edf2f7;
+      background: rgba(102, 126, 234, 0.1);
       color: #667eea;
       border-left-color: #667eea;
       font-weight: 500;
@@ -278,14 +320,19 @@
     /* Contenu principal */
     .main-content {
       margin-left: 280px;
-      margin-top: 64px;
+      margin-top: 80px;
       flex: 1;
-      padding: 3rem;
-      max-width: 900px;
+      padding: 2.5rem 3rem 2.5rem 2.5rem;
+      max-width: calc(100% - 280px);
+      overflow-x: hidden;
+      width: 100%;
     }
 
     .content-section {
       display: none;
+      overflow-x: hidden;
+      word-wrap: break-word;
+      max-width: 1000px;
     }
 
     .content-section.active {
@@ -365,6 +412,8 @@
       padding: 1.5rem;
       margin-bottom: 1.5rem;
       transition: all 0.2s ease;
+      overflow: hidden;
+      max-width: 100%;
     }
 
     .step-card:hover {
@@ -394,6 +443,8 @@
       display: flex;
       gap: 1rem;
       align-items: flex-start;
+      overflow: hidden;
+      max-width: 100%;
     }
 
     .info-box .material-icons {
@@ -411,6 +462,8 @@
       display: flex;
       gap: 1rem;
       align-items: flex-start;
+      overflow: hidden;
+      max-width: 100%;
     }
 
     .success-box .material-icons {
@@ -428,6 +481,8 @@
       display: flex;
       gap: 1rem;
       align-items: flex-start;
+      overflow: hidden;
+      max-width: 100%;
     }
 
     .warning-box .material-icons {
@@ -443,10 +498,12 @@
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
       border: 1px solid #e2e8f0;
+      max-width: 100%;
     }
 
     .screenshot-container img {
       width: 100%;
+      max-width: 100%;
       height: auto;
       display: block;
     }
@@ -558,12 +615,46 @@
 
     /* Exception pour image desktop téléchargement */
     .screenshot-container img[src*="dl_desktop"] {
-      object-position: right;
+      object-position: -365px 0px;
     }
 
     /* Exception pour image mobile dans section téléchargement */
     .screenshot-container img[src*="previsu_mobile"][alt*="Téléchargement"] {
       object-position: bottom right;
+    }
+
+    /* Exception pour image login mobile */
+    .screenshot-container img[src*="login_mobile"] {
+      object-position: 0px -230px;
+    }
+
+    /* Exception pour images panneau (panel) - afficher côté gauche */
+    .screenshot-container img[src*="panel_open"],
+    .screenshot-container img[src*="panel_close"] {
+      object-position: left;
+    }
+
+    /* Exception pour image login desktop */
+    .screenshot-container img[src*="login_desktop"] {
+      object-position: top right;
+    }
+
+    /* Exception pour image custom_mobile - afficher entièrement */
+    .screenshot-container img[src*="custom_mobile"] {
+      object-fit: cover;
+      object-position: center;
+    }
+
+    /* Exception pour image panel_desktop - afficher le bas */
+    .screenshot-container img[src*="panel_desktop"] {
+      object-fit: cover;
+      object-position: bottom;
+    }
+
+    /* Exception pour image panel_mobile - afficher le bas */
+    .screenshot-container img[src*="panel_mobile"] {
+      object-fit: cover;
+      object-position: bottom;
     }
 
     /* Images zoomables */
@@ -641,6 +732,8 @@
       font-family: 'Monaco', 'Courier New', monospace;
       font-size: 0.9em;
       color: #d946ef;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     pre {
@@ -651,12 +744,15 @@
       overflow-x: auto;
       font-size: 0.875rem;
       margin: 1rem 0;
+      max-width: 100%;
     }
 
     pre code {
       background: none;
       padding: 0;
       color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .simple-list {
@@ -687,7 +783,7 @@
 
     .tech-stack {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
       gap: 1rem;
       margin: 1.5rem 0;
     }
@@ -724,18 +820,40 @@
     /* Responsive */
     @media (max-width: 768px) {
       .sidebar {
+        position: fixed;
+        top: 72px;
+        left: 0;
+        width: 280px;
+        height: calc(100vh - 72px);
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 50;
+        padding-top: 1rem;
+        padding-bottom: 2rem;
       }
 
       .sidebar.open {
         transform: translateX(0);
       }
 
+      .sidebar-nav {
+        padding: 0;
+      }
+
+      .nav-link {
+        padding: 0.875rem 1.25rem;
+        font-size: 1rem;
+      }
+
+      .nav-link .material-icons {
+        font-size: 22px;
+      }
+
       .main-content {
         margin-left: 0;
-        padding: 2rem 1rem;
+        padding: 1.25rem 0.75rem;
+        max-width: 100%;
+        width: 100%;
       }
 
       .mobile-menu-btn {
@@ -743,11 +861,16 @@
       }
 
       header {
-        padding: 0.5rem 0.75rem;
+        padding: 0 0.75rem;
+        height: 72px;
       }
 
       .header-title {
-        font-size: 1rem;
+        font-size: 1.25rem;
+      }
+
+      .header-title .suffix-text {
+        display: none;
       }
 
       .header-title-full {
@@ -759,13 +882,13 @@
       }
 
       .logo-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
       }
 
       .logo-icon .material-icons {
-        font-size: 18px;
+        font-size: 20px;
       }
 
       .admin-indicator {
@@ -823,11 +946,102 @@
         grid-template-columns: 1fr;
         gap: 1rem;
       }
+
+      /* === Section Technique - Mobile === */
+      .step-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .step-card h4 {
+        font-size: 1rem;
+      }
+
+      .simple-list {
+        padding: 1rem;
+      }
+
+      .simple-list-item {
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+      }
+
+      .simple-list-item .material-icons {
+        font-size: 22px;
+      }
+
+      .tech-item {
+        padding: 0.75rem;
+      }
+
+      .tech-item .material-icons {
+        font-size: 20px;
+      }
+
+      .info-box,
+      .success-box,
+      .warning-box {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .info-box .material-icons,
+      .success-box .material-icons,
+      .warning-box .material-icons {
+        font-size: 20px;
+      }
+
+      pre {
+        padding: 0.75rem;
+        font-size: 0.75rem;
+      }
+
+      code {
+        font-size: 0.8em;
+        word-break: break-word;
+      }
+
+      ul, ol {
+        padding-left: 1.25rem;
+      }
+
+      li {
+        margin-bottom: 0.5rem;
+      }
     }
 
     @media (max-width: 480px) {
       .header-title {
         font-size: 0.9rem;
+      }
+
+      /* === Section Technique - Petits ecrans === */
+      .step-card {
+        padding: 0.75rem;
+      }
+
+      .simple-list {
+        padding: 0.75rem;
+      }
+
+      .tech-item {
+        padding: 0.5rem;
+        gap: 0.5rem;
+      }
+
+      .tech-item small {
+        font-size: 0.7rem;
+      }
+
+      pre {
+        font-size: 0.7rem;
+        padding: 0.5rem;
+      }
+
+      pre code {
+        white-space: pre-wrap;
+        word-break: break-all;
       }
 
       .logo-icon {
@@ -847,13 +1061,17 @@
       .header-right {
         gap: 0.25rem;
       }
+
+      .sidebar-overlay {
+        top: 72px;
+      }
     }
 
     /* Overlay pour mobile */
     .sidebar-overlay {
       display: none;
       position: fixed;
-      top: 64px;
+      top: 80px;
       left: 0;
       right: 0;
       bottom: 0;
@@ -1481,8 +1699,8 @@
           <span class="material-icons">description</span>
         </div>
         <span class="header-title">
-          <span class="header-title-full">Documentation DocEase</span>
-          <span class="header-title-short">DocEase</span>
+          <span class="header-title-full"><span class="doc-text">Doc</span><span class="ease-text">Ease</span> <span class="suffix-text">Documentation</span></span>
+          <span class="header-title-short"><span class="doc-text">Doc</span><span class="ease-text">Ease</span></span>
         </span>
       </div>
     </div>
@@ -1763,11 +1981,10 @@
         <h3>Étape 1 : Se connecter</h3>
         <div class="step-card">
           <p>
-            Cliquez sur le bouton "Se connecter" sur la page d'accueil. 
+            Cliquez sur le bouton <strong>"Se connecter"</strong> sur la page d'accueil. 
             Entrez votre email <strong>@fo-metaux.fr</strong> et votre Nom/Prenom (optionnel).
           </p>
           
-          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1812,7 +2029,6 @@
             <li><strong>Document Personnalisé</strong> : pour créer un document libre avec l'aide de l'IA</li>
           </ul>
           
-          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1856,7 +2072,6 @@
           </div>
           
           <h4 style="margin-top: 1.5rem;">Coordonnées : Vos informations (nom, prénom, fonction, adresse...)</h4>
-          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1884,9 +2099,22 @@
           <p>
             Le formulaire est divisé en plusieurs sections (Coordonnées, Contenu, Ordre du jour, Signataire...).
             Vous voyez une barre de progression en haut qui vous indique où vous en êtes.
-            Cliquez sur "Suivant" pour passer à l'étape suivante, ou "Précédent" pour revenir en arrière.
           </p>
-          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
+          <p style="margin-top: 1rem;">
+            <strong>Pour naviguer :</strong>
+          </p>
+          <ul>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">arrow_forward</span><strong>Suivant</strong> : Passe à l'étape suivante</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">arrow_back</span><strong>Précédent</strong> : Revient à l'étape précédente</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">radio_button_checked</span><strong>Numéros d'étapes</strong> : Cliquez directement sur un numéro dans la barre de progression pour accéder à l'étape correspondante</li>
+          </ul>
+          <p style="margin-top: 1rem;">
+            <strong>Barre d'outils :</strong> À côté des boutons de navigation, vous trouverez également :
+          </p>
+          <ul>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">delete_sweep</span><strong>Effacer tout</strong> : Vide tous les champs du formulaire pour recommencer à zéro</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">build</span><strong>Personnaliser</strong> (uniquement pour le modèle <strong>"Document Personnalisé"</strong>) : Active le mode personnalisation pour réorganiser ou supprimer des champs. <a href="#fonc-custom" class="internal-anchor" data-section="fonctionnalites" data-anchor="fonc-custom" style="color: #667eea;">En savoir plus</a></li>
+          </ul>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1910,8 +2138,7 @@
             </div>
           </div>
           
-          <h4 style="margin-top: 1.5rem;">Date et heure : Quand ? (un calendrier s'ouvre pour choisir facilement)</h4>
-          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
+          <h4 style="margin-top: 1.5rem;"><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">event</span>Date et <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px; margin-left: 6px;">schedule</span>heure : Quand ? (un calendrier s'ouvre pour choisir facilement)</h4>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1937,7 +2164,6 @@
           
           <h4 style="margin-top: 1.5rem;">Contenu : Le message principal de votre document</h4>
           <p>Écrivez ici le texte principal : convocation, information, demande... C'est le corps de votre document.</p>
-          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1962,7 +2188,6 @@
           </div>
           
           <h4 style="margin-top: 1.5rem;">Destinataires : À qui vous envoyez ce document ?</h4>
-          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -1990,12 +2215,22 @@
             <span class="material-icons">auto_awesome</span>
             <div>
               <strong>Astuce magique :</strong> 
-              Voyez-vous le bouton "IA" à côté des grandes zones de texte ? 
+              Voyez-vous le bouton <strong>"IA"</strong> <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">auto_fix_high</span> à côté des grandes zones de texte ? 
               Cliquez dessus et le robot écrit pour vous ! Vous pouvez ensuite modifier si besoin.
             </div>
           </div>
           
-          <p style="margin-top: 1rem;"><strong>Exemple :</strong></p>
+          <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Génération IA</h4>
+          <ul>
+            <li>Tapez au moins <strong>10 caractères</strong> dans le champ <strong>"Contenu du Document"</strong></li>
+            <li>Cliquez sur le bouton <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">auto_fix_high</span> qui apparaît</li>
+            <li>L'IA génère un texte professionnel basé sur votre saisie</li>
+            <li>Modifiez le texte proposé selon vos besoins</li>
+          </ul>
+          <p>
+            C'est idéal pour les courriers qui ne correspondent pas aux modèles existants (demandes spéciales, réponses personnalisées, etc.).
+          </p>
+          
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -2023,7 +2258,7 @@
         <h3>Étape 4 : Vérifier avant</h3>
         <div class="step-card">
           <p>
-            Cliquez sur "Prévisualiser". Vous verrez exactement à quoi ressemblera votre document. 
+            Cliquez sur <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 4px;">visibility</span><strong>"Prévisualiser"</strong>. Vous verrez exactement à quoi ressemblera votre document. 
             Si quelque chose ne va pas, retournez en arrière et modifiez.
           </p>
           
@@ -2035,7 +2270,6 @@
             </div>
           </div>
           
-          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -2066,7 +2300,6 @@
             Votre document est prêt ! Vous pouvez le télécharger sur votre ordinateur au format Word et PDF.
           </p>
           
-          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -2094,10 +2327,9 @@
             Votre document est prêt ! Vous pouvez :
           </p>
           <ul>
-            <li><strong>L'envoyer par email</strong> directement depuis DocEase</li>
+            <li><strong>L'envoyer par email</strong> : Plus besoin d'ouvrir votre boîte mail ! DocEase peut envoyer le document directement à tous les destinataires. Un message d'accompagnement est déjà préparé pour vous, que vous pouvez personnaliser ou remplacer selon vos besoins. Appuyez sur le bouton de partage <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">share</span> et laissez-vous guider !</li>
           </ul>
           
-          <p style="margin-top: 1.5rem;"><strong>Exemple :</strong></p>
           <div class="screenshot-grid">
             <div class="screenshot-item">
               <div class="screenshot-item-title">
@@ -2146,7 +2378,7 @@
             DocEase a le même genre de robot intelligent.
           </p>
           <p>
-            Quand vous ne savez pas quoi écrire, cliquez sur le bouton "IA" et le robot vous propose un texte. 
+            Quand vous ne savez pas quoi écrire, tapez au moins <strong>10 caractères</strong> dans un champ de texte, puis cliquez sur le bouton <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">auto_fix_high</span> qui apparaît. Le robot vous propose un texte complet. 
             C'est comme avoir un collègue qui vous aide !
           </p>
           
@@ -2157,7 +2389,7 @@
                 Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_ia_desktop.png" alt="IA - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smart_toy</span><br>Capture bureau de l\'IA</div>'">
+                <img src="/assets/screenshots/IA_desktop.png" alt="IA - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smart_toy</span><br>Capture bureau de l\'IA</div>'">
                 <div class="screenshot-caption">L'IA sur ordinateur</div>
               </div>
             </div>
@@ -2167,7 +2399,7 @@
                 Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_ia_mobile.png" alt="IA - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smart_toy</span><br>Capture mobile de l\'IA</div>'">
+                <img src="/assets/screenshots/IA_mobile.gif" alt="IA - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smart_toy</span><br>Capture mobile de l\'IA</div>'">
                 <div class="screenshot-caption">L'IA sur téléphone</div>
               </div>
             </div>
@@ -2183,11 +2415,27 @@
           </div>
         </div>
 
-        <h3>Création automatique de PDF</h3>
+        <h3 id="fonc-custom">Document Personnalisé (avec l'IA)</h3>
         <div class="step-card">
           <p>
-            DocEase crée d'abord un document Word (que vous pouvez modifier). 
-            Ensuite, il le transforme en PDF (qui ne peut plus être modifié, parfait pour l'envoyer officiellement).
+            Le modèle <strong>Document Personnalisé</strong> vous permet de créer un document libre, sans format prédéfini.
+            Vous définissez l'objet et rédigez votre contenu, puis l'intelligence artificielle vous aide à le compléter et l'améliorer.
+          </p>
+          
+          <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Mode personnalisation</h4>
+          <p>
+            Ce modèle dispose d'un bouton <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">build</span> (clé à molette) qui active le <strong>mode personnalisation</strong> :
+          </p>
+          <ul>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">drag_indicator</span><strong>Glisser-déposer</strong> : Réorganisez l'ordre des champs en les faisant glisser</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">arrow_upward</span><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">arrow_downward</span><strong>Flèches</strong> : Déplacez un champ vers le haut ou le bas</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">delete</span><strong>Supprimer</strong> : Retirez un champ du formulaire (restaurable)</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">restore</span><strong>Restaurer</strong> : Récupérez un champ précédemment supprimé</li>
+          </ul>
+          
+          <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Génération IA</h4>
+          <p>
+            L'IA vous aide à rédiger le contenu de votre document. Tapez quelques mots et laissez-la générer un texte professionnel.
           </p>
           
           <div class="screenshot-grid">
@@ -2197,8 +2445,8 @@
                 Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_pdf_desktop.png" alt="PDF - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>picture_as_pdf</span><br>Capture bureau du PDF</div>'">
-                <div class="screenshot-caption">Le PDF sur ordinateur</div>
+                <img src="/assets/screenshots/custom_desktop.png" alt="Document Personnalisé - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>edit_document</span><br>Capture bureau du document personnalisé</div>'">
+                <div class="screenshot-caption">Document personnalisé sur ordinateur</div>
               </div>
             </div>
             <div class="screenshot-item">
@@ -2207,71 +2455,8 @@
                 Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_pdf_mobile.png" alt="PDF - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>picture_as_pdf</span><br>Capture mobile du PDF</div>'">
-                <div class="screenshot-caption">Le PDF sur téléphone</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <h3>Envoi d'emails</h3>
-        <div class="step-card">
-          <p>
-            Plus besoin d'ouvrir votre boîte mail ! 
-            DocEase peut envoyer le document directement à tous les destinataires. 
-            Vous écrivez un petit message d'accompagnement et hop, c'est envoyé !
-          </p>
-          
-          <div class="screenshot-grid">
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">desktop_windows</span>
-                Version ordinateur
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_email_desktop.png" alt="Email - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>email</span><br>Capture bureau de l\'email</div>'">
-                <div class="screenshot-caption">L'envoi email sur ordinateur</div>
-              </div>
-            </div>
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">smartphone</span>
-                Version mobile
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_email_mobile.png" alt="Email - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>email</span><br>Capture mobile de l\'email</div>'">
-                <div class="screenshot-caption">L'envoi email sur téléphone</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <h3>Historique des documents</h3>
-        <div class="step-card">
-          <p>
-            Tous vos anciens documents sont sauvegardés. 
-            Si vous voulez retrouver la convocation de la semaine dernière, c'est facile !
-          </p>
-          
-          <div class="screenshot-grid">
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">desktop_windows</span>
-                Version ordinateur
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_historique_desktop.png" alt="Historique - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>history</span><br>Capture bureau de l\'historique</div>'">
-                <div class="screenshot-caption">L'historique sur ordinateur</div>
-              </div>
-            </div>
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">smartphone</span>
-                Version mobile
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_historique_mobile.png" alt="Historique - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>history</span><br>Capture mobile de l\'historique</div>'">
-                <div class="screenshot-caption">L'historique sur téléphone</div>
+                <img src="/assets/screenshots/custom_mobile.png" alt="Document Personnalisé - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>edit_document</span><br>Capture mobile du document personnalisé</div>'">
+                <div class="screenshot-caption">Document personnalisé sur téléphone</div>
               </div>
             </div>
           </div>
@@ -2280,105 +2465,16 @@
         <h3>Mode sombre / Mode clair</h3>
         <div class="step-card">
           <p>
-            Vous pouvez changer l'apparence de DocEase selon vos preferences :
+            Vous pouvez changer l'apparence de DocEase selon vos préférences :
           </p>
           <ul>
-            <li><strong>Mode clair</strong> : Fond blanc, texte sombre - ideal en journee</li>
-            <li><strong>Mode sombre</strong> : Fond sombre, texte clair - plus reposant pour les yeux le soir</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">light_mode</span><strong>Mode clair</strong> : Fond blanc, texte sombre - idéal en journée</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">dark_mode</span><strong>Mode sombre</strong> : Fond sombre, texte clair - économise la batterie sur mobile</li>
+            <li><span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 6px;">contrast</span><strong>Mode système</strong> : Suit automatiquement le thème de votre appareil (Windows, macOS, Android, iOS)</li>
           </ul>
           <p>
-            Pour changer : cliquez sur l'icone <strong>soleil</strong> ou <strong>lune</strong> en haut a droite de l'ecran.
+            Pour changer : cliquez sur l'icône <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">light_mode</span>, <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">dark_mode</span> ou <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">contrast</span> en haut à droite de l'écran.
             DocEase se souvient de votre choix !
-          </p>
-          
-          <div class="screenshot-grid">
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">light_mode</span>
-                Mode clair
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/theme_light.png" alt="Theme clair" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>light_mode</span><br>Capture du mode clair</div>'">
-                <div class="screenshot-caption">L'interface en mode clair</div>
-              </div>
-            </div>
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">dark_mode</span>
-                Mode sombre
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/theme_dark.png" alt="Theme sombre" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>dark_mode</span><br>Capture du mode sombre</div>'">
-                <div class="screenshot-caption">L'interface en mode sombre</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="info-box">
-            <span class="material-icons">tips_and_updates</span>
-            <div>
-              <strong>Conseil :</strong> Le mode sombre reduit la fatigue oculaire si vous travaillez longtemps sur ecran.
-            </div>
-          </div>
-        </div>
-
-        <h3>Panneau des modeles retractable</h3>
-        <div class="step-card">
-          <p>
-            Sur ordinateur, le panneau de gauche avec la liste des modeles peut se replier pour vous donner plus de place.
-          </p>
-          <ul>
-            <li><strong>Cliquez sur la fleche</strong> a cote du panneau pour le replier</li>
-            <li><strong>Cliquez a nouveau</strong> pour le reouvrir</li>
-          </ul>
-          <p>
-            C'est pratique quand vous remplissez un long formulaire et que vous voulez voir tout l'ecran !
-          </p>
-          
-          <div class="screenshot-grid">
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">view_sidebar</span>
-                Panneau ouvert
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/sidebar_open.png" alt="Panneau ouvert" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>view_sidebar</span><br>Capture panneau ouvert</div>'">
-                <div class="screenshot-caption">Panneau des modeles visible</div>
-              </div>
-            </div>
-            <div class="screenshot-item">
-              <div class="screenshot-item-title">
-                <span class="material-icons">chevron_left</span>
-                Panneau ferme
-              </div>
-              <div class="screenshot-container">
-                <img src="/assets/screenshots/sidebar_closed.png" alt="Panneau ferme" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>chevron_left</span><br>Capture panneau ferme</div>'">
-                <div class="screenshot-caption">Plus d'espace pour travailler</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="success-box">
-            <span class="material-icons">smartphone</span>
-            <div>
-              <strong>Sur mobile :</strong> Le panneau s'ouvre en plein ecran quand vous cliquez sur le menu, puis se ferme automatiquement quand vous choisissez un modele.
-            </div>
-          </div>
-        </div>
-
-        <h3>Autocompletion d'adresse intelligente</h3>
-        <div class="step-card">
-          <p>
-            Quand vous tapez une adresse dans le champ "Adresse", DocEase vous propose automatiquement des suggestions !
-            C'est comme Google Maps : vous commencez a taper et les adresses apparaissent.
-          </p>
-          <ul>
-            <li><strong>Tapez au moins 3 caracteres</strong> pour voir les suggestions</li>
-            <li><strong>Cliquez sur une suggestion</strong> pour la selectionner</li>
-            <li><strong>Le code postal se remplit automatiquement</strong> dans le champ "Code postal + Ville"</li>
-          </ul>
-          <p>
-            Plus besoin de chercher le code postal vous-meme, DocEase le fait pour vous !
           </p>
           
           <div class="screenshot-grid">
@@ -2388,7 +2484,97 @@
                 Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_adresse_desktop.png" alt="Autocompletion adresse - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>location_on</span><br>Capture bureau autocompletion</div>'">
+                <img src="/assets/screenshots/theme_desktop.gif" alt="Theme - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>light_mode</span><br>Capture du thème sur ordinateur</div>'">
+                <div class="screenshot-caption">Changement de thème sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/theme_mobile.gif" alt="Theme - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>dark_mode</span><br>Capture du thème sur mobile</div>'">
+                <div class="screenshot-caption">Changement de thème sur téléphone</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">tips_and_updates</span>
+            <div>
+              <strong>Conseil :</strong> Le mode sombre réduit la fatigue oculaire si vous travaillez longtemps sur écran.
+            </div>
+          </div>
+        </div>
+
+        <h3>Panneau des modèles rétractable</h3>
+        <div class="step-card">
+          <p>
+            Sur ordinateur, le panneau de gauche avec la liste des modèles peut se replier pour vous donner plus de place.
+          </p>
+          <ul>
+            <li><strong>Cliquez sur <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">first_page</span></strong> à côté du panneau pour le replier</li>
+            <li><strong>Cliquez sur <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">menu_open</span></strong> pour le rouvrir</li>
+          </ul>
+          <p>
+            C'est pratique quand vous remplissez un long formulaire et que vous voulez voir tout l'écran !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">first_page</span>
+                Panneau ouvert
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/panel_open.png" alt="Panneau ouvert" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>first_page</span><br>Capture panneau ouvert</div>'">
+                <div class="screenshot-caption">Panneau des modèles visible</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">menu_open</span>
+                Panneau fermé
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/panel_close.png" alt="Panneau fermé" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>menu_open</span><br>Capture panneau fermé</div>'">
+                <div class="screenshot-caption">Plus d'espace pour travailler</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="success-box">
+            <span class="material-icons">smartphone</span>
+            <div>
+              <strong>Sur mobile :</strong> Le panneau s'ouvre en plein écran quand vous cliquez sur le menu, puis se ferme automatiquement quand vous choisissez un modèle.
+            </div>
+          </div>
+        </div>
+
+        <h3>Autocomplétion d'adresse intelligente</h3>
+        <div class="step-card">
+          <p>
+            Quand vous tapez une adresse dans le champ <strong>"Adresse"</strong>, DocEase vous propose automatiquement des suggestions !
+            C'est comme Google Maps : vous commencez à taper et les adresses apparaissent.
+          </p>
+          <ul>
+            <li><strong>Tapez au moins 3 caractères</strong> pour voir les suggestions</li>
+            <li><strong>Cliquez sur une suggestion</strong> pour la sélectionner</li>
+            <li><strong>Le code postal se remplit automatiquement</strong> dans le champ "Code postal + Ville"</li>
+          </ul>
+          <p>
+            Plus besoin de chercher le code postal vous-même, DocEase le fait pour vous !
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/adress_desktop.png" alt="Autocompletion adresse - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>location_on</span><br>Capture bureau autocompletion</div>'">
                 <div class="screenshot-caption">Suggestions d'adresse sur ordinateur</div>
               </div>
             </div>
@@ -2398,8 +2584,8 @@
                 Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_adresse_mobile.png" alt="Autocompletion adresse - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>location_on</span><br>Capture mobile autocompletion</div>'">
-                <div class="screenshot-caption">Suggestions d'adresse sur telephone</div>
+                <img src="/assets/screenshots/adress_mobile.gif" alt="Autocompletion adresse - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>location_on</span><br>Capture mobile autocompletion</div>'">
+                <div class="screenshot-caption">Suggestions d'adresse sur téléphone</div>
               </div>
             </div>
           </div>
@@ -2408,17 +2594,45 @@
             <span class="material-icons">public</span>
             <div>
               <strong>Note technique :</strong><br>
-              Cette fonctionnalite utilise l'API officielle du gouvernement francais <strong>adresse.data.gouv.fr</strong>.
-              Elle fournit des adresses francaises precises et a jour, gratuitement.
+              Cette fonctionnalité utilise l'API officielle du gouvernement français <strong>adresse.data.gouv.fr</strong>.
+              Elle fournit des adresses françaises précises et à jour, gratuitement.
             </div>
           </div>
         </div>
 
-        <h3>Utilisation sur telephone</h3>
+        <h3>Utilisation sur téléphone</h3>
         <div class="step-card">
           <p>
             Vous pouvez installer DocEase sur votre téléphone comme une application normale. 
             Ça marche exactement pareil que sur l'ordinateur !
+          </p>
+          
+          <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Sur iPhone (Safari)</h4>
+          <ol>
+            <li>Ouvrez DocEase dans <strong>Safari</strong></li>
+            <li>Appuyez sur l'icône de partage <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">ios_share</span> (carré avec une flèche vers le haut)</li>
+            <li>Faites défiler et appuyez sur <strong>"Sur l'écran d'accueil"</strong></li>
+            <li>Appuyez sur <strong>"Ajouter"</strong> en haut à droite</li>
+          </ol>
+          
+          <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Sur Android (Chrome)</h4>
+          <ol>
+            <li>Ouvrez DocEase dans <strong>Chrome</strong></li>
+            <li>Appuyez sur les trois points <span class="material-icons" style="vertical-align: middle; font-size: 1rem; background: #1a202c; color: white; border-radius: 50%; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">more_vert</span> en haut à droite</li>
+            <li>Appuyez sur <strong>"Ajouter à l'écran d'accueil"</strong></li>
+            <li>Confirmez en appuyant sur <strong>"Ajouter"</strong></li>
+          </ol>
+          
+          <div class="success-box" style="margin-top: 1rem;">
+            <span class="material-icons">check_circle</span>
+            <div>
+              Une icône DocEase apparaît sur votre écran d'accueil. Vous pouvez maintenant lancer l'application d'un simple tap !
+            </div>
+          </div>
+          
+          <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Installation automatique</h4>
+          <p>
+            DocEase peut aussi vous proposer automatiquement de l'installer ! Une fenêtre apparaît pour vous guider selon votre appareil (iPhone, Android, ordinateur). Il suffit de suivre les instructions affichées.
           </p>
           
           <div class="screenshot-grid">
@@ -2428,8 +2642,8 @@
                 Version ordinateur
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_mobile_desktop.png" alt="Comparaison - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>desktop_windows</span><br>Capture bureau de la comparaison</div>'">
-                <div class="screenshot-caption">L'interface sur ordinateur</div>
+                <img src="/assets/screenshots/panel_desktop.png" alt="Installation - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>install_desktop</span><br>Capture bureau de l\'installation</div>'">
+                <div class="screenshot-caption">Panel d'installation sur ordinateur</div>
               </div>
             </div>
             <div class="screenshot-item">
@@ -2438,8 +2652,8 @@
                 Version mobile
               </div>
               <div class="screenshot-container">
-                <img src="/assets/screenshots/fonc_mobile_mobile.png" alt="Comparaison - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>smartphone</span><br>Capture mobile de la comparaison</div>'">
-                <div class="screenshot-caption">L'interface sur téléphone</div>
+                <img src="/assets/screenshots/panel_mobile.png" alt="Installation - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\' style=\'font-size: 3rem; margin-bottom: 0.5rem;\'>install_mobile</span><br>Capture mobile de l\'installation</div>'">
+                <div class="screenshot-caption">Panel d'installation sur mobile</div>
               </div>
             </div>
           </div>
@@ -2890,6 +3104,28 @@ VITE_GROK_API_URL=https://api.x.ai/v1</code></pre>
 
     // Restaurer la section au chargement
     restoreActiveSection();
+
+    // Gestionnaire pour les liens d'ancrage internes (liens vers des éléments à l'intérieur d'une section)
+    document.querySelectorAll('.internal-anchor').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const sectionId = link.getAttribute('data-section');
+        const anchorId = link.getAttribute('data-anchor');
+        
+        // D'abord afficher la section
+        showSection(sectionId, true);
+        
+        // Puis scroll vers l'ancre après un court délai pour laisser la section s'afficher
+        setTimeout(() => {
+          const anchorElement = document.getElementById(anchorId);
+          if (anchorElement) {
+            anchorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Mettre à jour l'URL avec l'ancre
+            history.replaceState(null, '', '#' + anchorId);
+          }
+        }, 100);
+      });
+    });
 
     // Gérer le retour arrière du navigateur
     window.addEventListener('hashchange', () => {
