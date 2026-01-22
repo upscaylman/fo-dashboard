@@ -31,5 +31,11 @@
     "**/*.ts",
     "**/*.tsx",
     "vite-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "docease",
+    "signease",
+    "dist"
   ]
 }
