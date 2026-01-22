@@ -800,7 +800,7 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 overflow-x-hidden">
       {/* Input file global caché, utilisé par tous les boutons */}
       <input
         ref={fileInputRef}
@@ -1465,7 +1465,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Section Admin - visible seulement pour l'admin */}
       {currentUser?.isAdmin && (
-        <div className="container mx-auto mt-8 mb-8">
+        <div className="container mx-auto mt-8 mb-8 px-0 max-w-full">
           <AdminPanel />
         </div>
       )}

@@ -100,7 +100,7 @@ const AdminPanel: React.FC = () => {
   };
 
   return (
-    <div className="bg-surface rounded-3xl shadow-sm border border-outlineVariant/30">
+    <div className="bg-surface rounded-3xl shadow-sm border border-outlineVariant/30 overflow-hidden">
       {/* Header cliquable pour collapse */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -129,7 +129,7 @@ const AdminPanel: React.FC = () => {
 
       {/* Contenu collapse */}
       {isOpen && (
-        <div className="px-6 pb-6 space-y-6 animate-fade-in">
+        <div className="px-6 pb-6 space-y-6 animate-fade-in overflow-hidden">
           {/* Formulaire d'ajout */}
           <div>
             <h3 className="text-lg font-semibold text-onSurface mb-4">
@@ -192,13 +192,13 @@ const AdminPanel: React.FC = () => {
                 Aucun utilisateur personnalisé pour le moment.
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 w-full">
                 {users.map((user) => (
                   <div
                     key={user.id}
-                    className="relative group p-4 bg-surfaceVariant/40 rounded-xl border border-outlineVariant hover:border-primary/50 hover:shadow-md transition-all"
+                    className="relative group p-4 bg-surfaceVariant/40 rounded-xl border border-outlineVariant hover:border-primary/50 hover:shadow-md transition-all min-w-0"
                   >
-                    <div className="pr-8">
+                    <div className="pr-8 min-w-0">
                       <p
                         className="font-medium text-onSurface truncate"
                         title={user.email}

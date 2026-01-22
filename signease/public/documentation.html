@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="fr" style="overflow-x: hidden;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Documentation - SignEase | FO Metaux</title>
+  <link rel="icon" type="image/x-icon" href="/icon-96x96.png">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
+    }
+
+    img, video, iframe, embed, object {
+      max-width: 100%;
+      height: auto;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      line-height: 1.8;
+      color: #1a202c;
+      background: #f7fafc;
+      min-height: 100vh;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    /* Header fixe */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      height: 80px;
+      gap: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+      flex-shrink: 0;
+      transition: transform 0.3s ease;
+    }
+
+    .logo-icon:hover {
+      transform: scale(1.1);
+    }
+
+    .logo-icon svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .header-title .sign-text {
+      color: #1a202c;
+    }
+
+    .header-title .ease-text {
+      color: #10b981;
+    }
+
+    .header-title .suffix-text {
+      color: #718096;
+      font-weight: 400;
+      font-size: 1.25rem;
+    }
+
+    .header-title-full {
+      display: inline;
+    }
+
+    .header-title-short {
+      display: none;
+    }
+
+    /* Boutons style SignEase */
+    .btn-doc {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      white-space: nowrap;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-doc:active {
+      transform: scale(0.95);
+    }
+
+    .btn-doc.btn-primary {
+      background: #10b981;
+      color: white;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-doc.btn-primary:hover {
+      background: #059669;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+      transform: translateY(-2px);
+    }
+
+    .btn-doc.btn-outlined {
+      background: white;
+      color: #10b981;
+      border: 2px solid #10b981;
+    }
+
+    .btn-doc.btn-outlined:hover {
+      background: rgba(16, 185, 129, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-doc .material-icons {
+      font-size: 1.125rem;
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      white-space: nowrap;
+      background: white;
+      color: #10b981;
+      border: 2px solid #10b981;
+    }
+
+    .back-button:hover {
+      background: rgba(16, 185, 129, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .back-button:active {
+      transform: scale(0.95);
+    }
+
+    .back-button-text {
+      display: inline;
+    }
+
+    /* Sidebar navigation */
+    .sidebar {
+      position: fixed;
+      top: 80px;
+      left: 0;
+      width: 280px;
+      height: calc(100vh - 80px);
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      overflow-y: auto;
+      padding: 1.5rem 0;
+    }
+
+    .sidebar nav {
+      width: 100%;
+    }
+
+    .sidebar-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+    }
+
+    .nav-item {
+      margin-bottom: 0.25rem;
+      list-style: none;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      color: #4a5568;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-link:hover {
+      background: rgba(16, 185, 129, 0.05);
+      color: #10b981;
+    }
+
+    .nav-link.active {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+      border-left-color: #10b981;
+      font-weight: 500;
+    }
+
+    .nav-link .material-icons {
+      font-size: 20px;
+    }
+
+    /* Contenu principal */
+    .main-content {
+      margin-left: 280px;
+      margin-top: 80px;
+      flex: 1;
+      padding: 2.5rem 3rem 2.5rem 2.5rem;
+      max-width: calc(100% - 280px);
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    .content-section {
+      display: none;
+      overflow-x: hidden;
+      word-wrap: break-word;
+      max-width: 1000px;
+    }
+
+    .content-section.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Typography */
+    h2 {
+      font-size: 2rem;
+      color: #1a202c;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      color: #2d3748;
+      margin: 2rem 0 1rem;
+      font-weight: 600;
+    }
+
+    h4 {
+      font-size: 1.125rem;
+      color: #2d3748;
+      margin: 1.5rem 0 0.75rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+      color: #4a5568;
+      font-size: 1.05rem;
+    }
+
+    ul, ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    li {
+      margin-bottom: 0.75rem;
+      color: #4a5568;
+      font-size: 1.05rem;
+    }
+
+    strong {
+      color: #2d3748;
+      font-weight: 600;
+    }
+
+    a {
+      color: #10b981;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #059669;
+    }
+
+    /* Cards et boxes */
+    .step-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.2s ease;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .step-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: #10b981;
+      color: white;
+      border-radius: 50%;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .info-box {
+      background: #ecfdf5;
+      border-left: 4px solid #10b981;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .info-box .material-icons {
+      color: #10b981;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .success-box {
+      background: #f0fdf4;
+      border-left: 4px solid #22c55e;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .success-box .material-icons {
+      color: #22c55e;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .warning-box {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .warning-box .material-icons {
+      color: #f59e0b;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .danger-box {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .danger-box .material-icons {
+      color: #ef4444;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    /* Screenshots */
+    .screenshot-container {
+      margin: 1.5rem 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      border: 1px solid #e2e8f0;
+      max-width: 100%;
+    }
+
+    .screenshot-container img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .screenshot-placeholder {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: white;
+    }
+
+    .screenshot-placeholder .material-icons {
+      font-size: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.8;
+    }
+
+    .screenshot-placeholder p {
+      color: white;
+      opacity: 0.9;
+      margin: 0;
+    }
+
+    .screenshot-caption {
+      background: #f7fafc;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: #4a5568;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .screenshot-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screenshot-item-title {
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .screenshot-item-title .material-icons {
+      font-size: 20px;
+      color: #10b981;
+    }
+
+    .screenshot-grid .screenshot-container {
+      width: 100%;
+      height: 280px;
+      overflow: hidden;
+    }
+
+    .screenshot-grid .screenshot-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    /* Images zoomables */
+    .screenshot-container img {
+      cursor: zoom-in;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .screenshot-container img:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Modal zoom image */
+    .image-zoom-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      cursor: zoom-out;
+    }
+
+    .image-zoom-modal.active {
+      display: flex;
+    }
+
+    .image-zoom-modal img {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      cursor: zoom-out;
+    }
+
+    .image-zoom-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: white;
+      color: #1a202c;
+      border: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      z-index: 10000;
+    }
+
+    .image-zoom-close:hover {
+      background: #f7fafc;
+      transform: scale(1.1);
+    }
+
+    .image-zoom-close .material-icons {
+      font-size: 28px;
+    }
+
+    code {
+      background: #edf2f7;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+      color: #10b981;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .simple-list {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .simple-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid #f7fafc;
+    }
+
+    .simple-list-item:last-child {
+      border-bottom: none;
+    }
+
+    .simple-list-item .material-icons {
+      color: #10b981;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .tech-stack {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .tech-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .tech-item .material-icons {
+      color: #10b981;
+      font-size: 24px;
+    }
+
+    /* Icones style defonce */
+    .icon-badge {
+      vertical-align: middle;
+      font-size: 1rem;
+      background: #1a202c;
+      color: white;
+      border-radius: 50%;
+      padding: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 6px;
+    }
+
+    .icon-badge.green {
+      background: #10b981;
+    }
+
+    .icon-badge.orange {
+      background: #f59e0b;
+    }
+
+    .icon-badge.red {
+      background: #ef4444;
+    }
+
+    .icon-badge.blue {
+      background: #3b82f6;
+    }
+
+    /* Mobile menu */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    .mobile-menu-btn .material-icons {
+      font-size: 24px;
+      color: #4a5568;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 72px;
+        left: 0;
+        width: 280px;
+        height: calc(100vh - 72px);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 50;
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 1.25rem 0.75rem;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      header {
+        padding: 0 0.75rem;
+        height: 72px;
+      }
+
+      .header-title {
+        font-size: 1.25rem;
+      }
+
+      .header-title .suffix-text {
+        display: none;
+      }
+
+      .header-title-full {
+        display: none;
+      }
+
+      .header-title-short {
+        display: inline;
+      }
+
+      .logo-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+      }
+
+      .logo-icon .material-icons {
+        font-size: 20px;
+      }
+
+      .back-button {
+        padding: 0.5rem 0.75rem;
+      }
+
+      .back-button .material-icons {
+        font-size: 1rem;
+      }
+
+      .back-button-text {
+        display: none;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      h3 {
+        font-size: 1.25rem;
+      }
+
+      .screenshot-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .step-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .info-box,
+      .success-box,
+      .warning-box,
+      .danger-box {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-title {
+        font-size: 0.9rem;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+
+      .logo-icon .material-icons {
+        font-size: 16px;
+      }
+    }
+
+    /* Overlay pour mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 80px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 40;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-overlay.active {
+        display: block;
+      }
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1a202c;
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      z-index: 300;
+      opacity: 0;
+      transition: all 0.3s ease;
+      text-align: center;
+      max-width: calc(100% - 2rem);
+    }
+
+    .toast.active {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #10b981;
+    }
+
+    .toast.error {
+      background: #ef4444;
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-badge.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.signed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-badge.rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-badge .material-icons {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header fixe -->
+  <header>
+    <div class="header-left">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <span class="material-icons">menu</span>
+      </button>
+      <div class="header-logo">
+        <div class="logo-icon">
+          <!-- PenTool SVG (Lucide) -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+            <path d="M2 2l7.586 7.586"/>
+            <circle cx="11" cy="11" r="2"/>
+          </svg>
+        </div>
+        <span class="header-title">
+          <span class="header-title-full"><span class="sign-text">Sign</span><span class="ease-text">Ease</span> <span class="suffix-text">Documentation</span></span>
+          <span class="header-title-short"><span class="sign-text">Sign</span><span class="ease-text">Ease</span></span>
+        </span>
+      </div>
+    </div>
+    <div class="header-right">
+      <a href="/" class="back-button">
+        <span class="material-icons">arrow_back</span>
+        <span class="back-button-text">Retour</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Modal zoom image -->
+  <div class="image-zoom-modal" id="imageZoomModal">
+    <button class="image-zoom-close" id="imageZoomClose">
+      <span class="material-icons">close</span>
+    </button>
+    <img id="zoomedImage" src="" alt="Image agrandie">
+  </div>
+
+  <!-- Overlay mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="layout">
+    <!-- Sidebar navigation -->
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="sidebar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" data-section="introduction">
+              <span class="material-icons">home</span>
+              <span>Introduction</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="envoyer">
+              <span class="material-icons">send</span>
+              <span>Envoyer un document</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="signer">
+              <span class="material-icons">draw</span>
+              <span>Signer un document</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="tableau-bord">
+              <span class="material-icons">dashboard</span>
+              <span>Tableau de bord</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="verifier">
+              <span class="material-icons">verified</span>
+              <span>Verifier une signature</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="faq">
+              <span class="material-icons">help</span>
+              <span>Questions frequentes</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-section="securite">
+              <span class="material-icons">security</span>
+              <span>Securite & Conformite</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="main-content">
+      
+      <!-- Section: Introduction -->
+      <section class="content-section active" id="introduction">
+        <h2>Bienvenue sur SignEase</h2>
+        
+        <div class="success-box">
+          <span class="material-icons">check_circle</span>
+          <div>
+            <strong>SignEase</strong> est votre plateforme de signature electronique simple et securisee. 
+            Envoyez, signez et suivez vos documents en quelques clics !
+          </div>
+        </div>
+
+        <p>
+          Fini les impressions, les scans et les envois postaux. 
+          Avec SignEase, vous signez vos documents directement en ligne, depuis votre ordinateur ou votre telephone.
+        </p>
+
+        <h3>Que pouvez-vous faire ?</h3>
+        <div class="simple-list">
+          <div class="simple-list-item">
+            <span class="material-icons">send</span>
+            <div>
+              <strong>Envoyer des documents a signer</strong><br>
+              Chargez un PDF ou Word, ajoutez les destinataires et placez les champs de signature
+            </div>
+          </div>
+          <div class="simple-list-item">
+            <span class="material-icons">draw</span>
+            <div>
+              <strong>Signer des documents recus</strong><br>
+              Dessinez votre signature, tapez votre nom ou importez une image
+            </div>
+          </div>
+          <div class="simple-list-item">
+            <span class="material-icons">track_changes</span>
+            <div>
+              <strong>Suivre l'avancement</strong><br>
+              Voyez en temps reel qui a signe et qui doit encore signer
+            </div>
+          </div>
+          <div class="simple-list-item">
+            <span class="material-icons">verified</span>
+            <div>
+              <strong>Verifier l'authenticite</strong><br>
+              Controlez qu'un document signe est authentique et n'a pas ete modifie
+            </div>
+          </div>
+        </div>
+
+        <h3>Premiere connexion</h3>
+        <div class="step-card">
+          <p>
+            <strong>C'est simple :</strong> Entrez votre adresse email et cliquez sur "Se connecter".
+          </p>
+          <p>
+            Pas de mot de passe a retenir ! Votre email suffit pour vous identifier.
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/login_desktop.png" alt="Page de connexion SignEase - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau de la page de connexion</p></div>'">
+                <div class="screenshot-caption">Connexion sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/login_mobile.png" alt="Page de connexion SignEase - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile de la page de connexion</p></div>'">
+                <div class="screenshot-caption">Connexion sur mobile</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">info</span>
+            <div>
+              <strong>Acces restreint :</strong> Seuls les emails autorises peuvent se connecter.
+              Contactez votre administrateur si vous n'avez pas acces.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Envoyer un document -->
+      <section class="content-section" id="envoyer">
+        <h2>Envoyer un document a signer</h2>
+        
+        <p style="font-size: 1.125rem; color: #2d3748;">
+          Suivez ces etapes pour envoyer un document a faire signer.
+        </p>
+
+        <h3>Etape 1 : Ajouter votre document</h3>
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <p>
+            Sur le <strong>Tableau de bord</strong>, cliquez sur <span class="icon-badge"><span class="material-icons" style="font-size: 14px;">add</span></span> <strong>"Ajouter un fichier"</strong>.
+          </p>
+          <p>
+            Selectionnez votre document :
+          </p>
+          <ul>
+            <li><strong>PDF</strong> - Format recommande</li>
+            <li><strong>Word (.doc, .docx)</strong> - Converti automatiquement en PDF</li>
+          </ul>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/upload_desktop.png" alt="Ajout de document - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau - Ajout de fichier</p></div>'">
+                <div class="screenshot-caption">Tableau de bord sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/upload_mobile.png" alt="Ajout de document - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile - Ajout de fichier</p></div>'">
+                <div class="screenshot-caption">Tableau de bord sur mobile</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="success-box">
+            <span class="material-icons">tips_and_updates</span>
+            <div>
+              <strong>Astuce :</strong> Vous pouvez aussi glisser-deposer votre fichier directement sur la page !
+            </div>
+          </div>
+        </div>
+
+        <h3>Etape 2 : Ajouter les destinataires</h3>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <p>
+            Dans le panneau lateral de droite, cliquez sur <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">person_add</span></span> <strong>"Ajouter un destinataire"</strong>.
+          </p>
+          <p>
+            Remplissez pour chaque personne :
+          </p>
+          <ul>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">person</span></span> <strong>Nom complet</strong> du destinataire</li>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">email</span></span> <strong>Adresse email</strong></li>
+          </ul>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/destinataires_desktop.png" alt="Ajout destinataires - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau - Ajout destinataires</p></div>'">
+                <div class="screenshot-caption">Panneau destinataires sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/destinataires_mobile.png" alt="Ajout destinataires - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile - Ajout destinataires</p></div>'">
+                <div class="screenshot-caption">Panneau destinataires sur mobile</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">contacts</span>
+            <div>
+              <strong>Contacts enregistres :</strong> Cliquez sur un contact existant pour l'ajouter rapidement !
+            </div>
+          </div>
+        </div>
+
+        <h3>Etape 3 : Placer les champs de signature</h3>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <p>
+            C'est l'etape la plus importante ! Vous allez placer les zones ou les destinataires devront agir.
+          </p>
+          
+          <h4>Comment faire :</h4>
+          <ol>
+            <li><strong>Selectionnez un destinataire</strong> dans la liste (panneau de droite)</li>
+            <li><strong>Choisissez le type de champ</strong> a placer :</li>
+          </ol>
+          
+          <div class="simple-list" style="margin: 1rem 0;">
+            <div class="simple-list-item">
+              <span class="material-icons">draw</span>
+              <div>
+                <strong>Signature</strong><br>
+                Zone pour la signature complete
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">font_download</span>
+              <div>
+                <strong>Initiales</strong><br>
+                Zone pour les initiales (paraphe)
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">text_fields</span>
+              <div>
+                <strong>Texte</strong><br>
+                Zone de saisie libre
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">check_box</span>
+              <div>
+                <strong>Case a cocher</strong><br>
+                Pour accepter une condition
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">event</span>
+              <div>
+                <strong>Date</strong><br>
+                Inseree automatiquement lors de la signature
+              </div>
+            </div>
+          </div>
+          
+          <ol start="3">
+            <li><strong>Cliquez sur le document</strong> a l'endroit ou placer le champ</li>
+            <li><strong>Ajustez la position et la taille</strong> si necessaire :</li>
+          </ol>
+          <ul>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">open_with</span></span> <strong>Deplacer</strong> : Cliquez et glissez le champ</li>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">aspect_ratio</span></span> <strong>Redimensionner</strong> : Utilisez la poignee en bas a droite</li>
+          </ul>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/champs_desktop.png" alt="Placement des champs - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau - Placement des champs</p></div>'">
+                <div class="screenshot-caption">Placement des champs sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/champs_mobile.png" alt="Placement des champs - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile - Placement des champs</p></div>'">
+                <div class="screenshot-caption">Placement des champs sur mobile</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="warning-box">
+            <span class="material-icons">palette</span>
+            <div>
+              <strong>Personnalisation :</strong> Cliquez sur un champ pour modifier sa couleur dans le panneau de droite. 
+              Pratique pour distinguer les champs de chaque destinataire !
+            </div>
+          </div>
+        </div>
+
+        <h3>Etape 4 : Envoyer</h3>
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <p>
+            Une fois tous les champs places, cliquez sur <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">send</span></span> <strong>"Envoyer"</strong>.
+          </p>
+          <p>
+            Une fenetre recapitulative s'affiche :
+          </p>
+          <ul>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">check</span></span> <strong>Cochez</strong> les destinataires qui doivent recevoir le document</li>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">email</span></span> <strong>Confirmez votre email</strong> pour recevoir les notifications</li>
+          </ul>
+          
+          <div class="success-box">
+            <span class="material-icons">check_circle</span>
+            <div>
+              <strong>C'est parti !</strong> Les destinataires recevront un email avec un lien direct pour signer.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Signer un document -->
+      <section class="content-section" id="signer">
+        <h2>Signer un document recu</h2>
+        
+        <p style="font-size: 1.125rem; color: #2d3748;">
+          Vous avez recu une demande de signature ? Voici comment proceder.
+        </p>
+
+        <h3>Acceder au document</h3>
+        <div class="step-card">
+          <h4>Option 1 : Depuis votre email</h4>
+          <ol>
+            <li>Ouvrez l'<strong>email de demande de signature</strong></li>
+            <li>Cliquez sur le bouton <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">draw</span></span> <strong>"Signer le document"</strong></li>
+            <li>Vous etes automatiquement connecte !</li>
+          </ol>
+          
+          <h4 style="margin-top: 1.5rem;">Option 2 : Depuis l'application</h4>
+          <ol>
+            <li>Connectez-vous avec votre email</li>
+            <li>Allez dans <span class="icon-badge"><span class="material-icons" style="font-size: 14px;">inbox</span></span> <strong>"Boite de reception"</strong></li>
+            <li>Cliquez sur le document a signer</li>
+          </ol>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/inbox_desktop.png" alt="Boite de reception - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau - Boite de reception</p></div>'">
+                <div class="screenshot-caption">Boite de reception sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/inbox_mobile.png" alt="Boite de reception - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile - Boite de reception</p></div>'">
+                <div class="screenshot-caption">Boite de reception sur mobile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Remplir et signer</h3>
+        <div class="step-card">
+          <p>
+            Le document s'affiche avec les champs a remplir mis en evidence.
+          </p>
+          
+          <h4>Pour signer ou parapher :</h4>
+          <ol>
+            <li><strong>Cliquez sur un champ</strong> de signature ou d'initiales</li>
+            <li><strong>Choisissez votre methode</strong> :</li>
+          </ol>
+          
+          <div class="simple-list" style="margin: 1rem 0;">
+            <div class="simple-list-item">
+              <span class="material-icons">gesture</span>
+              <div>
+                <strong>Dessiner</strong><br>
+                Dessinez votre signature avec la souris ou le doigt (sur mobile)
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">keyboard</span>
+              <div>
+                <strong>Taper</strong><br>
+                Tapez votre nom - il sera affiche en ecriture cursive
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">upload</span>
+              <div>
+                <strong>Importer</strong><br>
+                Televersez une image de votre signature
+              </div>
+            </div>
+          </div>
+          
+          <ol start="3">
+            <li><strong>Ajustez la taille</strong> avec le curseur</li>
+            <li>Cliquez sur <strong>"Appliquer la signature"</strong></li>
+          </ol>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/signature_desktop.png" alt="Creation signature - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau - Creation de signature</p></div>'">
+                <div class="screenshot-caption">Modal de signature sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/signature_mobile.png" alt="Creation signature - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile - Creation de signature</p></div>'">
+                <div class="screenshot-caption">Modal de signature sur mobile</div>
+              </div>
+            </div>
+          </div>
+          
+          <h4 style="margin-top: 1.5rem;">Autres champs :</h4>
+          <ul>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">text_fields</span></span> <strong>Texte</strong> : Cliquez et tapez</li>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">check_box</span></span> <strong>Cases</strong> : Cliquez pour cocher</li>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">event</span></span> <strong>Date</strong> : Remplie automatiquement</li>
+          </ul>
+        </div>
+
+        <h3>Valider la signature</h3>
+        <div class="step-card">
+          <p>
+            Une fois tous les champs remplis, cliquez sur <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">check</span></span> <strong>"Soumettre la signature"</strong>.
+          </p>
+          
+          <div class="success-box">
+            <span class="material-icons">celebration</span>
+            <div>
+              <strong>Termine !</strong> L'expediteur et les autres destinataires sont automatiquement notifies.
+            </div>
+          </div>
+        </div>
+
+        <h3>Rejeter un document</h3>
+        <div class="step-card">
+          <p>
+            Si vous ne souhaitez pas signer :
+          </p>
+          <ol>
+            <li>Cliquez sur <span class="icon-badge red"><span class="material-icons" style="font-size: 14px;">close</span></span> <strong>"Rejeter"</strong></li>
+            <li>Indiquez la <strong>raison du rejet</strong></li>
+            <li>Confirmez</li>
+          </ol>
+          
+          <div class="warning-box">
+            <span class="material-icons">info</span>
+            <div>
+              L'expediteur sera notifie de votre refus avec la raison indiquee.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Tableau de bord -->
+      <section class="content-section" id="tableau-bord">
+        <h2>Gerer vos documents</h2>
+        
+        <p style="font-size: 1.125rem; color: #2d3748;">
+          Le tableau de bord vous donne une vue complete de tous vos documents.
+        </p>
+
+        <h3>Les deux sections</h3>
+        <div class="step-card">
+          <h4><span class="icon-badge blue"><span class="material-icons" style="font-size: 14px;">inbox</span></span> Documents recus</h4>
+          <p>
+            Documents que <strong>vous devez signer</strong> ou que vous avez deja signes.
+          </p>
+          
+          <h4 style="margin-top: 1.5rem;"><span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">outbox</span></span> Documents envoyes</h4>
+          <p>
+            Documents que <strong>vous avez envoyes</strong> a d'autres personnes.
+          </p>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/dashboard_desktop.png" alt="Tableau de bord - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau - Tableau de bord</p></div>'">
+                <div class="screenshot-caption">Tableau de bord sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/dashboard_mobile.png" alt="Tableau de bord - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile - Tableau de bord</p></div>'">
+                <div class="screenshot-caption">Tableau de bord sur mobile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Comprendre les statuts</h3>
+        <div class="step-card">
+          <div class="simple-list">
+            <div class="simple-list-item">
+              <span class="status-badge pending"><span class="material-icons">schedule</span> Envoye</span>
+              <div>
+                En attente de signature
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="status-badge signed"><span class="material-icons">check_circle</span> Signe</span>
+              <div>
+                Document signe par tous les destinataires
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="status-badge rejected"><span class="material-icons">cancel</span> Rejete</span>
+              <div>
+                Document refuse par un destinataire
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Actions disponibles</h3>
+        <div class="step-card">
+          <p>Pour chaque document, vous pouvez :</p>
+          <ul>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">visibility</span></span> <strong>Consulter</strong> : Voir le document en lecture seule</li>
+            <li><span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">draw</span></span> <strong>Signer</strong> : Signer si pas encore fait</li>
+            <li><span class="icon-badge blue"><span class="material-icons" style="font-size: 14px;">download</span></span> <strong>Telecharger</strong> : Sauvegarder une copie locale</li>
+          </ul>
+          
+          <h4 style="margin-top: 1.5rem;">Mode selection (documents envoyes)</h4>
+          <ol>
+            <li>Cliquez sur <strong>"Selectionner"</strong></li>
+            <li>Cochez les documents concernes</li>
+            <li>Choisissez l'action :</li>
+          </ol>
+          <ul>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">archive</span></span> <strong>Archiver</strong> : Ranger les documents termines</li>
+            <li><span class="icon-badge red"><span class="material-icons" style="font-size: 14px;">delete</span></span> <strong>Supprimer</strong> : Suppression definitive (irreversible !)</li>
+          </ul>
+        </div>
+
+        <h3>Rechercher un document</h3>
+        <div class="step-card">
+          <p>
+            Utilisez la <span class="icon-badge"><span class="material-icons" style="font-size: 14px;">search</span></span> <strong>barre de recherche</strong> en haut pour trouver rapidement un document par son nom.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section: Verifier une signature -->
+      <section class="content-section" id="verifier">
+        <h2>Verifier une signature</h2>
+        
+        <p style="font-size: 1.125rem; color: #2d3748;">
+          Controlez l'authenticite d'un document signe.
+        </p>
+
+        <h3>Comment verifier ?</h3>
+        <div class="step-card">
+          <ol>
+            <li>Allez dans <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">verified</span></span> <strong>"Verifier"</strong> (menu en haut)</li>
+            <li><strong>Televersez le document PDF</strong> signe</li>
+            <li>L'application analyse et affiche :</li>
+          </ol>
+          
+          <div class="simple-list" style="margin: 1rem 0;">
+            <div class="simple-list-item">
+              <span class="material-icons" style="color: #22c55e;">verified</span>
+              <div>
+                <strong>Statut de validation</strong><br>
+                Valide ou invalide
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">people</span>
+              <div>
+                <strong>Liste des signataires</strong><br>
+                Qui a signe le document
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">event</span>
+              <div>
+                <strong>Dates de signature</strong><br>
+                Quand chaque personne a signe
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">fingerprint</span>
+              <div>
+                <strong>Empreinte cryptographique</strong><br>
+                Preuve que le document n'a pas ete modifie
+              </div>
+            </div>
+          </div>
+          
+          <div class="screenshot-grid">
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">desktop_windows</span>
+                Version ordinateur
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/verifier_desktop.png" alt="Verification signature - Version bureau" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>desktop_windows</span><p>Capture bureau - Verification signature</p></div>'">
+                <div class="screenshot-caption">Page de verification sur ordinateur</div>
+              </div>
+            </div>
+            <div class="screenshot-item">
+              <div class="screenshot-item-title">
+                <span class="material-icons">smartphone</span>
+                Version mobile
+              </div>
+              <div class="screenshot-container">
+                <img src="/assets/screenshots/verifier_mobile.png" alt="Verification signature - Version mobile" onerror="this.parentElement.innerHTML='<div class=\'screenshot-placeholder\'><span class=\'material-icons\'>smartphone</span><p>Capture mobile - Verification signature</p></div>'">
+                <div class="screenshot-caption">Page de verification sur mobile</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <span class="material-icons">security</span>
+            <div>
+              Cette verification permet de detecter toute modification du document apres signature.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: FAQ -->
+      <section class="content-section" id="faq">
+        <h2>Questions frequentes</h2>
+
+        <div class="step-card">
+          <h4>Puis-je modifier un document apres l'avoir envoye ?</h4>
+          <p>
+            <span class="icon-badge red"><span class="material-icons" style="font-size: 14px;">close</span></span> <strong>Non</strong>, une fois envoye, le document est verrouille. 
+            Vous devez le supprimer et en creer un nouveau.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <h4>Combien de destinataires puis-je ajouter ?</h4>
+          <p>
+            <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">check</span></span> <strong>Autant que necessaire !</strong> Il n'y a pas de limite.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <h4>Les documents Word sont-ils supportes ?</h4>
+          <p>
+            <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">check</span></span> <strong>Oui !</strong> L'application convertit automatiquement les fichiers .doc et .docx en PDF.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <h4>Puis-je signer sur mobile ?</h4>
+          <p>
+            <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">check</span></span> <strong>Absolument !</strong> L'interface est optimisee pour les ecrans tactiles. 
+            Utilisez votre doigt pour dessiner votre signature.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <h4>Combien de temps les documents sont conserves ?</h4>
+          <p>
+            <span class="icon-badge"><span class="material-icons" style="font-size: 14px;">event</span></span> Les documents sont conserves pendant <strong>1 an</strong>, 
+            puis automatiquement supprimes (conformite RGPD).
+          </p>
+        </div>
+
+        <div class="step-card">
+          <h4>Puis-je annuler un envoi ?</h4>
+          <p>
+            <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">check</span></span> <strong>Oui</strong>, vous pouvez supprimer le document depuis votre tableau de bord 
+            (s'il n'a pas encore ete signe par tous).
+          </p>
+        </div>
+
+        <div class="step-card">
+          <h4>Les signatures sont-elles legalement valables ?</h4>
+          <p>
+            <span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">check</span></span> <strong>Oui</strong>, les signatures electroniques ont une valeur legale 
+            conformement au reglement europeen eIDAS.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <h4>Je n'ai pas recu l'email de signature</h4>
+          <p>
+            Verifiez :
+          </p>
+          <ul>
+            <li>Votre dossier <strong>spam/indesirables</strong></li>
+            <li>Que l'adresse email est correcte</li>
+            <li>Attendez quelques minutes (delai de livraison possible)</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section: Securite -->
+      <section class="content-section" id="securite">
+        <h2>Securite & Conformite</h2>
+        
+        <p style="font-size: 1.125rem; color: #2d3748;">
+          SignEase respecte les plus hauts standards de securite.
+        </p>
+
+        <h3>Protection des donnees</h3>
+        <div class="step-card">
+          <div class="simple-list">
+            <div class="simple-list-item">
+              <span class="material-icons">lock</span>
+              <div>
+                <strong>Chiffrement</strong><br>
+                Vos documents sont chiffres en transit et au repos
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">schedule</span>
+              <div>
+                <strong>Horodatage</strong><br>
+                Chaque signature est horodatee de maniere infalsifiable
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">fingerprint</span>
+              <div>
+                <strong>Empreinte numerique</strong><br>
+                Un hash SHA-256 garantit l'integrite du document
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">history</span>
+              <div>
+                <strong>Piste d'audit</strong><br>
+                Toutes les actions sont tracees et consultables
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Conformite reglementaire</h3>
+        <div class="step-card">
+          <div class="simple-list">
+            <div class="simple-list-item">
+              <span class="material-icons">gavel</span>
+              <div>
+                <strong>eIDAS</strong><br>
+                Reglement europeen sur l'identification electronique
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">shield</span>
+              <div>
+                <strong>RGPD</strong><br>
+                Protection des donnees personnelles europeenne
+              </div>
+            </div>
+            <div class="simple-list-item">
+              <span class="material-icons">description</span>
+              <div>
+                <strong>PAdES</strong><br>
+                Format de signature PDF avance
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Conservation des documents</h3>
+        <div class="step-card">
+          <p>
+            Les documents sont conserves pendant <strong>1 an</strong> apres creation, puis automatiquement supprimes.
+          </p>
+          
+          <div class="warning-box">
+            <span class="material-icons">warning</span>
+            <div>
+              <strong>Important :</strong> Telechargez et conservez vos documents signes importants 
+              dans vos propres archives avant leur expiration.
+            </div>
+          </div>
+        </div>
+
+        <h3>Bonnes pratiques</h3>
+        <div class="step-card">
+          <ul>
+            <li><span class="icon-badge green"><span class="material-icons" style="font-size: 14px;">download</span></span> <strong>Telechargez</strong> vos documents importants</li>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">verified</span></span> <strong>Verifiez</strong> les signatures recues</li>
+            <li><span class="icon-badge"><span class="material-icons" style="font-size: 14px;">archive</span></span> <strong>Archivez</strong> les documents termines</li>
+            <li><span class="icon-badge red"><span class="material-icons" style="font-size: 14px;">share</span></span> <strong>Ne partagez jamais</strong> vos liens de signature</li>
+          </ul>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // Navigation
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('.content-section');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+    function showSection(sectionId) {
+      sections.forEach(section => section.classList.remove('active'));
+      navLinks.forEach(link => link.classList.remove('active'));
+      
+      const targetSection = document.getElementById(sectionId);
+      const targetLink = document.querySelector(`[data-section="${sectionId}"]`);
+      
+      if (targetSection) targetSection.classList.add('active');
+      if (targetLink) targetLink.classList.add('active');
+      
+      // Fermer le menu mobile
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+      
+      // Scroll en haut
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const sectionId = link.dataset.section;
+        showSection(sectionId);
+      });
+    });
+
+    // Menu mobile
+    mobileMenuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      sidebarOverlay.classList.toggle('active');
+    });
+
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+    });
+
+    // Zoom image
+    const imageZoomModal = document.getElementById('imageZoomModal');
+    const imageZoomClose = document.getElementById('imageZoomClose');
+    const zoomedImage = document.getElementById('zoomedImage');
+
+    document.addEventListener('click', function(e) {
+      const img = e.target.closest('.screenshot-container img');
+      if (!img) return;
+      
+      if (img.src && img.naturalWidth > 0) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        zoomedImage.src = img.src;
+        zoomedImage.alt = img.alt || 'Image agrandie';
+        imageZoomModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    });
+
+    function closeImageZoom() {
+      imageZoomModal.classList.remove('active');
+      document.body.style.overflow = '';
+      zoomedImage.src = '';
+    }
+
+    imageZoomClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeImageZoom();
+    });
+
+    imageZoomModal.addEventListener('click', closeImageZoom);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && imageZoomModal.classList.contains('active')) {
+        closeImageZoom();
+      }
+    });
+
+    zoomedImage.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // Toast
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast active ' + type;
+      
+      setTimeout(() => {
+        toast.classList.remove('active');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

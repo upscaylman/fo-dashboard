@@ -6,6 +6,7 @@ import Tooltip from "./Tooltip";
 
 const Footer: React.FC = () => {
   const footerLinks = [
+    { name: "Documentation", href: "/documentation.html" },
     {
       name: "A propos de nous",
       href: "https://www.fo-metaux.org/pages/organisation-fo-metaux",
