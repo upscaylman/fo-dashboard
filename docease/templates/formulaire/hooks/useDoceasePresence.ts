@@ -1,6 +1,8 @@
 /**
  * Hook de présence pour DocEase
  * Gère le tracking en temps réel des utilisateurs sur DocEase
+ * NOTE: Ce tracking est 100% optionnel et non-bloquant
+ * DocEase fonctionne sans Supabase - c'est juste pour le dashboard
  */
 
 import { useEffect, useRef, useCallback } from 'react';
@@ -14,11 +16,47 @@ const SUPABASE_CONFIG = {
 
 const SESSION_KEY = 'docease_session_id';
 const HEARTBEAT_INTERVAL = 30000; // 30 secondes
+const FETCH_TIMEOUT = 3000; // 3 secondes timeout pour éviter de bloquer
+
+// Flag pour désactiver temporairement si Supabase est down
+let supabaseAvailable = true;
+let retryAfter = 0;
 
 interface UseDoceasePresenceOptions {
   currentPage?: string;
   tool?: 'docease' | 'signease';
 }
+
+// Helper pour fetch avec timeout
+const fetchWithTimeout = async (url: string, options: RequestInit, timeout: number): Promise<Response | null> => {
+  // Si Supabase est marqué comme indisponible, ne pas essayer
+  if (!supabaseAvailable && Date.now() < retryAfter) {
+    return null;
+  }
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    // Si on a une erreur 503/502, marquer Supabase comme indisponible pour 60s
+    if (response.status === 503 || response.status === 502) {
+      supabaseAvailable = false;
+      retryAfter = Date.now() + 60000; // Réessayer dans 60 secondes
+      return null;
+    }
+    
+    // Supabase est disponible
+    supabaseAvailable = true;
+    return response;
+  } catch (e) {
+    clearTimeout(timeoutId);
+    // Timeout ou erreur réseau - ne pas spammer
+    return null;
+  }
+};
 
 export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
   const { user, isAuthenticated } = useDoceaseAuth();
@@ -34,19 +72,21 @@ export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
     const sessionId = localStorage.getItem(SESSION_KEY);
     if (!sessionId) return;
 
-    try {
-      const updateData: Record<string, any> = {
-        current_page: activity || currentPage,
-        current_tool: tool,
-        last_activity: new Date().toISOString()
-      };
+    const updateData: Record<string, any> = {
+      current_page: activity || currentPage,
+      current_tool: tool,
+      last_activity: new Date().toISOString()
+    };
 
-      // Stocker la dernière activité
-      if (activity) {
-        lastActivityRef.current = activity;
-      }
+    // Stocker la dernière activité
+    if (activity) {
+      lastActivityRef.current = activity;
+    }
 
-      await fetch(`${SUPABASE_CONFIG.url}/rest/v1/active_sessions?id=eq.${sessionId}`, {
+    // Utiliser fetchWithTimeout pour ne pas bloquer
+    await fetchWithTimeout(
+      `${SUPABASE_CONFIG.url}/rest/v1/active_sessions?id=eq.${sessionId}`,
+      {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -55,10 +95,10 @@ export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify(updateData)
-      });
-    } catch (e) {
-      console.error('Erreur mise à jour présence:', e);
-    }
+      },
+      FETCH_TIMEOUT
+    );
+    // Pas de catch - on ignore silencieusement les erreurs
   }, [isAuthenticated, user, currentPage, tool]);
 
   // Enregistrer une activité (génération de document, téléchargement, etc.)
@@ -73,8 +113,10 @@ export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
     await updatePresence(activityPage);
 
     // Optionnel: Enregistrer l'activité dans une table dédiée (pour historique)
-    try {
-      await fetch(`${SUPABASE_CONFIG.url}/rest/v1/docease_activities`, {
+    // Silencieux et non-bloquant
+    fetchWithTimeout(
+      `${SUPABASE_CONFIG.url}/rest/v1/docease_activities`,
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,11 +131,10 @@ export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
           metadata: metadata || {},
           created_at: new Date().toISOString()
         })
-      });
-    } catch (e) {
-      // Silencieux si la table n'existe pas
-      console.debug('Activities table may not exist:', e);
-    }
+      },
+      FETCH_TIMEOUT
+    );
+    // Pas de catch - on ignore silencieusement les erreurs
   }, [isAuthenticated, user, currentPage, tool, updatePresence]);
 
   // Heartbeat pour maintenir la session active

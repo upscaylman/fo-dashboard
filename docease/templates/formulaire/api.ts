@@ -203,11 +203,13 @@ export const sendEmailWithPdf = async (
 
 /**
  * Configuration du tracking DocEase vers le dashboard
+ * NOTE: Le tracking est 100% optionnel - DocEase fonctionne sans Supabase
  */
 const TRACKING_CONFIG = {
   url: 'https://geljwonckfmdkaywaxly.supabase.co/functions/v1/docease-webhook',
   apiKey: 'fo-metaux-docease-2025',
-  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlbGp3b25ja2ZtZGtheXdheGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTM3MDAsImV4cCI6MjA4MTQyOTcwMH0.K9-DyDP1sbKo59VY8iMwSgCukLk0Cm3OTBCIkipxzUQ'
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlbGp3b25ja2ZtZGtheXdheGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTM3MDAsImV4cCI6MjA4MTQyOTcwMH0.K9-DyDP1sbKo59VY8iMwSgCukLk0Cm3OTBCIkipxzUQ',
+  timeout: 5000 // 5 secondes max pour le tracking
 };
 
 /**
@@ -280,30 +282,43 @@ export const trackDocumentGeneration = async (
       file_base64: fileBase64 ? `[${fileBase64.length} chars]` : undefined 
     });
 
-    const response = await fetch(TRACKING_CONFIG.url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${TRACKING_CONFIG.supabaseAnonKey}`,
-        'Content-Type': MIME_TYPES.json,
-        'x-api-key': TRACKING_CONFIG.apiKey
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Erreur tracking ${response.status}: ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log('✅ Document tracked on dashboard:', result);
+    // Tracking avec timeout court - ne doit JAMAIS bloquer l'envoi d'email
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TRACKING_CONFIG.timeout);
     
-    if (result.file_url) {
-      console.log('📎 Fichier stocké:', result.file_url);
+    try {
+      const response = await fetch(TRACKING_CONFIG.url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${TRACKING_CONFIG.supabaseAnonKey}`,
+          'Content-Type': MIME_TYPES.json,
+          'x-api-key': TRACKING_CONFIG.apiKey
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        // Ne pas throw - juste logger
+        console.warn(`⚠️ Tracking response: ${response.status}`);
+      } else {
+        const result = await response.json();
+        console.log('✅ Document tracked on dashboard:', result);
+        
+        if (result.file_url) {
+          console.log('📎 Fichier stocké:', result.file_url);
+        }
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      // Timeout ou erreur - ignorer silencieusement
+      console.warn('⚠️ Tracking timeout ou erreur (ignoré)');
     }
   } catch (error) {
     // Ne pas bloquer l'utilisateur si le tracking échoue
-    console.error('⚠️ Erreur tracking (non bloquant):', error);
+    console.warn('⚠️ Erreur tracking (non bloquant):', error);
   }
 };
 

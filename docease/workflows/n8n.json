@@ -130,7 +130,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "={{ $json.emailDelegue || 'contact@fo-metaux.fr' }}",
+        "fromEmail": "contact@fo-metaux.fr",
         "toEmail": "={{ $json.templateType === 'convocations' ? ($json.emailDelegue || 'contact@fo-metaux.fr') : $json.emailEnvoi }}",
         "bccEmail": "={{ $json.templateType === 'convocations' ? $json.emailEnvoi : '' }}",
         "subject": "={{ ($json.templateName || $json.templateType || 'Fo-Métaux - Vos Documents') + ' - ' + ($json.nomDestinataire || 'Destinataire') }}",

@@ -1983,7 +1983,7 @@ Cordialement.`
         isSubmitting={isSubmitting}
       />
       <div className="h-screen bg-background flex flex-col overflow-hidden">
-        <div className="bg-surface/80 backdrop-blur-sm p-3 shadow-sm z-30 border-b border-outlineVariant flex-shrink-0">
+        <div className="bg-surface/95 backdrop-blur-sm p-3 shadow-md z-50 border-b border-outlineVariant flex-shrink-0 sticky top-0">
           <div className="container mx-auto flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <Button

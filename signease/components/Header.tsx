@@ -113,6 +113,13 @@ const Header: React.FC = () => {
     };
     window.addEventListener("inboxUpdated", handleInboxUpdated);
 
+    // �️ Écouter les événements de suppression d'éléments
+    const handleItemsDeleted = () => {
+      console.log("🗑️ Badge - Éléments supprimés, rafraîchissement du compteur");
+      fetchUnreadCount();
+    };
+    window.addEventListener("itemsDeleted", handleItemsDeleted);
+
     // 🔄 Polling de secours toutes les 10 secondes
     const interval = setInterval(fetchUnreadCount, 10000);
 
@@ -120,6 +127,7 @@ const Header: React.FC = () => {
       unsubscribe();
       window.removeEventListener("storage_updated", fetchUnreadCount);
       window.removeEventListener("inboxUpdated", handleInboxUpdated);
+      window.removeEventListener("itemsDeleted", handleItemsDeleted);
       clearInterval(interval);
     };
   }, [currentUser?.email]);

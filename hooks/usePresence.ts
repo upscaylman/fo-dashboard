@@ -123,10 +123,18 @@ export const usePresence = (): UsePresenceReturn => {
           localStorage.setItem(SESSION_STORAGE_KEY, data.id);
           setIsOnline(true);
           console.log('✅ Session dashboard créée:', data.id);
+        } else if (error) {
+          // Ignorer silencieusement les erreurs 503/502 (Supabase temporairement indisponible)
+          if (error.code === 'PGRST002' || error.message?.includes('503') || error.message?.includes('502')) {
+            console.log('⏳ Supabase temporairement indisponible, session ignorée');
+          } else {
+            console.error('❌ Erreur création session:', error);
+          }
         }
       }
     } catch (error) {
-      console.error('Erreur updatePresence:', error);
+      // Ignorer silencieusement - la présence n'est pas critique
+      console.log('⏳ Présence ignorée (service indisponible)');
     }
   }, [user, isImpersonating, cleanupOldSessions]);
 
@@ -217,9 +225,17 @@ export const usePresence = (): UsePresenceReturn => {
         });
         
         setActiveUsers(Array.from(emailMap.values()));
+      } else if (error) {
+        // Ignorer silencieusement les erreurs Supabase temporaires
+        if (error.code === 'PGRST002' || error.message?.includes('503') || error.message?.includes('502')) {
+          console.log('⏳ Liste présence: Supabase temporairement indisponible');
+        } else {
+          console.error('Erreur fetchActiveUsers:', error);
+        }
       }
     } catch (error) {
-      console.error('Erreur fetchActiveUsers:', error);
+      // Ignorer silencieusement - la présence n'est pas critique
+      console.log('⏳ Présence ignorée (service indisponible)');
     } finally {
       setLoading(false);
     }

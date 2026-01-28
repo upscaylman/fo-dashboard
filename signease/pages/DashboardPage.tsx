@@ -32,6 +32,7 @@ import { useUser } from "../components/UserContext";
 import { useDraftDocument } from "../hooks/useDraftDocument";
 import {
   archiveDocuments,
+  archiveEmails,
   deleteDocuments,
   deleteEmails,
   downloadDocument,
@@ -168,6 +169,7 @@ const DashboardPage: React.FC = () => {
       source: "received",
       emailId: email.id,
       originalEmail: email,
+      archived: email.archived || false, // Préserver l'état d'archivage de l'email
     };
   };
 
@@ -629,35 +631,39 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
-      // Extraire les IDs des documents signés
-      // Pour les documents reçus (emails), on doit utiliser l'ID du document original
-      const docIdsToArchive = signedDocs.map((doc) => {
-        // Si c'est un document reçu (email), extraire l'ID réel du document
-        if (doc.source === "received" && doc.id.startsWith("email-")) {
-          return doc.id.substring(6); // Enlever le préfixe "email-"
-        }
-        return doc.id;
-      });
+      // Séparer les documents envoyés des emails reçus
+      const sentDocsToArchive = signedDocs.filter((d) => d.source === "sent");
+      const receivedEmailsToArchive = signedDocs.filter((d) => d.source === "received");
 
-      if (docIdsToArchive.length > 0) {
-        await archiveDocuments(docIdsToArchive, true);
-        setDocuments((prev) =>
-          prev.map((doc) => {
-            const docId =
-              doc.source === "received" && doc.id.startsWith("email-")
-                ? doc.id.substring(6)
-                : doc.id;
-            return docIdsToArchive.includes(docId)
-              ? { ...doc, archived: true }
-              : doc;
-          })
-        );
-        addToast(
-          `${docIdsToArchive.length} document(s) archivé(s) avec succès.`,
-          "success"
-        );
-        handleExitSelectionMode();
+      // Archiver les documents envoyés
+      if (sentDocsToArchive.length > 0) {
+        const sentDocIds = sentDocsToArchive.map((d) => d.id);
+        await archiveDocuments(sentDocIds, true);
       }
+
+      // Archiver les emails reçus (utiliser l'emailId, pas l'ID unifié)
+      if (receivedEmailsToArchive.length > 0) {
+        const emailIds = receivedEmailsToArchive
+          .map((d) => d.emailId)
+          .filter((id): id is string => id !== undefined);
+        if (emailIds.length > 0) {
+          await archiveEmails(emailIds, true);
+        }
+      }
+
+      // Mettre à jour l'état local
+      const archivedIds = signedDocs.map((d) => d.id);
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          archivedIds.includes(doc.id) ? { ...doc, archived: true } : doc
+        )
+      );
+
+      addToast(
+        `${signedDocs.length} document(s) archivé(s) avec succès.`,
+        "success"
+      );
+      handleExitSelectionMode();
     } catch (error) {
       console.error("Erreur lors de l'archivage:", error);
       addToast("Échec de l'archivage des documents.", "error");
@@ -666,7 +672,30 @@ const DashboardPage: React.FC = () => {
 
   const handleUnarchive = async (docIds: string[]) => {
     try {
-      await archiveDocuments(docIds, false);
+      // Séparer les documents envoyés des emails reçus
+      const docsToUnarchive = docIds
+        .map((id) => documents.find((d) => d.id === id))
+        .filter((d): d is UnifiedDocument => d !== undefined);
+
+      const sentDocs = docsToUnarchive.filter((d) => d.source === "sent");
+      const receivedEmails = docsToUnarchive.filter((d) => d.source === "received");
+
+      // Désarchiver les documents envoyés
+      if (sentDocs.length > 0) {
+        const sentDocIds = sentDocs.map((d) => d.id);
+        await archiveDocuments(sentDocIds, false);
+      }
+
+      // Désarchiver les emails reçus
+      if (receivedEmails.length > 0) {
+        const emailIds = receivedEmails
+          .map((d) => d.emailId)
+          .filter((id): id is string => id !== undefined);
+        if (emailIds.length > 0) {
+          await archiveEmails(emailIds, false);
+        }
+      }
+
       setDocuments((prev) =>
         prev.map((doc) =>
           docIds.includes(doc.id) ? { ...doc, archived: false } : doc

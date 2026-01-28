@@ -1252,6 +1252,36 @@ export const archiveDocuments = async (
   }
 };
 
+// 📦 ARCHIVAGE EMAILS : Archiver/Désarchiver des emails reçus
+export const archiveEmails = async (
+  emailIds: string[],
+  archived: boolean
+): Promise<{ success: boolean }> => {
+  try {
+    console.log(
+      `📦 ${archived ? "Archivage" : "Désarchivage"} d'emails:`,
+      emailIds
+    );
+
+    for (const emailId of emailIds) {
+      await updateDoc(doc(db, "emails", emailId), {
+        archived: archived,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    console.log(
+      `✅ ${emailIds.length} email(s) ${
+        archived ? "archivé(s)" : "désarchivé(s)"
+      }`
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Erreur archiveEmails:", error);
+    return { success: false };
+  }
+};
+
 export const deleteDocuments = async (
   documentIds: string[]
 ): Promise<{ success: boolean }> => {

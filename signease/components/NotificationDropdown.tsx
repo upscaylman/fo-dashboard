@@ -264,6 +264,26 @@ const NotificationDropdown: React.FC = () => {
       const dismissedKey = `dismissed_notifications_${currentUser.email}`;
       const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || "[]");
 
+      // Récupérer les éléments supprimés de l'inbox (documents et emails)
+      const deletedItemsKey = `deletedItems_${currentUser.email}`;
+      const deletedItemsArray: string[] = JSON.parse(localStorage.getItem(deletedItemsKey) || "[]");
+      const deletedItems = new Set<string>(deletedItemsArray);
+      
+      // 🔗 Extraire les documentIds des emailIds supprimés
+      // Format email: "email-signed-{documentId}-{timestamp}"
+      deletedItemsArray.forEach((id) => {
+        if (id.startsWith('email-signed-')) {
+          // Extraire le documentId: email-signed-doc1234-abcd-timestamp -> doc1234-abcd
+          const match = id.match(/^email-signed-(doc[^-]+-[^-]+)-\d+$/);
+          if (match && match[1]) {
+            deletedItems.add(match[1]);
+          }
+        }
+      });
+      
+      console.log("🔔 NotificationDropdown - Éléments supprimés (avec docIds extraits):", Array.from(deletedItems));
+      console.log("🔔 NotificationDropdown - Notifications avant filtrage:", allNotifications.map(n => ({ id: n.id, documentId: n.documentId, type: n.type })));
+
       // ========== PARTIE 3 : NOTIFICATIONS BROUILLONS ==========
       // Ajouter les brouillons comme notifications
       const draftNotifications: Notification[] = drafts.map((draft) => ({
@@ -280,17 +300,31 @@ const NotificationDropdown: React.FC = () => {
 
       allNotifications.push(...draftNotifications);
 
-      // Trier par date décroissante, filtrer les masquées, et limiter à 10
+      // Trier par date décroissante, filtrer les masquées et supprimées, et limiter à 10
       const sortedNotifications = allNotifications
-        .filter((notif) => !dismissed.includes(notif.id)) // Exclure les masquées
+        .filter((notif) => {
+          const isDismissed = dismissed.includes(notif.id);
+          const isDocDeleted = deletedItems.has(notif.documentId);
+          const isEmailDeleted = notif.emailId && deletedItems.has(notif.emailId);
+          
+          if (isDismissed || isDocDeleted || isEmailDeleted) {
+            console.log(`🔔 Notification filtrée: ${notif.documentName}`, { isDismissed, isDocDeleted, isEmailDeleted, documentId: notif.documentId });
+          }
+          
+          return !isDismissed && !isDocDeleted && !isEmailDeleted;
+        })
         .sort(
           (a, b) =>
             new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         )
         .slice(0, 10);
+      
+      console.log("🔔 NotificationDropdown - Notifications après filtrage:", sortedNotifications.length);
 
       setNotifications(sortedNotifications);
-      setUnreadCount(sortedNotifications.filter((n) => !n.read).length);
+      const newUnreadCount = sortedNotifications.filter((n) => !n.read).length;
+      console.log("🔔 NotificationDropdown - Nouveau unreadCount:", newUnreadCount);
+      setUnreadCount(newUnreadCount);
     } catch (error) {
       console.error("Erreur lors de la récupération des notifications:", error);
     }
@@ -320,12 +354,23 @@ const NotificationDropdown: React.FC = () => {
     };
     window.addEventListener("inboxUpdated", handleInboxUpdated);
 
+    // Écouter les événements de suppression d'éléments
+    const handleItemsDeleted = () => {
+      console.log("🗑️ Éléments supprimés - Rafraîchissement des notifications");
+      // Petit délai pour s'assurer que localStorage est bien mis à jour
+      setTimeout(() => {
+        fetchNotifications();
+      }, 100);
+    };
+    window.addEventListener("itemsDeleted", handleItemsDeleted);
+
     // 🔄 Polling de secours toutes les 10 secondes (au cas où le listener manque un changement)
     const interval = setInterval(fetchNotifications, 10000);
 
     return () => {
       unsubscribe();
       window.removeEventListener("inboxUpdated", handleInboxUpdated);
+      window.removeEventListener("itemsDeleted", handleItemsDeleted);
       clearInterval(interval);
     };
   }, [currentUser?.email, fetchNotifications]);
@@ -441,6 +486,31 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
+  // 🔕 Tout effacer : Masquer toutes les notifications
+  const clearAllNotifications = () => {
+    try {
+      const dismissedKey = `dismissed_notifications_${currentUser?.email}`;
+      const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || "[]");
+      
+      // Ajouter tous les IDs des notifications actuelles
+      notifications.forEach((n) => {
+        if (!dismissed.includes(n.id)) {
+          dismissed.push(n.id);
+        }
+      });
+      
+      localStorage.setItem(dismissedKey, JSON.stringify(dismissed));
+      
+      // Vider les notifications localement
+      setNotifications([]);
+      setUnreadCount(0);
+      
+      console.log("🔕 Toutes les notifications masquées");
+    } catch (error) {
+      console.error("Erreur lors de l'effacement des notifications:", error);
+    }
+  };
+
   // Gérer le clic sur une notification
   const handleNotificationClick = async (notification: Notification) => {
     await markAsRead(notification);
@@ -523,14 +593,24 @@ const NotificationDropdown: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-outlineVariant flex-shrink-0">
             <h3 className="font-bold text-lg text-onSurface">Notifications</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-xs text-primary hover:underline font-medium"
-              >
-                Tout marquer comme lu
-              </button>
-            )}
+            <div className="flex gap-3">
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearAllNotifications}
+                  className="text-xs text-error hover:underline font-medium"
+                >
+                  Tout effacer
+                </button>
+              )}
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs text-primary hover:underline font-medium"
+                >
+                  Tout marquer comme lu
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Liste des notifications */}

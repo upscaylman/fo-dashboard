@@ -73,6 +73,7 @@ export interface MockEmail {
   read: boolean;
   signatureLink: string;
   documentName: string;
+  archived?: boolean; // Email archivé par le destinataire
 }
 
 export interface AuditEvent {
