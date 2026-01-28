@@ -30,11 +30,37 @@ const SESSION_STORAGE_KEY = 'dashboard_session_id';
 // Timeout d'inactivité: 45 secondes (détection rapide)
 const INACTIVITY_TIMEOUT_MS = 45 * 1000;
 
-// Heartbeat: toutes les 15 secondes (plus réactif)
-const HEARTBEAT_INTERVAL_MS = 15 * 1000;
+// Heartbeat: toutes les 30 secondes (réduit pour limiter les erreurs 503)
+const HEARTBEAT_INTERVAL_MS = 30 * 1000;
 
-// Rafraîchissement liste: toutes les 10 secondes
-const REFRESH_INTERVAL_MS = 10 * 1000;
+// Rafraîchissement liste: toutes les 20 secondes (réduit)
+const REFRESH_INTERVAL_MS = 20 * 1000;
+
+// Configuration retry pour erreurs temporaires (503, PGRST002)
+const MAX_RETRIES = 2;
+const INITIAL_RETRY_DELAY_MS = 1000;
+
+// Compteur d'erreurs pour éviter le spam console
+let consecutiveErrors = 0;
+const MAX_CONSOLE_ERRORS = 1;
+
+// Vérifier si c'est une erreur temporaire Supabase (503, PGRST002)
+const isTransientError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { code?: string; message?: string; status?: number };
+  return (
+    err.code === 'PGRST002' ||
+    err.status === 503 ||
+    err.status === 502 ||
+    err.message?.includes('503') ||
+    err.message?.includes('502') ||
+    err.message?.includes('Service Unavailable') ||
+    err.message?.includes('schema cache')
+  );
+};
+
+// Utilitaire: sleep avec backoff
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const usePresence = (): UsePresenceReturn => {
   const { user, isImpersonating } = useAuth();
@@ -44,8 +70,9 @@ export const usePresence = (): UsePresenceReturn => {
   const sessionIdRef = useRef<string | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const initializingRef = useRef(false);
+  const isUpdatingRef = useRef(false); // Évite les appels en parallèle
 
-  // Nettoyer les anciennes sessions de cet utilisateur
+  // Nettoyer les anciennes sessions de cet utilisateur (silencieux)
   const cleanupOldSessions = useCallback(async (userId: string, keepSessionId?: string) => {
     try {
       let query = supabase
@@ -58,87 +85,114 @@ export const usePresence = (): UsePresenceReturn => {
       }
       
       await query;
-    } catch (error) {
-      // Ignorer silencieusement
+    } catch {
+      // Ignorer silencieusement - pas critique
     }
   }, []);
 
-  // Créer ou mettre à jour la session
+  // Créer ou mettre à jour la session avec retry automatique
   const updatePresence = useCallback(async (
     page: string = 'dashboard',
     tool: 'docease' | 'signease' | null = null
   ) => {
     // Ne pas créer de session en mode impersonation
     if (!user || isImpersonating) return;
+    
+    // Éviter les appels en parallèle
+    if (isUpdatingRef.current) return;
+    isUpdatingRef.current = true;
 
-    try {
-      // Récupérer le nom et l'avatar de l'utilisateur
-      const { data: userData } = await supabase
-        .from('users')
-        .select('name, avatar')
-        .eq('id', user.id)
-        .single();
-
-      if (sessionIdRef.current) {
-        // Mettre à jour la session existante
-        const { error } = await supabase
-          .from('active_sessions')
-          .update({
-            current_page: page,
-            current_tool: tool,
-            last_activity: new Date().toISOString(),
-            user_name: userData?.name || null,
-            avatar_url: userData?.avatar || null
-          })
-          .eq('id', sessionIdRef.current);
-        
-        if (error) {
-          // Session expirée, en recréer une
-          sessionIdRef.current = null;
-          localStorage.removeItem(SESSION_STORAGE_KEY);
-          await updatePresence(page, tool);
-        }
-      } else {
-        // Supprimer toutes les anciennes sessions de cet utilisateur
-        await cleanupOldSessions(user.id);
-
-        // Créer une nouvelle session
-        const { data, error } = await supabase
-          .from('active_sessions')
-          .insert({
-            user_id: user.id,
-            user_email: user.email || 'unknown',
-            user_name: userData?.name || null,
-            avatar_url: userData?.avatar || null,
-            current_page: page,
-            current_tool: tool,
-            last_activity: new Date().toISOString(),
-            started_at: new Date().toISOString()
-          })
-          .select()
+    const executeWithRetry = async (attempt: number = 0): Promise<void> => {
+      try {
+        // Récupérer le nom et l'avatar de l'utilisateur
+        const { data: userData } = await supabase
+          .from('users')
+          .select('name, avatar')
+          .eq('id', user.id)
           .single();
 
-        if (!error && data) {
-          sessionIdRef.current = data.id;
-          localStorage.setItem(SESSION_STORAGE_KEY, data.id);
-          setIsOnline(true);
-          console.log('✅ Session dashboard créée:', data.id);
-        } else if (error) {
-          // Ignorer silencieusement les erreurs 503/502 (Supabase temporairement indisponible)
-          if (error.code === 'PGRST002' || error.message?.includes('503') || error.message?.includes('502')) {
-            console.log('⏳ Supabase temporairement indisponible, session ignorée');
-          } else {
-            console.error('❌ Erreur création session:', error);
+        if (sessionIdRef.current) {
+          // Mettre à jour la session existante
+          const { error } = await supabase
+            .from('active_sessions')
+            .update({
+              current_page: page,
+              current_tool: tool,
+              last_activity: new Date().toISOString(),
+              user_name: userData?.name || null,
+              avatar_url: userData?.avatar || null
+            })
+            .eq('id', sessionIdRef.current);
+          
+          if (error) {
+            if (isTransientError(error) && attempt < MAX_RETRIES) {
+              await sleep(INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt));
+              return executeWithRetry(attempt + 1);
+            }
+            // Session expirée ou erreur - recréer
+            sessionIdRef.current = null;
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+          }
+        } else {
+          // Supprimer toutes les anciennes sessions de cet utilisateur
+          await cleanupOldSessions(user.id);
+
+          // Créer une nouvelle session
+          const { data, error } = await supabase
+            .from('active_sessions')
+            .insert({
+              user_id: user.id,
+              user_email: user.email || 'unknown',
+              user_name: userData?.name || null,
+              avatar_url: userData?.avatar || null,
+              current_page: page,
+              current_tool: tool,
+              last_activity: new Date().toISOString(),
+              started_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (!error && data) {
+            sessionIdRef.current = data.id;
+            localStorage.setItem(SESSION_STORAGE_KEY, data.id);
+            setIsOnline(true);
+            consecutiveErrors = 0; // Reset on success
+            console.log('✅ Session dashboard créée:', data.id);
+          } else if (error) {
+            if (isTransientError(error) && attempt < MAX_RETRIES) {
+              await sleep(INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt));
+              return executeWithRetry(attempt + 1);
+            }
+            // Log silencieux pour erreurs 503 répétées
+            if (isTransientError(error)) {
+              // Totalement silencieux - pas de log console
+              consecutiveErrors++;
+            } else {
+              console.error('❌ Erreur création session:', error);
+            }
           }
         }
+      } catch (error) {
+        if (isTransientError(error) && attempt < MAX_RETRIES) {
+          await sleep(INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt));
+          return executeWithRetry(attempt + 1);
+        }
+        // Ignorer silencieusement les erreurs temporaires après max retries
+        if (!isTransientError(error)) {
+          console.error('Erreur présence:', error);
+        }
       }
-    } catch (error) {
-      // Ignorer silencieusement - la présence n'est pas critique
-      console.log('⏳ Présence ignorée (service indisponible)');
+    };
+
+    try {
+      await executeWithRetry();
+    } finally {
+      isUpdatingRef.current = false;
     }
   }, [user, isImpersonating, cleanupOldSessions]);
 
-  // Supprimer la session
+  // Supprimer la session (silencieux)
   const removePresence = useCallback(async () => {
     if (sessionIdRef.current) {
       try {
@@ -148,7 +202,7 @@ export const usePresence = (): UsePresenceReturn => {
           .eq('id', sessionIdRef.current);
         console.log('🔴 Session dashboard supprimée:', sessionIdRef.current);
       } catch {
-        // Ignorer
+        // Ignorer silencieusement
       }
       
       sessionIdRef.current = null;
@@ -157,7 +211,7 @@ export const usePresence = (): UsePresenceReturn => {
     }
   }, []);
 
-  // Récupérer les utilisateurs actifs (dédupliqués par email)
+  // Récupérer les utilisateurs actifs (dédupliqués par email) - silencieux
   const fetchActiveUsers = useCallback(async () => {
     try {
       // Nettoyer les sessions inactives (plus de 45 secondes sans activité)
@@ -169,7 +223,7 @@ export const usePresence = (): UsePresenceReturn => {
           .delete()
           .lt('last_activity', timeoutAgo);
       } catch {
-        // Ignorer
+        // Ignorer silencieusement
       }
 
       const { data, error } = await supabase
@@ -179,6 +233,8 @@ export const usePresence = (): UsePresenceReturn => {
         .order('last_activity', { ascending: false });
 
       if (!error && data) {
+        consecutiveErrors = 0; // Reset on success
+        
         // Dédupliquer par email - fusionner les outils et pseudos
         const emailMap = new Map<string, ActiveUser>();
         
@@ -226,16 +282,13 @@ export const usePresence = (): UsePresenceReturn => {
         
         setActiveUsers(Array.from(emailMap.values()));
       } else if (error) {
-        // Ignorer silencieusement les erreurs Supabase temporaires
-        if (error.code === 'PGRST002' || error.message?.includes('503') || error.message?.includes('502')) {
-          console.log('⏳ Liste présence: Supabase temporairement indisponible');
-        } else {
+        // Ignorer totalement les erreurs Supabase temporaires
+        if (!isTransientError(error)) {
           console.error('Erreur fetchActiveUsers:', error);
         }
       }
-    } catch (error) {
+    } catch {
       // Ignorer silencieusement - la présence n'est pas critique
-      console.log('⏳ Présence ignorée (service indisponible)');
     } finally {
       setLoading(false);
     }

@@ -1456,13 +1456,54 @@ export const getUnreadEmailCount = async (
     const stored = localStorage.getItem(key);
     const deletedItems = stored ? new Set(JSON.parse(stored)) : new Set();
     
-    // Compter uniquement les emails non lus qui ne sont pas supprimés localement
-    const unreadEmails = snapshot.docs.filter((doc) => {
-      const emailId = doc.id;
-      return !deletedItems.has(emailId);
-    });
+    // Compter uniquement les emails non lus qui :
+    // - ne sont pas supprimés localement
+    // - ne sont pas archivés directement (email.archived)
+    // - dont le document associé n'est pas archivé
+    const validEmails: string[] = [];
     
-    return unreadEmails.length;
+    for (const docSnapshot of snapshot.docs) {
+      const emailId = docSnapshot.id;
+      const emailData = docSnapshot.data();
+      
+      // Ignorer si supprimé localement
+      if (deletedItems.has(emailId)) continue;
+      
+      // Ignorer si l'email lui-même est archivé
+      if (emailData.archived === true) continue;
+      
+      // Vérifier si le document associé est archivé
+      let isDocArchived = false;
+      if (emailData.signatureLink) {
+        try {
+          const token = emailData.signatureLink.split("/").pop();
+          if (token) {
+            // Chercher le document via le token
+            const tokenDoc = await getDoc(doc(db, "tokens", token));
+            if (tokenDoc.exists()) {
+              const tokenData = tokenDoc.data();
+              const documentId = tokenData.documentId;
+              if (documentId) {
+                const documentDoc = await getDoc(doc(db, "documents", documentId));
+                if (documentDoc.exists()) {
+                  const documentData = documentDoc.data();
+                  isDocArchived = documentData.archived === true;
+                }
+              }
+            }
+          }
+        } catch {
+          // Ignorer les erreurs de vérification d'archivage
+        }
+      }
+      
+      // Ajouter uniquement si ni l'email ni le document n'est archivé
+      if (!isDocArchived) {
+        validEmails.push(emailId);
+      }
+    }
+    
+    return validEmails.length;
   } catch (error) {
     console.error("❌ Erreur getUnreadEmailCount Firebase:", error);
     return 0;

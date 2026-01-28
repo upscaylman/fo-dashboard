@@ -395,7 +395,7 @@ const QuickSignPage: React.FC = () => {
           <div
             ref={viewerRef}
             className={`flex-1 bg-surfaceVariant/30 p-2 sm:p-4 overflow-auto ${
-              pendingSignature ? "cursor-crosshair" : ""
+              pendingSignature ? "cursor-crosshair-black" : ""
             }`}
           >
             <div className="w-full max-w-full overflow-x-hidden">
@@ -407,7 +407,7 @@ const QuickSignPage: React.FC = () => {
                         key={pageNum}
                         ref={(el) => (pageRefs.current[pageNum - 1] = el)}
                         className={`relative bg-white shadow-lg mx-auto ${
-                          pendingSignature ? "cursor-crosshair" : ""
+                          pendingSignature ? "cursor-crosshair-black" : ""
                         }`}
                         style={{
                           width: `${

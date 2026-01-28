@@ -37,7 +37,8 @@ const SignaturePadUnified: React.FC<SignaturePadUnifiedProps> = ({
   );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [typedName, setTypedName] = useState(signerName);
+  // Si signerName est "Utilisateur" (valeur par défaut), on met une chaîne vide pour afficher le placeholder
+  const [typedName, setTypedName] = useState(signerName === "Utilisateur" ? "" : signerName);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [scale, setScale] = useState(1); // Zoom pour redimensionnement proportionnel
 
@@ -157,8 +158,8 @@ const SignaturePadUnified: React.FC<SignaturePadUnifiedProps> = ({
       if (!typedName.trim()) {
         addToast(
           isParaphe 
-            ? "Veuillez taper votre nom pour créer un paraphe."
-            : "Veuillez taper votre nom pour créer une signature.",
+            ? "Veuillez écrire votre paraphe."
+            : "Veuillez écrire votre signature.",
           "info"
         );
         return;
@@ -251,7 +252,7 @@ const SignaturePadUnified: React.FC<SignaturePadUnifiedProps> = ({
             className={tabClasses("type")}
             onClick={() => setActiveTab("type")}
           >
-            Taper
+            Écrire
           </button>
           <button
             className={tabClasses("upload")}
@@ -275,7 +276,7 @@ const SignaturePadUnified: React.FC<SignaturePadUnifiedProps> = ({
               {/* Canvas pour dessiner */}
               <canvas
                 ref={canvasRef}
-                className="bg-white rounded-xl cursor-crosshair w-full border-2 border-primary/30 touch-none shadow-inner max-w-full"
+                className="bg-white rounded-xl cursor-crosshair-black w-full border-2 border-primary/30 touch-none shadow-inner max-w-full"
                 style={{
                   touchAction: "none",
                   height: "320px",
@@ -335,7 +336,7 @@ const SignaturePadUnified: React.FC<SignaturePadUnifiedProps> = ({
                     maxWidth: "100%",
                     width: "100%",
                   }}
-                  placeholder="Tapez votre nom"
+                  placeholder="Écrire/Parapher"
                 />
               </div>
             </div>
@@ -471,10 +472,7 @@ const SignaturePadUnified: React.FC<SignaturePadUnifiedProps> = ({
               onClick={handleSave}
               className="btn-premium-shine btn-premium-extended h-11 text-sm focus:outline-none focus:ring-4 focus:ring-primary/30 flex-1 sm:flex-initial inline-flex items-center justify-center"
             >
-              <span className="hidden sm:inline">
-                {isParaphe ? "Appliquer le paraphe" : "Appliquer la signature"}
-              </span>
-              <span className="sm:hidden">Appliquer</span>
+              Appliquer
             </button>
           </div>
         </div>

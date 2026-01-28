@@ -567,20 +567,25 @@ const InboxPage: React.FC = () => {
     return nonArchivedItems.filter((item) => item.folder === selectedFolder);
   }, [unifiedItems, selectedFolder]);
 
-  // Calculate folder counts
+  // Calculate folder counts (exclure les documents archivés)
   const folders = useMemo(() => {
     // 🎨 Toujours afficher TOUS les onglets peu importe le rôle
     // (même si certains sont vides, pour une meilleure cohérence UX)
     const effectiveRole = "both"; // Forcer "both" pour afficher tous les onglets
     const folderList = getFolders(effectiveRole);
+    
+    // Exclure les documents archivés pour le calcul des counts
+    const nonArchivedItems = unifiedItems.filter(
+      (item) => !(item.archived === true)
+    );
 
     return folderList.map((folder) => {
-      const count = unifiedItems.filter(
+      const count = nonArchivedItems.filter(
         (item) => item.folder === folder.id || folder.id === "all"
       ).length;
-      // Calculer les badges "unread" : uniquement pour les emails non lus
+      // Calculer les badges "unread" : uniquement pour les emails non lus et non archivés
       // Les documents envoyés (expéditeur) sont toujours considérés comme "lus" car en lecture seule
-      const unread = unifiedItems.filter(
+      const unread = nonArchivedItems.filter(
         (item) =>
           (item.folder === folder.id || folder.id === "all") &&
           !item.read &&
@@ -588,7 +593,7 @@ const InboxPage: React.FC = () => {
       ).length;
       return {
         ...folder,
-        count: folder.id === "all" ? unifiedItems.length : count,
+        count: folder.id === "all" ? nonArchivedItems.length : count,
         unread,
       };
     });

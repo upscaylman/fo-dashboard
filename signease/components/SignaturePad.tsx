@@ -270,7 +270,7 @@ const SignaturePadComponent: React.FC<SignaturePadComponentProps> = ({
               {/* Canvas signature_pad (30k⭐) - Hauteur augmentée + bordure visible */}
               <canvas
                 ref={canvasRef}
-                className="bg-white rounded-xl cursor-crosshair w-full border-2 border-primary/30 touch-none shadow-inner max-w-full"
+                className="bg-white rounded-xl cursor-crosshair-black w-full border-2 border-primary/30 touch-none shadow-inner max-w-full"
                 style={{
                   touchAction: "none",
                   height: "320px",

@@ -2507,7 +2507,7 @@ Cordialement.`
                     ),
                     height: dim.height * zoomLevel,
                     cursor: selectedFieldType
-                      ? "crosshair"
+                      ? "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='0' x2='12' y2='24' stroke='%23000000' stroke-width='2'/%3E%3Cline x1='0' y1='12' x2='24' y2='12' stroke='%23000000' stroke-width='2'/%3E%3C/svg%3E\") 12 12, crosshair"
                       : editingField
                       ? editingField.action === "move"
                         ? "grabbing"
