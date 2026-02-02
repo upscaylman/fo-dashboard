@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { FileText, Download, Calendar, User, Users, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, CheckCircle, AlertCircle, Eye, X, RotateCcw, List } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
@@ -52,8 +52,22 @@ const DoceaseDocumentsTable: React.FC<DoceaseDocumentsTableProps> = ({ timeRange
   // État pour le filtre par utilisateur (uniquement pour les admins)
   const [filterUser, setFilterUser] = useState<string>('all');
 
+  // Debounce pour realtime
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchDocumentsRef = useRef<() => void>(() => {});
+
+  const debouncedFetch = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      fetchDocumentsRef.current();
+    }, 2000);
+  }, []); // Stable
+
   useEffect(() => {
     fetchDocuments();
+    fetchDocumentsRef.current = fetchDocuments;
 
     // Realtime subscription pour mise à jour automatique
     const channel = supabase
@@ -66,16 +80,19 @@ const DoceaseDocumentsTable: React.FC<DoceaseDocumentsTableProps> = ({ timeRange
           table: 'docease_documents'
         },
         () => {
-          console.log('🔄 Document DocEase changé, rechargement...');
-          fetchDocuments();
+          console.log('Document DocEase change, rechargement...');
+          debouncedFetch();
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [isRestrictedView, user?.id]);
+  }, [isRestrictedView, user?.id, debouncedFetch]);
 
   const fetchDocuments = async () => {
     try {

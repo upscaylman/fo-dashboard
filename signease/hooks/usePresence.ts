@@ -1,8 +1,17 @@
 // Hook de tracking de présence pour SignEase
 // Envoie les données vers Supabase pour le dashboard FO Metaux
+// TEMPORAIREMENT DESACTIVE - Surcharge PostgREST
 
 import { useCallback, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../config/supabase';
+
+// ========================================================
+// PRESENCE SYSTEM - TEMPORAIREMENT DESACTIVE
+// Cause: Surcharge PostgREST avec requetes excessives
+// Date: 2026-02-02
+// TODO: Reactivier apres optimisation Supabase
+// ========================================================
+const PRESENCE_DISABLED = true;
 
 // Clé pour stocker l'ID de session et l'UUID utilisateur
 const SESSION_STORAGE_KEY = 'signease_session_id';
@@ -57,7 +66,15 @@ interface UsePresenceOptions {
   userEmail?: string | null;
 }
 
-export const usePresence = (options?: UsePresenceOptions) => {
+// Version desactivee du hook
+const usePresenceDisabled = (_options?: UsePresenceOptions) => {
+  return {
+    updatePresence: async (_page?: string) => {},
+    removePresence: async () => {}
+  };
+};
+
+const usePresenceEnabled = (options?: UsePresenceOptions) => {
   const userEmail = options?.userEmail;
   const sessionIdRef = useRef<string | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -251,3 +268,5 @@ export const usePresence = (options?: UsePresenceOptions) => {
     removePresence
   };
 };
+// Export conditionnel selon l'etat du systeme
+export const usePresence = PRESENCE_DISABLED ? usePresenceDisabled : usePresenceEnabled;

@@ -3,10 +3,18 @@
  * Gère le tracking en temps réel des utilisateurs sur DocEase
  * NOTE: Ce tracking est 100% optionnel et non-bloquant
  * DocEase fonctionne sans Supabase - c'est juste pour le dashboard
+ * 
+ * TEMPORAIREMENT DESACTIVE - Surcharge PostgREST
+ * Date: 2026-02-02
  */
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useDoceaseAuth } from '../context/AuthContext';
+
+// ========================================================
+// PRESENCE SYSTEM - TEMPORAIREMENT DESACTIVE
+// ========================================================
+const PRESENCE_DISABLED = true;
 
 // Configuration Supabase
 const SUPABASE_CONFIG = {
@@ -26,6 +34,14 @@ interface UseDoceasePresenceOptions {
   currentPage?: string;
   tool?: 'docease' | 'signease';
 }
+
+// Version desactivee du hook
+const useDoceasePresenceDisabled = (_options: UseDoceasePresenceOptions = {}) => {
+  return {
+    updatePresence: async (_activity?: string) => {},
+    trackActivity: (_activity: string) => {}
+  };
+};
 
 // Helper pour fetch avec timeout
 const fetchWithTimeout = async (url: string, options: RequestInit, timeout: number): Promise<Response | null> => {
@@ -58,7 +74,7 @@ const fetchWithTimeout = async (url: string, options: RequestInit, timeout: numb
   }
 };
 
-export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
+const useDoceasePresenceEnabled = (options: UseDoceasePresenceOptions = {}) => {
   const { user, isAuthenticated } = useDoceaseAuth();
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<string | null>(null);
@@ -174,4 +190,6 @@ export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
   };
 };
 
+// Export conditionnel selon l'etat du systeme
+export const useDoceasePresence = PRESENCE_DISABLED ? useDoceasePresenceDisabled : useDoceasePresenceEnabled;
 export default useDoceasePresence;

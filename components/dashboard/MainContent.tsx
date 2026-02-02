@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, Edit3, ChevronRight, Newspaper, Clock, Zap, ArrowDown, ArrowUp, FileSpreadsheet, Download, AlertCircle, RefreshCw, ExternalLink, Star, Plus, Trash2, X, Search, File, ChevronDown, Image, Film, Grid, List, HardDrive, Calendar, User, Filter, Upload, Settings, PenTool } from 'lucide-react';
 import { NewsItem } from '../../types';
 import { Card, CardHeader } from '../ui/Card';
@@ -10,6 +10,7 @@ import { useBookmarks } from '../../context/BookmarkContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { isCircuitOpen, recordSuccess, recordFailure, isTransientError, probeSupabaseHealth, queryViaEdgeFunction } from '../../lib/supabaseRetry';
 import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
 import DocumentsManagementPanel from './DocumentsManagementPanel';
 import SelectBottomSheet from '../ui/SelectBottomSheet';
@@ -171,10 +172,30 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const STORAGE_LIMIT = 1024 * 1024 * 1024; // 1 GB en bytes
   const STORAGE_WARNING_THRESHOLD = 0.8; // 80%
 
+  // Debounce ref pour éviter les appels multiples
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastFetchRef = useRef<number>(0);
+  const DEBOUNCE_MS = 2000;
+
+  // Fetch avec debounce pour realtime
+  const debouncedFetchDocuments = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      if (!isCircuitOpen()) {
+        fetchSharedDocuments();
+        fetchStorageUsage();
+      }
+    }, DEBOUNCE_MS);
+  }, []);
+
   // Charger les documents partagés et calculer le stockage
   useEffect(() => {
-    fetchSharedDocuments();
-    fetchStorageUsage();
+    if (!isCircuitOpen()) {
+      fetchSharedDocuments();
+      fetchStorageUsage();
+    }
 
     // Subscription temps réel pour les documents partagés
     const channel = supabase
@@ -182,28 +203,39 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shared_documents' },
-        (payload) => {
-          console.log('📁 Document change detected:', payload.eventType);
-          // Rafraîchir les documents et le stockage en temps réel
-          fetchSharedDocuments();
-          fetchStorageUsage();
+        () => {
+          // Utiliser debounce pour éviter le spam
+          debouncedFetchDocuments();
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [debouncedFetchDocuments]);
 
   const fetchStorageUsage = async () => {
+    // Skip si circuit ouvert
+    if (isCircuitOpen()) return;
+    
     try {
       // Méthode 1: Récupérer les fichiers du bucket avec leurs métadonnées
       const { data: files, error } = await supabase.storage
         .from('shared-documents')
         .list('', { limit: 1000 });
       
-      if (!error && files && files.length > 0) {
+      if (error) {
+        if (isTransientError(error)) recordFailure(error);
+        return;
+      }
+      
+      recordSuccess();
+      
+      if (files && files.length > 0) {
         // Calculer la taille totale depuis les métadonnées des fichiers du bucket
         let totalBytes = 0;
         files.forEach(file => {
@@ -221,7 +253,19 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
       }
       
       // Méthode 2 (fallback): Calculer depuis les file_size enregistrés dans la BDD
-      const { data: docs } = await supabase.from('shared_documents').select('file_size');
+      if (isCircuitOpen()) return;
+      // Utiliser Edge Function pour le SELECT (PostgREST est down)
+      const { data: docs, error: docsError } = await queryViaEdgeFunction<{file_size: string}[]>('shared_documents', {
+        select: 'file_size'
+      });
+      
+      if (docsError) {
+        if (isTransientError(docsError)) recordFailure(docsError);
+        return;
+      }
+      
+      recordSuccess();
+      
       if (docs && docs.length > 0) {
         let totalBytes = 0;
         docs.forEach(doc => {
@@ -239,25 +283,43 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
         setStorageUsed(totalBytes);
       }
     } catch (e) {
-      console.error('Erreur calcul stockage:', e);
+      if (isTransientError(e)) recordFailure(e);
     }
   };
 
   const fetchSharedDocuments = async () => {
-    const { data, error } = await supabase
-      .from('shared_documents')
-      .select('*, users:uploaded_by(name, email)')
-      .order('created_at', { ascending: false });
+    // Skip si circuit ouvert
+    if (isCircuitOpen()) return;
     
-    if (error) {
-      console.error('Erreur chargement documents:', error);
-    } else {
+    // Vérifier la santé avec probe centralisée
+    const isHealthy = await probeSupabaseHealth();
+    if (!isHealthy) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('shared_documents')
+        .select('*, users:uploaded_by(name, email)')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        if (isTransientError(error)) {
+          recordFailure(error);
+        }
+        return;
+      }
+      
+      recordSuccess();
+      
       // Mapper les données pour inclure le nom du créateur
       const docsWithCreator = (data || []).map(doc => ({
         ...doc,
         created_by_name: doc.users?.name || doc.users?.email?.split('@')[0] || 'Inconnu'
       }));
       setSharedDocuments(docsWithCreator);
+    } catch (e) {
+      if (isTransientError(e)) {
+        recordFailure(e);
+      }
     }
   };
 

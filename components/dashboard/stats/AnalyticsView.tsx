@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   FileText, Users, Calendar, Filter, 
   Clock, Search, ChevronDown,
@@ -274,21 +274,40 @@ const AnalyticsView: React.FC = () => {
     }
   };
 
+  // Debounce pour realtime - évite les appels multiples
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchAnalyticsRef = useRef(fetchAnalytics);
+  fetchAnalyticsRef.current = fetchAnalytics;
+
+  const debouncedFetch = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      fetchAnalyticsRef.current();
+    }, 2000);
+  }, []); // Pas de dépendances = stable
+
   useEffect(() => {
     fetchAnalytics();
   }, [dateFilter, isRestrictedView, effectiveUserId, effectiveUserEmail]);
 
-  // Souscription realtime
+  // Souscription realtime - utiliser debounce
   useEffect(() => {
     const channel = supabase
       .channel('analytics_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'docease_documents' }, fetchAnalytics)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'signatures' }, fetchAnalytics)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'signease_activity' }, fetchAnalytics)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'docease_documents' }, debouncedFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'signatures' }, debouncedFetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'signease_activity' }, debouncedFetch)
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [dateFilter, isRestrictedView, effectiveUserId, effectiveUserEmail]);
+    return () => { 
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      supabase.removeChannel(channel); 
+    };
+  }, [debouncedFetch]); // Dépendance unique et stable
 
   const handleRefresh = async () => {
     setRefreshing(true);

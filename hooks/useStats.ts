@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { queryViaEdgeFunction } from '../lib/supabaseRetry';
 import { archiveLinks } from '../constants';
 import { GlobalStat, UserStat, DocumentTypeStat, WeeklyActivity, NewsItem, ArchiveLink } from '../types';
 import { FileText, Edit3, User, Mail } from 'lucide-react';
@@ -87,13 +88,8 @@ export const useStats = (timeRange: TimeRange = 'month') => {
       }
       setError(null);
 
-      // Helper pour appliquer le filtre utilisateur si on est en vue restreinte
-      const applyUserFilter = (query: any, userIdColumn: string = 'user_id') => {
-        if (isRestrictedView && effectiveUserId) {
-          return query.eq(userIdColumn, effectiveUserId);
-        }
-        return query;
-      };
+      // TOUJOURS utiliser Edge Function car PostgREST est 503
+      console.log('[useStats] Using Edge Function exclusively (PostgREST 503)');
 
       // Helper pour filter signease par email si en vue restreinte
       const applyEmailFilter = (query: any) => {
@@ -103,72 +99,91 @@ export const useStats = (timeRange: TimeRange = 'month') => {
         return query;
       };
 
-      // 1. Récupérer les stats globales (filtrées si vue restreinte)
+      // 1. Récupérer les stats globales via Edge Function directement
       const [documentsCount, signaturesCount, usersCount, doceaseCount, signeaseCount] = await Promise.all([
-        applyUserFilter(supabase.from('documents').select('id', { count: 'exact', head: true })),
-        applyUserFilter(supabase.from('signatures').select('id', { count: 'exact', head: true })),
+        queryViaEdgeFunction('documents', { 
+          countOnly: true, 
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }),
+        queryViaEdgeFunction('signatures', { 
+          countOnly: true, 
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }),
         isRestrictedView 
-          ? { count: 1 } // Un utilisateur restreint ne voit que lui-même
-          : supabase.from('users').select('id', { count: 'exact', head: true }),
-        applyUserFilter(supabase.from('docease_documents').select('id', { count: 'exact', head: true })),
-        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true })),
+          ? Promise.resolve({ data: null, count: 1, error: null })
+          : queryViaEdgeFunction('users', { countOnly: true }),
+        queryViaEdgeFunction('docease_documents', { 
+          countOnly: true, 
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }),
+        queryViaEdgeFunction('signease_activity', { 
+          countOnly: true, 
+          ...(isRestrictedView && user?.email ? { eq: { user_email: user.email } } : {})
+        }),
       ]);
 
       // Compter les documents SignEase par type d'action
       const [signeaseSent, signeaseSigned, signeaseRejected] = await Promise.all([
-        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_sent')),
-        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_signed')),
-        applyEmailFilter(supabase.from('signease_activity').select('id', { count: 'exact', head: true }).eq('action_type', 'document_rejected')),
+        queryViaEdgeFunction('signease_activity', { 
+          countOnly: true, 
+          eq: { action_type: 'document_sent', ...(isRestrictedView && user?.email ? { user_email: user.email } : {}) }
+        }),
+        queryViaEdgeFunction('signease_activity', { 
+          countOnly: true, 
+          eq: { action_type: 'document_signed', ...(isRestrictedView && user?.email ? { user_email: user.email } : {}) }
+        }),
+        queryViaEdgeFunction('signease_activity', { 
+          countOnly: true, 
+          eq: { action_type: 'document_rejected', ...(isRestrictedView && user?.email ? { user_email: user.email } : {}) }
+        }),
       ]);
 
       // Calculer les utilisateurs actifs selon la période sélectionnée
       const periodStartDate = getStartDateFromRange(timeRange);
       const periodLabel = getPeriodLabel(timeRange);
 
-      // Utilisateurs qui ont créé des documents DocEase
-      const doceaseQuery = supabase
-        .from('docease_documents')
-        .select('user_id, users:user_id(email)')
-        .gte('created_at', periodStartDate.toISOString());
-      const { data: activeDoceaseUsers } = isRestrictedView && effectiveUserId
-        ? await doceaseQuery.eq('user_id', effectiveUserId)
-        : await doceaseQuery;
+      // Utilisateurs qui ont créé des documents DocEase - via Edge Function
+      const { data: activeDoceaseUsers } = await queryViaEdgeFunction<{ user_id: string }[]>(
+        'docease_documents',
+        {
+          select: 'user_id',
+          gte: { created_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }
+      );
 
-      // Utilisateurs qui ont signé des documents
-      const signaturesQuery = supabase
-        .from('signatures')
-        .select('user_id')
-        .gte('signed_at', periodStartDate.toISOString());
-      const { data: activeSignatureUsers } = isRestrictedView && effectiveUserId
-        ? await signaturesQuery.eq('user_id', effectiveUserId)
-        : await signaturesQuery;
+      // Utilisateurs qui ont signé des documents - via Edge Function
+      const { data: activeSignatureUsers } = await queryViaEdgeFunction<{ user_id: string }[]>(
+        'signatures',
+        {
+          select: 'user_id',
+          gte: { signed_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }
+      );
 
-      // Utilisateurs qui ont envoyé des documents via SignEase
-      const signeaseUsersQuery = supabase
-        .from('signease_activity')
-        .select('user_email')
-        .gte('created_at', periodStartDate.toISOString());
-      const { data: activeSigneaseUsers } = isRestrictedView && user?.email
-        ? await signeaseUsersQuery.eq('user_email', user.email)
-        : await signeaseUsersQuery;
+      // Utilisateurs qui ont envoyé des documents via SignEase - via Edge Function
+      const { data: activeSigneaseUsers } = await queryViaEdgeFunction<{ user_email: string }[]>(
+        'signease_activity',
+        {
+          select: 'user_email',
+          gte: { created_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && user?.email ? { eq: { user_email: user.email } } : {})
+        }
+      );
 
-      // Utilisateurs qui se sont connectés au dashboard (sessions actives récentes)
-      const sessionsQuery = supabase
-        .from('active_sessions')
-        .select('user_email')
-        .gte('started_at', periodStartDate.toISOString());
-      const { data: activeDashboardUsers } = isRestrictedView && user?.email
-        ? await sessionsQuery.eq('user_email', user.email)
-        : await sessionsQuery;
+      // Sessions actives récentes - via Edge Function
+      const { data: activeDashboardUsers } = await queryViaEdgeFunction<{ user_email: string }[]>(
+        'active_sessions',
+        {
+          select: 'user_email',
+          gte: { started_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && user?.email ? { eq: { user_email: user.email } } : {})
+        }
+      );
 
       // Collecter tous les emails uniques (méthode principale)
       const allActiveEmails = new Set<string>();
-      
-      // Emails des documents DocEase (via la relation users)
-      activeDoceaseUsers?.forEach(d => {
-        const email = (d.users as any)?.email;
-        if (email) allActiveEmails.add(email.toLowerCase());
-      });
       
       // Emails des activités SignEase
       activeSigneaseUsers?.forEach(s => {
@@ -180,7 +195,7 @@ export const useStats = (timeRange: TimeRange = 'month') => {
         if (s.user_email) allActiveEmails.add(s.user_email.toLowerCase());
       });
 
-      // Collecter aussi les user_id pour les signatures (qui n'ont pas d'email direct)
+      // Collecter les user_id pour DocEase et Signatures
       const activeUserIds = new Set<string>();
       activeDoceaseUsers?.forEach(d => {
         if (d.user_id) activeUserIds.add(d.user_id);
@@ -189,70 +204,52 @@ export const useStats = (timeRange: TimeRange = 'month') => {
         if (s.user_id) activeUserIds.add(s.user_id);
       });
 
-      // Récupérer les emails des user_id trouvés pour les ajouter à la liste
+      // Récupérer les emails des user_id trouvés via Edge Function
       if (activeUserIds.size > 0) {
-        const { data: usersFromIds } = await supabase
-          .from('users')
-          .select('id, email')
-          .in('id', Array.from(activeUserIds));
-        usersFromIds?.forEach(u => {
+        // Edge Function ne supporte pas 'IN', on fait une requête pour tous les users
+        const { data: allUsers } = await queryViaEdgeFunction<{ id: string; email: string }[]>(
+          'users',
+          { select: 'id, email' }
+        );
+        const userIdArray = Array.from(activeUserIds);
+        allUsers?.filter(u => userIdArray.includes(u.id)).forEach(u => {
           if (u.email) allActiveEmails.add(u.email.toLowerCase());
         });
       }
 
       // Le nombre d'utilisateurs actifs = nombre d'emails uniques (1 si vue restreinte)
-      const activeUsersCount = isRestrictedView ? 1 : allActiveEmails.size;
+      const activeUsersCount = isRestrictedView ? 1 : Math.max(allActiveEmails.size, activeUserIds.size);
 
-        // Compter les documents/signatures selon la période sélectionnée (filtrés si vue restreinte)
-        let periodDocumentsQuery = supabase
-          .from('documents')
-          .select('id', { count: 'exact', head: true })
-          .gte('created_at', periodStartDate.toISOString());
-        if (isRestrictedView && effectiveUserId) {
-          periodDocumentsQuery = periodDocumentsQuery.eq('user_id', effectiveUserId);
-        }
-
-        let periodSignaturesQuery = supabase
-          .from('signatures')
-          .select('id', { count: 'exact', head: true })
-          .gte('signed_at', periodStartDate.toISOString());
-        if (isRestrictedView && effectiveUserId) {
-          periodSignaturesQuery = periodSignaturesQuery.eq('user_id', effectiveUserId);
-        }
-
-        let periodDoceaseQuery = supabase
-          .from('docease_documents')
-          .select('id', { count: 'exact', head: true })
-          .gte('created_at', periodStartDate.toISOString());
-        if (isRestrictedView && effectiveUserId) {
-          periodDoceaseQuery = periodDoceaseQuery.eq('user_id', effectiveUserId);
-        }
-
-        let periodSigneaseSentQuery = supabase
-          .from('signease_activity')
-          .select('id', { count: 'exact', head: true })
-          .eq('action_type', 'document_sent')
-          .gte('created_at', periodStartDate.toISOString());
-        if (isRestrictedView && user?.email) {
-          periodSigneaseSentQuery = periodSigneaseSentQuery.eq('user_email', user.email);
-        }
-
-        let periodSigneaseSignedQuery = supabase
-          .from('signease_activity')
-          .select('id', { count: 'exact', head: true })
-          .eq('action_type', 'document_signed')
-          .gte('created_at', periodStartDate.toISOString());
-        if (isRestrictedView && user?.email) {
-          periodSigneaseSignedQuery = periodSigneaseSignedQuery.eq('user_email', user.email);
-        }
-
-        const [periodDocuments, periodSignatures, periodDocease, periodSigneaseSent, periodSigneaseSigned] = await Promise.all([
-          periodDocumentsQuery,
-          periodSignaturesQuery,
-          periodDoceaseQuery,
-          periodSigneaseSentQuery,
-          periodSigneaseSignedQuery,
-        ]);
+      // Compter les documents/signatures via Edge Function avec countOnly
+      const [periodDocuments, periodSignatures, periodDocease, periodSigneaseSent, periodSigneaseSigned] = await Promise.all([
+        queryViaEdgeFunction('documents', {
+          countOnly: true,
+          gte: { created_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }),
+        queryViaEdgeFunction('signatures', {
+          countOnly: true,
+          gte: { signed_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }),
+        queryViaEdgeFunction('docease_documents', {
+          countOnly: true,
+          gte: { created_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+        }),
+        queryViaEdgeFunction('signease_activity', {
+          countOnly: true,
+          eq: { action_type: 'document_sent' },
+          gte: { created_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && user?.email ? { filters: { user_email: user.email } } : {})
+        }),
+        queryViaEdgeFunction('signease_activity', {
+          countOnly: true,
+          eq: { action_type: 'document_signed' },
+          gte: { created_at: periodStartDate.toISOString() },
+          ...(isRestrictedView && user?.email ? { filters: { user_email: user.email } } : {})
+        }),
+      ]);
 
         const globalStats: GlobalStat[] = [
           {
@@ -262,7 +259,7 @@ export const useStats = (timeRange: TimeRange = 'month') => {
             color: 'text-purple-700',
             bgColor: 'bg-purple-100',
             trend: `${periodDocease.count || 0} sur la période`,
-            description: `Générés via DocEase (${periodLabel})`
+            description: `Generés via DocEase (${periodLabel})`
           },
           {
             label: 'Documents SignEase',
@@ -274,7 +271,7 @@ export const useStats = (timeRange: TimeRange = 'month') => {
             description: `Documents envoyés (${periodLabel})`
           },
           {
-            label: 'Signatures réalisées',
+            label: 'Signatures realisées',
             value: String(periodSigneaseSigned.count || 0),
             icon: Edit3,
             color: 'text-green-700',
@@ -303,55 +300,43 @@ export const useStats = (timeRange: TimeRange = 'month') => {
           }] : [])
         ];
 
-        // 2. Récupérer les stats par utilisateur (filtré si vue restreinte)
-        let usersQuery = supabase
-          .from('users')
-          .select(`
-            id,
-            name,
-            email,
-            role,
-            role_level,
-            avatar_url,
-            avatar,
-            documents:documents(count),
-            signatures:signatures(count),
-            docease_docs:docease_documents(count)
-          `);
-        
-        if (isRestrictedView && effectiveUserId) {
-          // En vue restreinte, ne récupérer que l'utilisateur impersonné
-          usersQuery = usersQuery.eq('id', effectiveUserId);
-        } else {
-          usersQuery = usersQuery.limit(10);
-        }
-        
-        const { data: usersData, error: usersError } = await usersQuery;
+        // 2. Récupérer les stats par utilisateur via Edge Function
+        const { data: usersData } = await queryViaEdgeFunction<any[]>(
+          'users',
+          {
+            select: 'id, name, email, role, role_level, avatar_url, avatar',
+            ...(isRestrictedView && effectiveUserId ? { eq: { id: effectiveUserId } } : {}),
+            limit: isRestrictedView ? 1 : 10
+          }
+        );
 
-        if (usersError) throw usersError;
-
-        const userStats: UserStat[] = (usersData || []).map((u: any) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email || '',
-          letters: (u.documents?.[0]?.count || 0) + (u.docease_docs?.[0]?.count || 0), // Cumul documents + docease
-          signatures: u.signatures?.[0]?.count || 0,
-          role: u.role_level || u.role || 'secretary',
-          avatar_url: u.avatar_url || u.avatar || null,
+        // Pour chaque utilisateur, compter ses documents/signatures via Edge Function
+        const userStats: UserStat[] = await Promise.all((usersData || []).map(async (u: any) => {
+          const [docsCount, sigsCount, doceaseDocsCount] = await Promise.all([
+            queryViaEdgeFunction('documents', { countOnly: true, eq: { user_id: u.id } }),
+            queryViaEdgeFunction('signatures', { countOnly: true, eq: { user_id: u.id } }),
+            queryViaEdgeFunction('docease_documents', { countOnly: true, eq: { user_id: u.id } }),
+          ]);
+          
+          return {
+            id: u.id,
+            name: u.name,
+            email: u.email || '',
+            letters: (docsCount.count || 0) + (doceaseDocsCount.count || 0),
+            signatures: sigsCount.count || 0,
+            role: u.role_level || u.role || 'secretary',
+            avatar_url: u.avatar_url || u.avatar || null,
+          };
         }));
 
-        // 3. Récupérer les stats par type de document depuis docease_documents (filtré si vue restreinte)
-        let doceaseTypesQuery = supabase
-          .from('docease_documents')
-          .select('document_type');
-        
-        if (isRestrictedView && effectiveUserId) {
-          doceaseTypesQuery = doceaseTypesQuery.eq('user_id', effectiveUserId);
-        }
-        
-        const { data: doceaseTypesData, error: doceaseTypesError } = await doceaseTypesQuery;
-
-        if (doceaseTypesError) throw doceaseTypesError;
+        // 3. Récupérer les stats par type de document via Edge Function
+        const { data: doceaseTypesData } = await queryViaEdgeFunction<{ document_type: string }[]>(
+          'docease_documents',
+          {
+            select: 'document_type',
+            ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+          }
+        );
 
         // Compter les documents par type
         const typeCounts: { [key: string]: number } = {};
@@ -377,7 +362,7 @@ export const useStats = (timeRange: TimeRange = 'month') => {
           color: typeColors[type] || 'bg-slate-500 dark:bg-slate-600',
         }));
 
-        // 4. Récupérer l'activité hebdomadaire réelle depuis docease_documents et signatures
+        // 4. Récupérer l'activité hebdomadaire via Edge Function
         const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
         const last7Days = Array.from({ length: 7 }, (_, i) => {
           const date = new Date();
@@ -391,27 +376,20 @@ export const useStats = (timeRange: TimeRange = 'month') => {
             const nextDay = new Date(date);
             nextDay.setDate(nextDay.getDate() + 1);
 
-            // Construire les requêtes avec filtre utilisateur si vue restreinte
-            let doceaseActivityQuery = supabase
-              .from('docease_documents')
-              .select('id', { count: 'exact', head: true })
-              .gte('created_at', date.toISOString())
-              .lt('created_at', nextDay.toISOString());
-            
-            let signaturesActivityQuery = supabase
-              .from('signatures')
-              .select('id', { count: 'exact', head: true })
-              .gte('signed_at', date.toISOString())
-              .lt('signed_at', nextDay.toISOString());
-            
-            if (isRestrictedView && effectiveUserId) {
-              doceaseActivityQuery = doceaseActivityQuery.eq('user_id', effectiveUserId);
-              signaturesActivityQuery = signaturesActivityQuery.eq('user_id', effectiveUserId);
-            }
-
+            // Utiliser Edge Function avec gte et lt
             const [doceaseResult, signaturesResult] = await Promise.all([
-              doceaseActivityQuery,
-              signaturesActivityQuery,
+              queryViaEdgeFunction('docease_documents', {
+                countOnly: true,
+                gte: { created_at: date.toISOString() },
+                lt: { created_at: nextDay.toISOString() },
+                ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+              }),
+              queryViaEdgeFunction('signatures', {
+                countOnly: true,
+                gte: { signed_at: date.toISOString() },
+                lt: { signed_at: nextDay.toISOString() },
+                ...(isRestrictedView && effectiveUserId ? { eq: { user_id: effectiveUserId } } : {})
+              }),
             ]);
 
             return {
@@ -431,7 +409,7 @@ export const useStats = (timeRange: TimeRange = 'month') => {
       } catch (e: any) {
         console.error('Erreur lors du chargement des statistiques:', e);
         if (isMountedRef.current) {
-          setError(e.message || "Impossible de charger les statistiques.");
+          setError(e.message || 'Erreur de chargement');
         }
       } finally {
         if (isMountedRef.current) {
@@ -440,23 +418,27 @@ export const useStats = (timeRange: TimeRange = 'month') => {
       }
     }, [timeRange, isRestrictedView, effectiveUserId, user?.email]);
 
-  // Fonction de refresh avec debounce pour éviter les appels multiples
+  // Ref pour stocker fetchStats sans causer de re-render des channels
+  const fetchStatsRef = useRef(fetchStats);
+  fetchStatsRef.current = fetchStats;
+
+  // Fonction de refresh avec debounce - stable (pas de dépendance sur fetchStats)
   const debouncedFetchStats = useCallback(() => {
     if (fetchTimeoutRef.current) {
       clearTimeout(fetchTimeoutRef.current);
     }
     fetchTimeoutRef.current = setTimeout(() => {
-      fetchStats(true); // true = realtime update (pas de loading spinner)
-    }, 300); // 300ms debounce
-  }, [fetchStats]);
+      fetchStatsRef.current(true); // true = realtime update (pas de loading spinner)
+    }, 2000); // 2s debounce
+  }, []); // Pas de dépendances = fonction stable
 
   useEffect(() => {
     isMountedRef.current = true;
     fetchStats();
   }, [fetchStats]); // Se déclenche quand fetchStats change (qui dépend de timeRange)
 
+  // Channels Realtime - effet séparé avec dépendances minimales
   useEffect(() => {
-
     // Abonnement Realtime pour détecter les changements sur documents DocEase
     const doceaseChannel = supabase
       .channel('docease_documents_changes')
@@ -468,7 +450,6 @@ export const useStats = (timeRange: TimeRange = 'month') => {
           table: 'docease_documents'
         },
         (payload) => {
-          console.log('🔄 Changement DocEase détecté, rafraîchissement des stats...', payload.eventType);
           debouncedFetchStats(); // Utiliser la version debounced
         }
       )
@@ -485,7 +466,6 @@ export const useStats = (timeRange: TimeRange = 'month') => {
           table: 'signatures'
         },
         (payload) => {
-          console.log('🔄 Changement signatures détecté, rafraîchissement des stats...', payload.eventType);
           debouncedFetchStats();
         }
       )
@@ -502,7 +482,6 @@ export const useStats = (timeRange: TimeRange = 'month') => {
           table: 'documents'
         },
         (payload) => {
-          console.log('🔄 Changement documents détecté, rafraîchissement des stats...', payload.eventType);
           debouncedFetchStats();
         }
       )
@@ -519,14 +498,12 @@ export const useStats = (timeRange: TimeRange = 'month') => {
           table: 'signease_activity'
         },
         (payload) => {
-          console.log('🔄 Changement SignEase détecté, rafraîchissement des stats...', payload.eventType);
           debouncedFetchStats();
         }
       )
       .subscribe();
 
     return () => {
-      isMountedRef.current = false;
       if (fetchTimeoutRef.current) {
         clearTimeout(fetchTimeoutRef.current);
       }
@@ -535,7 +512,14 @@ export const useStats = (timeRange: TimeRange = 'month') => {
       supabase.removeChannel(documentsChannel);
       supabase.removeChannel(signeaseChannel);
     };
-  }, [fetchStats, debouncedFetchStats]);
+  }, [debouncedFetchStats]); // Seulement debouncedFetchStats qui est maintenant stable
+
+  // Cleanup au démontage
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   return { stats, loading, error, refetch: fetchStats };
 };

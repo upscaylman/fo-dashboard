@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { usePresence } from '../hooks/usePresence';
 import { usePermissions } from '../hooks/usePermissions';
 import { Card } from '../components/ui/Card';
+import { isInBackoff, recordSuccess, recordFailure, isTransientError } from '../lib/supabaseRetry';
 
 interface UserProfile {
   id: string;
@@ -200,6 +201,13 @@ const ProfilePage: React.FC = () => {
   const fetchProfile = async () => {
     if (!user) return;
     
+    // Skip si le service est en backoff
+    if (isInBackoff()) {
+      console.log('Profile: skipped (service in backoff)');
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     const { data, error } = await supabase
       .from('users')
@@ -208,9 +216,15 @@ const ProfilePage: React.FC = () => {
       .single();
 
     if (error) {
-      console.error('Erreur chargement profil:', error);
-      addToast('Erreur lors du chargement du profil', 'error');
+      recordFailure(error);
+      if (isTransientError(error)) {
+        console.log('Profile: 503, will retry later');
+      } else {
+        console.error('Erreur chargement profil:', error);
+        addToast('Erreur lors du chargement du profil', 'error');
+      }
     } else {
+      recordSuccess();
       setProfile(data);
       setFormData({
         name: data.name || '',

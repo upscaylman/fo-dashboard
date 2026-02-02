@@ -6,6 +6,7 @@ import { Badge } from '../../ui/Badge';
 import { useToast } from '../../../context/ToastContext';
 import { useAuth } from '../../../context/AuthContext';
 import { supabase } from '../../../lib/supabase';
+import { deleteViaEdgeFunction } from '../../../lib/supabaseRetry';
 import { ROLE_COLORS, ROLE_LABELS, UserRole } from '../../../lib/permissions';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { TimeRange } from '../../../hooks/useStats';
@@ -286,12 +287,13 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
     }
 
     try {
-      const { error } = await supabase.from('users').delete().eq('id', userStat.id);
+      // Utiliser Edge Function pour DELETE (PostgREST est down)
+      const { error } = await deleteViaEdgeFunction('users', { id: userStat.id });
 
       if (error) throw error;
 
       setLocalUsers((prev) => prev.filter((_, index) => index !== indexToDelete));
-      addToast(`Salarié ${userStat.name} supprimé avec succès`, 'success');
+      addToast(`Salarie ${userStat.name} supprime avec succes`, 'success');
     } catch (error: any) {
       console.error('Erreur suppression:', error);
       addToast(`Erreur lors de la suppression: ${error.message}`, 'error');

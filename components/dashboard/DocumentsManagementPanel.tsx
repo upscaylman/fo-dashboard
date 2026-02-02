@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   FileText, FileSpreadsheet, File, Image, Film, Download, Trash2, 
   Search, Filter, ChevronDown, AlertCircle, CheckCircle, X, 
@@ -6,6 +6,7 @@ import {
   Grid, List, Settings, Lock
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { isCircuitOpen, recordSuccess, recordFailure, isTransientError, probeSupabaseHealth, queryViaEdgeFunction, deleteViaEdgeFunction } from '../../lib/supabaseRetry';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import SelectBottomSheet from '../ui/SelectBottomSheet';
@@ -97,9 +98,24 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
   const [storageUsed, setStorageUsed] = useState(0);
 
   const STORAGE_LIMIT = 1024 * 1024 * 1024; // 1 GB
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const DEBOUNCE_MS = 2000;
+
+  // Fetch avec debounce
+  const debouncedFetch = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      if (!isCircuitOpen()) {
+        fetchDocuments();
+        fetchStorageUsage();
+      }
+    }, DEBOUNCE_MS);
+  }, []);
 
   useEffect(() => {
-    if (isOpen && isAdmin) {
+    if (isOpen && isAdmin && !isCircuitOpen()) {
       fetchDocuments();
       fetchStorageUsage();
     }
@@ -114,20 +130,36 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shared_documents' },
-        (payload) => {
-          console.log('📁 [ManagementPanel] Document change:', payload.eventType);
-          fetchDocuments();
-          fetchStorageUsage();
+        () => {
+          debouncedFetch();
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [isOpen]);
+  }, [isOpen, debouncedFetch]);
 
   const fetchDocuments = async () => {
+    // Skip si circuit ouvert
+    if (isCircuitOpen()) {
+      setDocuments([...STATIC_TEMPLATES]);
+      setLoading(false);
+      return;
+    }
+    
+    // Vérifier la santé avec probe centralisée
+    const isHealthy = await probeSupabaseHealth();
+    if (!isHealthy) {
+      setDocuments([...STATIC_TEMPLATES]);
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       // Requête simple sans jointure de clé étrangère
@@ -136,7 +168,12 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        if (isTransientError(error)) recordFailure(error);
+        throw error;
+      }
+      
+      recordSuccess();
       
       const formattedDocs: SharedDocument[] = (data || []).map(doc => ({
         ...doc,
@@ -149,8 +186,6 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
       
       setDocuments(allDocuments);
     } catch (error) {
-      console.error('Erreur chargement documents:', error);
-      addToast('Erreur lors du chargement des documents', 'error');
       // En cas d'erreur, afficher au moins les templates statiques
       setDocuments([...STATIC_TEMPLATES]);
     } finally {
@@ -159,11 +194,34 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
   };
 
   const fetchStorageUsage = async () => {
+    if (isCircuitOpen()) return;
+    
     try {
-      const { data: files } = await supabase.storage.from('shared-documents').list('', { limit: 1000 });
+      const { data: files, error: filesError } = await supabase.storage.from('shared-documents').list('', { limit: 1000 });
+      
+      if (filesError) {
+        if (isTransientError(filesError)) recordFailure(filesError);
+        return;
+      }
+      
+      recordSuccess();
+      
       if (files) {
         // Note: Supabase ne retourne pas la taille directement, on utilise les métadonnées
-        const { data: docs } = await supabase.from('shared_documents').select('file_size');
+        if (isCircuitOpen()) return;
+        
+        // Utiliser Edge Function pour le SELECT (PostgREST est down)
+        const { data: docs, error: docsError } = await queryViaEdgeFunction<{file_size: string}[]>('shared_documents', { 
+          select: 'file_size' 
+        });
+        
+        if (docsError) {
+          if (isTransientError(docsError)) recordFailure(docsError);
+          return;
+        }
+        
+        recordSuccess();
+        
         if (docs) {
           const totalSize = docs.reduce((acc, doc) => {
             const size = parseFloat(doc.file_size || '0');
@@ -176,8 +234,8 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
           setStorageUsed(totalSize);
         }
       }
-    } catch (error) {
-      console.error('Erreur calcul stockage:', error);
+    } catch (e) {
+      if (isTransientError(e)) recordFailure(e);
     }
   };
 
@@ -234,11 +292,11 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
           }
         }
 
-        // Supprimer de la base
-        await supabase.from('shared_documents').delete().eq('id', docId);
+        // Supprimer de la base via Edge Function (PostgREST est down)
+        await deleteViaEdgeFunction('shared_documents', { id: docId });
       }
 
-      addToast(`${selectedDocs.size} document(s) supprimé(s)`, 'success');
+      addToast(`${selectedDocs.size} document(s) supprime(s)`, 'success');
       setSelectedDocs(new Set());
       fetchDocuments();
       fetchStorageUsage();

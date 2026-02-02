@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink, X, Download, Eye, Users, List } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../context/AuthContext';
@@ -47,8 +47,22 @@ const SigneaseActivityTable: React.FC<SigneaseActivityTableProps> = ({ timeRange
   // Les autres rôles (secretary, secretary_federal) ne voient que leurs propres documents
   const isRestrictedView = !ADMIN_ROLES.includes(effectiveRole);
 
+  // Debounce pour realtime
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchActivitiesRef = useRef<() => void>(() => {});
+
+  const debouncedFetch = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      fetchActivitiesRef.current();
+    }, 2000);
+  }, []); // Stable
+
   useEffect(() => {
     fetchActivities();
+    fetchActivitiesRef.current = fetchActivities;
 
     // Realtime subscription pour mise à jour automatique
     const channel = supabase
@@ -61,16 +75,19 @@ const SigneaseActivityTable: React.FC<SigneaseActivityTableProps> = ({ timeRange
           table: 'signease_activity'
         },
         () => {
-          console.log('🔄 Activité SignEase changée, rechargement...');
-          fetchActivities();
+          console.log('Activite SignEase changee, rechargement...');
+          debouncedFetch();
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [isRestrictedView, user?.email]);
+  }, [isRestrictedView, user?.email, debouncedFetch]);
 
   const fetchActivities = async () => {
     try {
