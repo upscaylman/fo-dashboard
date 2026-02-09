@@ -259,10 +259,10 @@ const AppContent: React.FC = () => {
 
   return (
     <ReadOnlyOverlay>
-      <div className="min-h-screen w-full bg-[#FDF8F6] dark:bg-slate-950 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden transition-colors duration-300 flex flex-col animate-[fadeIn_0.5s_ease-out]">
+      <div className="min-h-screen w-full bg-[#FDF8F6] dark:bg-slate-950 font-sans selection:bg-blue-100 selection:text-blue-900 transition-colors duration-300 flex flex-col animate-[fadeIn_0.5s_ease-out]">
         <ImpersonationBanner />
         <Header onNavigate={navigateTo} data-navigation />
-        <main className="flex-1 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
+        <main className="flex-1 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full overflow-x-hidden">
           {currentPath === '/profile' ? <ProfilePage /> : <DashboardPage />}
         </main>
         <Footer />

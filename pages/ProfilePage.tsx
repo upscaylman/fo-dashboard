@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { usePresence } from '../hooks/usePresence';
 import { usePermissions } from '../hooks/usePermissions';
 import { Card } from '../components/ui/Card';
-import { isInBackoff, recordSuccess, recordFailure, isTransientError } from '../lib/supabaseRetry';
+import { isInBackoff, recordSuccess, recordFailure, isTransientError, queryViaEdgeFunction } from '../lib/supabaseRetry';
 
 interface UserProfile {
   id: string;
@@ -209,6 +209,8 @@ const ProfilePage: React.FC = () => {
     }
     
     setLoading(true);
+    
+    // Essayer PostgREST d'abord
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -217,8 +219,29 @@ const ProfilePage: React.FC = () => {
 
     if (error) {
       recordFailure(error);
+      
+      // Si 503, utiliser Edge Function fallback
       if (isTransientError(error)) {
-        console.log('Profile: 503, will retry later');
+        console.log('Profile: PostgREST 503, trying Edge Function fallback...');
+        const edgeResult = await queryViaEdgeFunction<UserProfile[]>('users', {
+          select: '*',
+          eq: { id: user.id },
+          limit: 1
+        });
+        
+        if (!edgeResult.error && edgeResult.data && edgeResult.data.length > 0) {
+          console.log('Profile: Edge Function fallback success');
+          const profileData = edgeResult.data[0];
+          setProfile(profileData);
+          setFormData({
+            name: profileData.name || '',
+            phone: profileData.phone || '',
+            avatar: profileData.avatar || 'avatar-1'
+          });
+          setLoading(false);
+          return;
+        }
+        console.log('Profile: Edge Function fallback also failed');
       } else {
         console.error('Erreur chargement profil:', error);
         addToast('Erreur lors du chargement du profil', 'error');

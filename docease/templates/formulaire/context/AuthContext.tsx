@@ -11,6 +11,96 @@ const SUPABASE_CONFIG = {
   anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlbGp3b25ja2ZtZGtheXdheGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTM3MDAsImV4cCI6MjA4MTQyOTcwMH0.K9-DyDP1sbKo59VY8iMwSgCukLk0Cm3OTBCIkipxzUQ'
 };
 
+// Helper pour les requêtes DB avec fallback Edge Function
+const dbRequest = async (
+  table: string,
+  method: 'GET' | 'POST' | 'DELETE',
+  options?: {
+    select?: string;
+    eq?: Record<string, string>;
+    body?: Record<string, unknown>;
+  }
+): Promise<{ data: unknown; error: Error | null }> => {
+  const { select, eq, body } = options || {};
+  
+  // D'abord essayer l'Edge Function (plus fiable quand PostgREST a des problèmes)
+  try {
+    const edgeBody: Record<string, unknown> = { table };
+    
+    if (method === 'GET') {
+      if (select) edgeBody.select = select;
+      if (eq) edgeBody.eq = eq;
+    } else if (method === 'POST' && body) {
+      edgeBody.data = body;
+      edgeBody.upsert = true;
+    } else if (method === 'DELETE' && eq) {
+      edgeBody.delete = true;
+      edgeBody.eq = eq;
+    }
+    
+    const response = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/db-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+      },
+      body: JSON.stringify(edgeBody)
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      return { data: result.data, error: null };
+    }
+  } catch (e) {
+    console.warn('Edge Function failed, trying PostgREST:', e);
+  }
+  
+  // Fallback vers PostgREST direct
+  try {
+    let url = `${SUPABASE_CONFIG.url}/rest/v1/${table}`;
+    const headers: Record<string, string> = {
+      'apikey': SUPABASE_CONFIG.anonKey,
+      'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+    };
+    
+    if (method === 'GET') {
+      const params = new URLSearchParams();
+      if (select) params.append('select', select);
+      if (eq) {
+        Object.entries(eq).forEach(([key, value]) => {
+          params.append(key, `eq.${value}`);
+        });
+      }
+      if (params.toString()) url += `?${params.toString()}`;
+    } else if (method === 'DELETE' && eq) {
+      const params = new URLSearchParams();
+      Object.entries(eq).forEach(([key, value]) => {
+        params.append(key, `eq.${value}`);
+      });
+      url += `?${params.toString()}`;
+    } else if (method === 'POST') {
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'resolution=merge-duplicates';
+    }
+    
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: method === 'POST' && body ? JSON.stringify(body) : undefined
+    });
+    
+    if (response.ok) {
+      const data = method === 'DELETE' ? null : await response.json();
+      return { data, error: null };
+    }
+    
+    return { data: null, error: new Error(`HTTP ${response.status}`) };
+  } catch (e) {
+    return { data: null, error: e as Error };
+  }
+};
+
 // Domaines autorisés
 const ALLOWED_DOMAINS = ['fo-metaux.fr'];
 
@@ -104,15 +194,8 @@ export const DoceaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
       const sessionId = localStorage.getItem(SESSION_KEY) || crypto.randomUUID();
       localStorage.setItem(SESSION_KEY, sessionId);
 
-      await fetch(`${SUPABASE_CONFIG.url}/rest/v1/active_sessions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_CONFIG.anonKey,
-          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-          'Prefer': 'resolution=merge-duplicates'
-        },
-        body: JSON.stringify({
+      await dbRequest('active_sessions', 'POST', {
+        body: {
           id: sessionId,
           user_id: loadedUser.id,
           user_email: loadedUser.email,
@@ -120,7 +203,7 @@ export const DoceaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
           current_page: 'docease',
           current_tool: 'docease',
           last_activity: new Date().toISOString()
-        })
+        }
       });
     } catch (e) {
       console.error('Erreur mise à jour présence:', e);
@@ -148,25 +231,17 @@ export const DoceaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
       let userRole = 'user';
 
       try {
-        // Chercher l'utilisateur dans la base
-        const response = await fetch(
-          `${SUPABASE_CONFIG.url}/rest/v1/users?email=eq.${encodeURIComponent(trimmedEmail)}&select=id,name,email,role`,
-          {
-            headers: {
-              'apikey': SUPABASE_CONFIG.anonKey,
-              'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
-            }
-          }
-        );
+        // Chercher l'utilisateur dans la base via Edge Function
+        const { data: users, error } = await dbRequest('users', 'GET', {
+          select: 'id,name,email,role',
+          eq: { email: trimmedEmail }
+        });
 
-        if (response.ok) {
-          const users = await response.json();
-          if (users && users.length > 0) {
-            const dbUser = users[0];
-            userId = dbUser.id;
-            userName = dbUser.name || userName;
-            userRole = dbUser.role || 'user';
-          }
+        if (!error && Array.isArray(users) && users.length > 0) {
+          const dbUser = users[0] as { id: string; name?: string; role?: string };
+          userId = dbUser.id;
+          userName = dbUser.name || userName;
+          userRole = dbUser.role || 'user';
         }
       } catch (e) {
         console.warn('Impossible de vérifier l\'utilisateur dans la base:', e);
@@ -189,15 +264,8 @@ export const DoceaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
       localStorage.setItem(SESSION_KEY, sessionId);
 
       try {
-        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/active_sessions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_CONFIG.anonKey,
-            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
+        await dbRequest('active_sessions', 'POST', {
+          body: {
             id: sessionId,
             user_id: newUser.id,
             user_email: newUser.email,
@@ -206,7 +274,7 @@ export const DoceaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
             current_tool: 'docease',
             last_activity: new Date().toISOString(),
             started_at: new Date().toISOString()
-          })
+          }
         });
       } catch (e) {
         console.warn('Impossible de créer la session:', e);
@@ -227,12 +295,8 @@ export const DoceaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
     // Supprimer la session de présence
     const sessionId = localStorage.getItem(SESSION_KEY);
     if (sessionId) {
-      fetch(`${SUPABASE_CONFIG.url}/rest/v1/active_sessions?id=eq.${sessionId}`, {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_CONFIG.anonKey,
-          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
-        }
+      dbRequest('active_sessions', 'DELETE', {
+        eq: { id: sessionId }
       }).catch(console.error);
     }
 

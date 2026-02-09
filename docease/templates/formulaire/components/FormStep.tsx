@@ -6,6 +6,7 @@ import { AITextarea } from './AITextarea';
 import { AddressInput } from './AddressInput';
 import { MultiEmailInput } from './MultiEmailInput';
 import { ConvocationTypeSelect } from './ConvocationTypeSelect';
+import { DynamicAgendaPoints } from './DynamicAgendaPoints';
 
 interface FormStepProps {
   step: StepType;
@@ -219,8 +220,63 @@ const FormStepComponent: React.FC<FormStepProps> = ({
         </div>
       )}
 
-      {/* Fields Grid - 6 colonnes pour supporter half (3 cols) et third (2 cols) */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-5 items-start">
+      {/* Rendu spécial pour les étapes jour1, jour2 (CA Fédérale) et ordreDuJourBureau (Bureau Fédéral) */}
+      {selectedTemplate === 'convocations' && (step === 'jour1' || step === 'jour2' || step === 'ordreDuJourBureau') ? (
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-5 items-start">
+          {/* Numéro de document (pour jour1 et ordreDuJourBureau) */}
+          {(step === 'jour1' || step === 'ordreDuJourBureau') && fields.find(f => f.id === 'codeDocument') && (
+            <div className="md:col-span-6">
+              <Input
+                label="Numéro du document"
+                type="text"
+                placeholder="Ex : DOC-2024-001"
+                icon="description"
+                required={true}
+                value={data['codeDocument'] || ''}
+                onChange={(e) => onChange('codeDocument', e.target.value)}
+                fieldId="codeDocument"
+                forceUppercase={true}
+                error={invalidFields?.has('codeDocument') ? 'Numéro du document est requis' : undefined}
+              />
+            </div>
+          )}
+          
+          {/* Points dynamiques à l'ordre du jour */}
+          <DynamicAgendaPoints
+            fieldPrefix="ordreDuJour"
+            startNumber={step === 'jour1' ? 1 : step === 'jour2' ? 5 : 1}
+            dayLabel={step === 'jour1' ? '1ère journée' : step === 'jour2' ? '2ème journée' : 'Bureau Fédéral'}
+            data={data}
+            onChange={onChange}
+            invalidFields={invalidFields}
+            minPoints={4}
+            maxPoints={step === 'ordreDuJourBureau' ? 6 : 5}
+          />
+          
+          {/* Secrétaire Fédéral (pour jour2 et ordreDuJourBureau) */}
+          {(step === 'jour2' || step === 'ordreDuJourBureau') && fields.find(f => f.id === 'signatureExp') && (
+            <div className="md:col-span-6 mt-4">
+              <Input
+                label="Secrétaire Fédéral"
+                type="select"
+                options={[
+                  'Bruno REYNES', 'Eric KELLER', 'Edwin LIARD', 'Gérard CIANNARELLA',
+                  'Géraldine GOMIZ', 'Jean-Yves SABOT', 'Nathalie CAPART',
+                  'Olivier LEFEBVRE', 'Paul RIBEIRO', 'Valentin RODRIGUEZ'
+                ]}
+                icon="badge"
+                required={true}
+                value={data['signatureExp'] || ''}
+                onChange={(e) => onChange('signatureExp', e.target.value)}
+                fieldId="signatureExp"
+                error={invalidFields?.has('signatureExp') ? 'Secrétaire Fédéral est requis' : undefined}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Fields Grid - 6 colonnes pour supporter half (3 cols) et third (2 cols) */
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-5 items-start">
         {fields.map((field, index) => (
           <div
             key={field.id}
@@ -359,7 +415,8 @@ const FormStepComponent: React.FC<FormStepProps> = ({
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* SECTION: ZONE DE RESTAURATION DES CHAMPS SUPPRIMÉS */}
       {isCustomizing && externalRemovedFields.length > 0 && (

@@ -28,3 +28,20 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Fix backdrop modal pour couvrir tout l'écran */
+/* Utiliser un sélecteur plus précis pour les overlays de modal uniquement */
+body > div > div > .fixed[class*="inset-0"][class*="bg-black"],
+body > div > div > .fixed[class*="inset-0"][class*="bg-slate"],
+body > div > div > .fixed[class*="inset-0"][class*="backdrop-blur"],
+.fixed[class*="z-50"][class*="inset-0"][class*="backdrop"],
+.fixed[class*="z-[100]"][class*="inset-0"] {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+}

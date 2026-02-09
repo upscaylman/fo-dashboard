@@ -17,8 +17,8 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/db-proxy`;
 
-// Mode automatique: essaie PostgREST d'abord, Edge Function en fallback si 503
-let useEdgeFunctionFallback = false;
+// FORCÉ: PostgREST est en 503, utiliser Edge Function directement
+let useEdgeFunctionFallback = true;
 let edgeFunctionFailures = 0;
 const MAX_EDGE_FAILURES = 3;
 
@@ -200,34 +200,19 @@ const BACKOFF_MAX_MS = 30000;
 
 /**
  * Vérifie si Supabase est prêt avec une requête simple
- * Tente d'abord PostgREST, puis Edge Function en fallback
+ * FORCÉ: Utilise directement Edge Function car PostgREST est en 503
  */
 const checkServiceReady = async (): Promise<boolean> => {
   try {
-    // Essayer PostgREST d'abord
-    const { error } = await supabase.from('users').select('id').limit(1);
-    if (!error) {
+    // Utiliser directement Edge Function car PostgREST est cassé
+    const edgeResult = await queryViaEdgeFunction('users', { select: 'id', limit: 1 });
+    
+    if (!edgeResult.error) {
       serviceReady = true;
       consecutiveErrors = 0;
       lastSuccessfulRequest = Date.now();
-      disableEdgeFallback();
-      console.log('✅ Supabase PostgREST ready');
+      console.log('✅ Edge Function ready');
       return true;
-    }
-    
-    // Si erreur 503, essayer Edge Function
-    if (error && (error.message?.includes('503') || error.code === 'PGRST002')) {
-      console.log('⚠️ PostgREST 503, trying Edge Function fallback...');
-      const edgeResult = await queryViaEdgeFunction('users', { select: 'id', limit: 1 });
-      
-      if (!edgeResult.error) {
-        serviceReady = true;
-        consecutiveErrors = 0;
-        lastSuccessfulRequest = Date.now();
-        enableEdgeFallback();
-        console.log('✅ Edge Function fallback working');
-        return true;
-      }
     }
     
     return false;

@@ -78,53 +78,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
     try {
-      // Attendre que le service soit prêt
-      await waitForServiceReady();
+      // Utiliser directement Edge Function car PostgREST est en 503
+      console.log('Auth: Fetching profile via Edge Function for', authUser.email);
       
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, email, role_level, avatar')
-        .eq('id', authUser.id)
-        .single();
-
-      if (error) {
-        recordFailure(error);
-        
-        // Si erreur 503, tenter Edge Function fallback
-        if (isTransientError(error)) {
-          console.log('Auth: PostgREST 503, trying Edge Function fallback...');
-          enableEdgeFallback();
-          
-          const edgeResult = await queryViaEdgeFunction<{id: string; name: string; email: string; role_level: string; avatar: string}[]>('users', {
-            select: 'id,name,email,role_level,avatar',
-            filters: { id: authUser.id },
-            limit: 1
-          });
-          
-          if (!edgeResult.error && edgeResult.data && edgeResult.data.length > 0) {
-            const userData = edgeResult.data[0];
-            console.log('Auth: Edge Function fallback success');
-            return {
-              id: userData.id,
-              name: userData.name,
-              email: userData.email,
-              role: userData.role_level || 'secretary',
-              avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
-            };
-          }
-          
-          console.log('Auth: Edge Function also failed, using minimal profile');
-          return {
-            id: authUser.id,
-            name: authUser.email?.split('@')[0] || 'Utilisateur',
-            email: authUser.email || '',
-            role: 'secretary',
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.email}`,
-          };
-        }
+      const edgeResult = await queryViaEdgeFunction<{id: string; name: string; email: string; role_level: string; avatar: string}[]>('users', {
+        select: 'id,name,email,role_level,avatar',
+        eq: { id: authUser.id },
+        limit: 1
+      });
+      
+      if (!edgeResult.error && edgeResult.data && edgeResult.data.length > 0) {
+        const userData = edgeResult.data[0];
+        console.log('Auth: Profile loaded:', userData.email, userData.role_level);
+        return {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role_level || 'secretary',
+          avatar: userData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
+        };
       }
       
-      if (!data) {
+      // Si pas trouvé, créer le profil
+      if (!edgeResult.error && edgeResult.data && edgeResult.data.length === 0) {
+        console.log('Auth: User not found, creating profile...');
         const newProfile = {
           id: authUser.id,
           email: authUser.email || '',
@@ -133,9 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.email}`,
         };
 
-        // Utiliser Edge Function pour INSERT (PostgREST est down)
         await insertViaEdgeFunction('users', newProfile);
-        recordSuccess();
 
         return {
           id: newProfile.id,
@@ -145,14 +120,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar: newProfile.avatar,
         };
       }
-
-      recordSuccess();
+      
+      // Fallback minimal si Edge Function échoue
+      console.log('Auth: Edge Function failed, using minimal profile');
       return {
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        role: data.role_level || 'secretary',
-        avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.email}`,
+        id: authUser.id,
+        name: authUser.email?.split('@')[0] || 'Utilisateur',
+        email: authUser.email || '',
+        role: 'secretary',
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.email}`,
       };
     } catch (error) {
       console.error('Erreur profil:', error);

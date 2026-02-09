@@ -162,7 +162,11 @@ export const TEMPLATE_SPECIFIC_FIELDS: Record<string, FormField[]> = {
     { id: 'ordreDuJour6', label: 'Point 2', type: 'text', placeholder: 'Deuxième point du 2ème jour', required: false, icon: 'list', width: 'half' },
     { id: 'ordreDuJour7', label: 'Point 3', type: 'text', placeholder: 'Troisième point du 2ème jour', required: false, icon: 'list', width: 'half' },
     { id: 'ordreDuJour8', label: 'Point 4', type: 'text', placeholder: 'Quatrième point du 2ème jour', required: false, icon: 'list', width: 'half' },
-    { id: 'signatureExp', label: 'Secrétaire Fédéral', type: 'select', options: ['Frédéric HOMEZ', 'Paul MUSIC', 'Christian LAFAY'], required: true, icon: 'badge', width: 'full' },
+    { id: 'signatureExp', label: 'Secrétaire Fédéral', type: 'select', options: [
+      'Bruno REYNES', 'Eric KELLER', 'Edwin LIARD', 'Gérard CIANNARELLA',
+      'Géraldine GOMIZ', 'Jean-Yves SABOT', 'Nathalie CAPART',
+      'Olivier LEFEBVRE', 'Paul RIBEIRO', 'Valentin RODRIGUEZ'
+    ], required: true, icon: 'badge', width: 'full', defaultValue: 'Valentin RODRIGUEZ' },
   ],
   // Champs spécifiques pour Bureau Fédéral - Page Contenu (dates uniquement)
   convocations_bureau_federal: [
@@ -177,7 +181,11 @@ export const TEMPLATE_SPECIFIC_FIELDS: Record<string, FormField[]> = {
     { id: 'ordreDuJour2', label: 'Point 2', type: 'text', placeholder: 'Deuxième point à l\'ordre du jour', required: false, icon: 'format_list_numbered', width: 'half' },
     { id: 'ordreDuJour3', label: 'Point 3', type: 'text', placeholder: 'Troisième point à l\'ordre du jour', required: false, icon: 'format_list_numbered', width: 'half' },
     { id: 'ordreDuJour4', label: 'Point 4', type: 'text', placeholder: 'Quatrième point à l\'ordre du jour', required: false, icon: 'format_list_numbered', width: 'half' },
-    { id: 'signatureExp', label: 'Secrétaire Fédéral', type: 'select', options: ['Frédéric HOMEZ', 'Paul MUSIC', 'Christian LAFAY'], required: true, icon: 'badge', width: 'full' },
+    { id: 'signatureExp', label: 'Secrétaire Fédéral', type: 'select', options: [
+      'Bruno REYNES', 'Eric KELLER', 'Edwin LIARD', 'Gérard CIANNARELLA',
+      'Géraldine GOMIZ', 'Jean-Yves SABOT', 'Nathalie CAPART',
+      'Olivier LEFEBVRE', 'Paul RIBEIRO', 'Valentin RODRIGUEZ'
+    ], required: true, icon: 'badge', width: 'full', defaultValue: 'Valentin RODRIGUEZ' },
   ],
   circulaire: [
     { id: 'numeroCourrier', label: 'Numéro de la Circulaire', type: 'text', placeholder: 'Ex: 2025-001', required: true, icon: 'tag', width: 'half' },

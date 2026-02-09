@@ -28,6 +28,7 @@ export interface FormField {
   maxLength?: number;
   hasUppercaseToggle?: boolean; // Affiche une case à cocher pour mettre en majuscules
   forceUppercase?: boolean; // Force les majuscules sans toggle
+  defaultValue?: string; // Valeur par défaut pour les champs select
 }
 
 // Données du formulaire
