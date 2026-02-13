@@ -183,7 +183,7 @@ const App: React.FC = () => {
         const entrepriseField = COMMON_FIELDS.find(f => f.id === 'entreprise');
         const regionFields = TEMPLATE_SPECIFIC_FIELDS['cprefp_coordonnees'] || [];
         const result: FormField[] = [];
-        if (entrepriseField) result.push(entrepriseField);
+        if (entrepriseField) result.push({ ...entrepriseField, placeholder: 'Ex: UMM' });
         result.push(...regionFields);
         return result;
       } else if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
