@@ -50,6 +50,8 @@ const SidebarComponent: React.FC<SidebarProps> = ({ templates, selectedTemplate,
         return 'Circulaire d\'informations';
       case 'custom':
         return 'Document personnalisé avec contenu IA';
+      case 'cprefp':
+        return 'Courrier CPREFP';
       default:
         return '';
     }

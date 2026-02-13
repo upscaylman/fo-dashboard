@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { TEMPLATES, STEPS, FORM_FIELDS, TEMPLATE_SPECIFIC_FIELDS, COMMON_FIELDS } from './constants';
 import { StepType, FormData, FormField, TemplateId } from './types';
 import { Header } from './components/Header';
@@ -39,8 +39,14 @@ const App: React.FC = () => {
     tool: 'docease'
   });
 
-  const [currentStepIdx, setCurrentStepIdx] = useState(0);
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>('designation');
+  const [currentStepIdx, setCurrentStepIdx] = useState(() => {
+    const saved = sessionStorage.getItem('docease-current-step');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateId | null>(() => {
+    const saved = sessionStorage.getItem('docease-selected-template');
+    return (saved as TemplateId) || 'designation';
+  });
   const [formData, setFormData] = useState<FormData>({});
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
@@ -72,8 +78,22 @@ const App: React.FC = () => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // Ref pour éviter de réinitialiser l'étape au premier rendu (restauration sessionStorage)
+  const isInitialMountRef = useRef(true);
+
   // Toast hook
   const { toast, showSuccess, showError, showInfo, hideToast } = useToast();
+
+  // Persister le template et l'étape dans sessionStorage
+  useEffect(() => {
+    if (selectedTemplate) {
+      sessionStorage.setItem('docease-selected-template', selectedTemplate);
+    }
+  }, [selectedTemplate]);
+
+  useEffect(() => {
+    sessionStorage.setItem('docease-current-step', String(currentStepIdx));
+  }, [currentStepIdx]);
 
   // Optimisation: mémoriser les valeurs calculées
   // Filtrer les steps selon le template (circulaire n'a pas de page signataire, convocations n'a que contenu et signataire)
@@ -115,8 +135,8 @@ const App: React.FC = () => {
         .map(renameExpStep)
         .map(renameContentStep);
     }
-    if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
-      // Pour designation, negociation et custom : coordonnées, contenu (avec codeDocument + signatureExp), destinataire(s)
+    if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom' || selectedTemplate === 'cprefp') {
+      // Pour designation, negociation, custom et cprefp : coordonnées, contenu (avec codeDocument + signatureExp), destinataire(s)
       return STEPS.filter(step => step.id !== 'jour1' && step.id !== 'jour2' && step.id !== 'ordreDuJourBureau')
         .map(step => step.id === 'expediteur' ? { ...step, label: 'Destinataire(s)', icon: 'group', description: 'Email du destinataire' } : step);
     }
@@ -158,6 +178,14 @@ const App: React.FC = () => {
       } else if (selectedTemplate === 'convocations') {
         // Pour les convocations, pas de champs coordonnées spécifiques, on saute directement au contenu
         return [];
+      } else if (selectedTemplate === 'cprefp') {
+        // Pour CPREFP : entreprise + nomRegion uniquement
+        const entrepriseField = COMMON_FIELDS.find(f => f.id === 'entreprise');
+        const regionFields = TEMPLATE_SPECIFIC_FIELDS['cprefp_coordonnees'] || [];
+        const result: FormField[] = [];
+        if (entrepriseField) result.push(entrepriseField);
+        result.push(...regionFields);
+        return result;
       } else if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
         // Pour designation, negociation et custom : coordonnées SANS codeDocument et SANS emailDestinataire
         // Adresse, Bâtiment et Code postal + Ville sur la même ligne en 3 colonnes
@@ -193,8 +221,8 @@ const App: React.FC = () => {
         return TEMPLATE_SPECIFIC_FIELDS['convocations'] || [];
       }
       
-      // Pour designation, negociation et custom : ajouter codeDocument au début et signatureExp à la fin
-      if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
+      // Pour designation, negociation, custom et cprefp : ajouter codeDocument au début et signatureExp à la fin
+      if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom' || selectedTemplate === 'cprefp') {
         const codeDocumentField = COMMON_FIELDS.find(f => f.id === 'codeDocument');
         const signatureField = COMMON_FIELDS.find(f => f.id === 'signatureExp');
         const templateFields = TEMPLATE_SPECIFIC_FIELDS[selectedTemplate] || [];
@@ -238,8 +266,8 @@ const App: React.FC = () => {
         };
         return [emailEnvoiField];
       }
-      // Pour designation, negociation et custom, retourner emailDestinataire en pleine largeur (onglet Destinataire(s))
-      if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom') {
+      // Pour designation, negociation, custom et cprefp, retourner emailDestinataire en pleine largeur (onglet Destinataire(s))
+      if (selectedTemplate === 'designation' || selectedTemplate === 'negociation' || selectedTemplate === 'custom' || selectedTemplate === 'cprefp') {
         const emailField = COMMON_FIELDS.find(f => f.id === 'emailDestinataire');
         if (emailField) {
           return [{ ...emailField, width: 'full' as const }];
@@ -325,8 +353,13 @@ const App: React.FC = () => {
   // Mettre à jour les champs du formulaire quand le template change
   useEffect(() => {
     if (selectedTemplate && TEMPLATE_SPECIFIC_FIELDS[selectedTemplate]) {
-      // Réinitialiser à la première étape pour éviter les erreurs d'index
-      setCurrentStepIdx(0);
+      // Au premier rendu (restauration sessionStorage), ne pas réinitialiser l'étape
+      if (isInitialMountRef.current) {
+        isInitialMountRef.current = false;
+      } else {
+        // Réinitialiser à la première étape pour éviter les erreurs d'index
+        setCurrentStepIdx(0);
+      }
       
       // Ajouter les champs spécifiques au template dans l'étape "contenu"
       FORM_FIELDS.contenu = TEMPLATE_SPECIFIC_FIELDS[selectedTemplate];
@@ -365,7 +398,6 @@ const App: React.FC = () => {
         }
       }
 
-      setCurrentStepIdx(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplate]);
@@ -426,6 +458,8 @@ const App: React.FC = () => {
       } else {
         prefix = 'Convocation';
       }
+    } else if (selectedTemplate === 'cprefp') {
+      prefix = 'CPREFP';
     } else if (selectedTemplate === 'circulaire') {
       prefix = 'Circulaire';
     } else if (selectedTemplate === 'custom') {

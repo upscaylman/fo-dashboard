@@ -1,83 +1,86 @@
 @echo off
+chcp 65001 >nul 2>&1
+setlocal enabledelayedexpansion
 
-REM Vérifier si le script est exécuté en tant qu'administrateur
+REM === DocEase - Arret de tous les services ===
+
+set "SCRIPT_DIR=%~dp0"
+if "!SCRIPT_DIR:~-1!"=="\" set "SCRIPT_DIR=!SCRIPT_DIR:~0,-1!"
+
+REM Verifier privileges administrateur
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo Demande d'élévation des privilèges administrateur...
-    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    echo [INFO] Elevation des privileges administrateur...
+    powershell -Command "Start-Process cmd.exe -ArgumentList '/c cd /d \"!SCRIPT_DIR!\" && \"!SCRIPT_DIR!\stop.bat\"' -Verb RunAs"
     exit /b
 )
 
+echo.
 echo ========================================
-echo 🛑 ARRÊT DE TOUS LES SERVICES
+echo  DocEase - ARRET DES SERVICES
 echo ========================================
 echo.
 
-REM Arrêter tous les processus ngrok
-echo 🔍 Arrêt de ngrok...
-powershell -ExecutionPolicy Bypass -Command "Get-Process ngrok -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.Id -Force; Write-Host '   ✅ ngrok arrêté (PID:' $_.Id ')' -ForegroundColor Green }"
-if errorlevel 1 (
-    echo    ℹ️  Aucun processus ngrok trouvé
+REM --- 1. Arreter ngrok ---
+echo [1/3] Arret de ngrok...
+taskkill /F /IM ngrok.exe >nul 2>&1
+if %errorLevel% equ 0 (
+    echo    [OK] ngrok arrete.
 ) else (
-    echo    ✅ Tous les processus ngrok arrêtés
+    echo    [--] Aucun processus ngrok trouve.
 )
 
 echo.
 
-REM Arrêter le serveur de formulaire (processus PowerShell)
-echo 🔍 Arrêt du serveur de formulaire...
-powershell -ExecutionPolicy Bypass -Command "$found = $false; Get-Process powershell -ErrorAction SilentlyContinue | ForEach-Object { $cmdLine = (Get-WmiObject Win32_Process -Filter \"ProcessId = $($_.Id)\" -ErrorAction SilentlyContinue).CommandLine; if ($cmdLine -match 'serve-form') { Stop-Process -Id $_.Id -Force; Write-Host '   ✅ Serveur formulaire arrêté (PID:' $_.Id ')' -ForegroundColor Green; $found = $true } }; if (-not $found) { Write-Host '   ℹ️  Aucun serveur de formulaire trouvé' -ForegroundColor Gray }"
+REM --- 2. Arreter le serveur formulaire (Node.js serve.cjs sur port 8080) ---
+echo [2/3] Arret du serveur formulaire (port 8080)...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8080.*LISTENING" 2^>nul') do (
+    taskkill /F /PID %%a >nul 2>&1
+    echo    [OK] Processus PID %%a arrete.
+)
+REM Tuer les processus node serve.cjs restants
+powershell -ExecutionPolicy Bypass -Command "Get-Process node -ErrorAction SilentlyContinue | ForEach-Object { $cmd = (Get-CimInstance Win32_Process -Filter \"ProcessId = $($_.Id)\" -ErrorAction SilentlyContinue).CommandLine; if ($cmd -match 'serve\.cjs') { Stop-Process -Id $_.Id -Force; Write-Host '   [OK] serve.cjs arrete (PID:' $_.Id ')' } }"
+echo    [OK] Serveur formulaire arrete.
 
 echo.
 
-REM Vérifier que Docker est disponible
+REM --- 3. Arreter Docker ---
+echo [3/3] Arret des conteneurs Docker...
 docker --version >nul 2>&1
 if errorlevel 1 (
-    echo ⚠️  Docker n'est pas accessible, impossible d'arrêter les conteneurs
-    echo    Les conteneurs peuvent toujours être en cours d'exécution
+    echo    [ATTENTION] Docker non accessible, conteneurs non arretes.
     goto :end
 )
 
-REM Aller dans le dossier docker
-cd /d "%~dp0docker"
+cd /d "!SCRIPT_DIR!\docker"
 if not exist "docker-compose.yml" (
-    echo ❌ Fichier docker-compose.yml introuvable dans le dossier docker
-    cd /d "%~dp0"
+    echo    [ATTENTION] docker-compose.yml introuvable.
+    cd /d "!SCRIPT_DIR!"
     goto :end
 )
 
-REM Arrêter Docker (mode développement par défaut)
-echo 📦 Arrêt des conteneurs Docker...
-echo    - n8n
-echo    - PostgreSQL
-echo    - Ollama
-echo.
 docker compose down
 if errorlevel 1 (
-    echo.
-    echo ❌ Erreur lors de l'arrêt de Docker
-    echo    Certains conteneurs peuvent encore être en cours d'exécution
+    echo    [ERREUR] Erreur lors de l'arret de Docker.
 ) else (
-    echo.
-    echo ✅ Conteneurs Docker arrêtés avec succès
+    echo    [OK] Conteneurs Docker arretes (n8n, PostgreSQL, Ollama).
 )
 
-REM Retour au répertoire racine
-cd /d "%~dp0"
+cd /d "!SCRIPT_DIR!"
 
 :end
 echo.
 echo ========================================
-echo ✅ ARRÊT TERMINÉ
+echo  ARRET TERMINE
 echo ========================================
 echo.
-echo 📋 Services arrêtés:
-echo    ✅ ngrok (tous les tunnels)
-echo    ✅ Serveur de formulaire PowerShell
-echo    ✅ Conteneurs Docker (n8n, PostgreSQL, Ollama)
+echo  Services arretes:
+echo    - ngrok (tunnel)
+echo    - Serveur formulaire (Node.js)
+echo    - Conteneurs Docker
 echo.
-echo 💡 Pour redémarrer: start.bat
+echo  Pour redemarrer: start.bat
 echo.
-echo Fermeture automatique dans 5 secondes...
+echo Fermeture dans 5 secondes...
 timeout /t 5 /nobreak >nul
 

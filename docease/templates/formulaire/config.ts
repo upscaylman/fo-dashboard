@@ -8,21 +8,21 @@ const getWebhookUrl = (): string => {
   if (typeof window !== 'undefined' && (window as any).ENV?.WEBHOOK_URL) {
     return (window as any).ENV.WEBHOOK_URL;
   }
-  return import.meta.env.VITE_WEBHOOK_URL || 'https://dee-wakeful-succulently.ngrok-free.dev/webhook/7f72ac69-35b7-4771-a5c6-7acb18947254';
+  return import.meta.env.VITE_WEBHOOK_URL || '/webhook/7f72ac69-35b7-4771-a5c6-7acb18947254';
 };
 
 const getWebhookEmailUrl = (): string => {
   if (typeof window !== 'undefined' && (window as any).ENV?.WEBHOOK_EMAIL_URL) {
     return (window as any).ENV.WEBHOOK_EMAIL_URL;
   }
-  return import.meta.env.VITE_WEBHOOK_EMAIL_URL || 'https://dee-wakeful-succulently.ngrok-free.dev/webhook/1ee6e745-fc31-4fd8-bc59-531bd4a69997';
+  return import.meta.env.VITE_WEBHOOK_EMAIL_URL || '/webhook/1ee6e745-fc31-4fd8-bc59-531bd4a69997';
 };
 
 const getWebhookPdfConvertUrl = (): string => {
   if (typeof window !== 'undefined' && (window as any).ENV?.WEBHOOK_PDF_CONVERT_URL) {
     return (window as any).ENV.WEBHOOK_PDF_CONVERT_URL;
   }
-  return import.meta.env.VITE_WEBHOOK_PDF_CONVERT_URL || 'https://dee-wakeful-succulently.ngrok-free.dev/api/convert-pdf';
+  return import.meta.env.VITE_WEBHOOK_PDF_CONVERT_URL || '/api/convert-pdf';
 };
 
 const getWebhookAiImproveUrl = (): string => {

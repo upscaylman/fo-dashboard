@@ -1,112 +1,103 @@
 @echo off
+chcp 65001 >nul 2>&1
+setlocal enabledelayedexpansion
 
-REM Vérifier si le script est exécuté en tant qu'administrateur
+REM ============================================
+REM DocEase - Demarrage complet
+REM Ordre: Docker -> Formulaire (8080) -> ngrok
+REM ============================================
+
+REM Sauvegarder le repertoire du script
+set "SCRIPT_DIR=%~dp0"
+
+REM Verifier les privileges administrateur
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo Demande d'élévation des privilèges administrateur...
-    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    echo [INFO] Elevation des privileges administrateur...
+    powershell -Command "Start-Process cmd.exe -ArgumentList '/c cd /d \"%SCRIPT_DIR%.\" && \"%SCRIPT_DIR%start.bat\"' -Verb RunAs"
     exit /b
 )
 
+echo.
 echo ========================================
-echo 🚀 DÉMARRAGE - MODE DÉVELOPPEMENT
+echo  DocEase - DEMARRAGE
 echo ========================================
 echo.
 
-REM Vérifier que Docker est disponible
+REM === ETAPE 1: Docker ===
+echo [1/3] Verification de Docker...
 docker --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ Docker n'est pas installé ou non accessible
-    echo    Veuillez installer Docker Desktop et réessayer
+    echo [ERREUR] Docker n'est pas installe ou Docker Desktop n'est pas lance.
     pause
     exit /b 1
 )
+echo [OK] Docker disponible
 
-REM Aller dans le dossier docker
-cd /d "%~dp0docker"
+cd /d "%SCRIPT_DIR%docker"
 if not exist "docker-compose.yml" (
-    echo ❌ Fichier docker-compose.yml introuvable dans le dossier docker
+    echo [ERREUR] docker-compose.yml introuvable dans %SCRIPT_DIR%docker
     pause
     exit /b 1
 )
 
-REM Démarrer Docker (mode développement par défaut)
-echo 📦 Démarrage des services Docker...
-echo    - PostgreSQL (base de données)
-echo    - n8n (orchestrateur de workflows)
-echo    - Ollama (IA locale)
-echo.
-docker compose up -d
-if errorlevel 1 (
-    echo.
-    echo ❌ Erreur lors du démarrage de Docker
-    echo    Vérifiez que Docker Desktop est démarré
-    pause
-    exit /b 1
-)
-
-REM Attendre que PostgreSQL soit prêt
-echo.
-echo ⏳ Attente du démarrage de PostgreSQL et n8n...
+echo [INFO] Demarrage des conteneurs (PostgreSQL, n8n, Ollama)...
+docker compose up -d 2>nul
+echo [INFO] Attente du demarrage (10s)...
 timeout /t 10 /nobreak >nul
-
-REM Vérifier que les conteneurs sont bien démarrés
-docker compose ps | findstr /C:"Up" >nul
+docker compose ps 2>nul | findstr /C:"Up" >nul
 if errorlevel 1 (
-    echo ⚠️  Certains conteneurs ne semblent pas démarrés correctement
-    echo    Vérifiez avec: docker compose ps
-)
-
-REM Retour au répertoire racine
-cd /d "%~dp0"
-
-REM Démarrer ngrok automatiquement
-echo.
-echo 🌐 Démarrage du tunnel ngrok...
-powershell -ExecutionPolicy Bypass -File "%~dp0scripts\start-ngrok.ps1"
-if errorlevel 1 (
-    echo    ⚠️  Erreur lors du démarrage de ngrok, utilisation de localhost
-    echo    Vous pouvez démarrer ngrok manuellement avec: start-ngrok.bat
-)
-
-REM Démarrer ngrok http 8080
-echo.
-echo 🌐 Démarrage de ngrok http 8080...
-start "🌐 ngrok http 8080" /min cmd /c "%~dp0scripts\start-ngrok-8080.bat"
-timeout /t 2 /nobreak >nul
-echo    ✅ ngrok http 8080 démarré
-
-REM Démarrer le serveur de formulaire en arrière-plan
-echo.
-echo 🌐 Démarrage du serveur de formulaire...
-if exist "templates\form\serve-form-wrapper.ps1" (
-    start "Serveur Formulaire" powershell -ExecutionPolicy Bypass -NoExit -Command "cd '%~dp0templates\form'; .\serve-form-wrapper.ps1"
-    timeout /t 2 /nobreak >nul
-    echo    ✅ Serveur de formulaire démarré
+    echo [ATTENTION] Certains conteneurs ne semblent pas demarres.
+    echo             Verifiez : cd docker ^& docker compose ps
 ) else (
-    echo ⚠️  Script serve-form-wrapper.ps1 introuvable, serveur formulaire non démarré
+    echo [OK] Conteneurs Docker demarres
 )
+
+cd /d "%SCRIPT_DIR%"
+
+REM === ETAPE 2: Serveur Formulaire (port 8080) ===
+echo.
+echo [2/3] Build + demarrage du serveur formulaire (port 8080)...
+if exist "%SCRIPT_DIR%templates\formulaire\package.json" (
+    echo [INFO] Build de l'application...
+    cd /d "%SCRIPT_DIR%templates\formulaire"
+    call npm run build
+    cd /d "%SCRIPT_DIR%"
+    echo [INFO] Demarrage du serveur Node.js...
+    start "DocEase - Formulaire" /min node "%SCRIPT_DIR%templates\formulaire\serve.cjs"
+    echo [INFO] Attente du demarrage serveur (3s)...
+    timeout /t 3 /nobreak >nul
+    echo [OK] Serveur formulaire demarre sur http://localhost:8080
+) else (
+    echo [ATTENTION] templates\formulaire introuvable, serveur non demarre
+)
+
+REM === ETAPE 3: ngrok (tunnel vers port 8080) ===
+echo.
+echo [3/3] Demarrage de ngrok (tunnel http 8080)...
+start "DocEase - ngrok" /min cmd /c ""%SCRIPT_DIR%scripts\start-ngrok-8080.bat""
+timeout /t 5 /nobreak >nul
+
+REM Recuperer l'URL ngrok
+set "NGROK_URL="
+for /f "delims=" %%u in ('powershell -ExecutionPolicy Bypass -Command "try { $r = Invoke-RestMethod -Uri 'http://localhost:4040/api/tunnels' -TimeoutSec 5 -ErrorAction Stop; ($r.tunnels | Where-Object { $_.proto -eq 'https' } | Select-Object -First 1).public_url } catch { '' }" 2^>nul') do set "NGROK_URL=%%u"
 
 echo.
 echo ========================================
-echo ✅ TOUT EST DÉMARRÉ !
+echo  TOUT EST DEMARRE !
 echo ========================================
 echo.
-echo 📋 Accès aux services:
-echo    - n8n Interface: http://localhost:5678
-echo    - Formulaire:     http://localhost:8080
-echo    - PostgreSQL:     localhost:5432
-echo    - Ollama:         http://localhost:11434
+echo  Services:
+echo    - n8n:         http://localhost:5678
+echo    - Formulaire:  http://localhost:8080
+echo    - Ollama:      http://localhost:11434
+echo    - ngrok:       http://localhost:4040
+if defined NGROK_URL (
+    echo    - URL publique: %NGROK_URL%
+)
 echo.
-echo 💡 Commandes utiles:
-echo    - Arrêter:        stop.bat
-echo    - Voir les logs:  cd docker ^&^& docker compose logs -f
-echo    - Redémarrer:     stop.bat puis start.bat
-echo    - Démarrer ngrok: start-ngrok.bat
-echo    - Arrêter ngrok:  stop-ngrok.bat
+echo  Commandes:
+echo    - Arreter:     stop.bat
+echo    - Logs:        cd docker ^& docker compose logs -f
 echo.
-echo 📝 Mode: DÉVELOPPEMENT (docker-compose.yml)
-echo    Pour la production: cd docker ^&^& docker compose -f docker-compose.prod.yml up -d
-echo.
-echo Fermeture automatique dans 3 secondes...
-timeout /t 3 /nobreak >nul
+pause

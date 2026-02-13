@@ -280,6 +280,90 @@
           "rows": 5
         }
       }
+    },
+    "cprefp": {
+      "nom": "CPREFP",
+      "fichier": "template_CPREFP.docx",
+      "description": "Courrier CPREFP",
+      "variables_specifiques": {
+        "nomRegion": {
+          "label": "Region",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Ile-de-France",
+          "icon": "map"
+        },
+        "civiliteDelegue": {
+          "label": "Civilite Delegue(e)",
+          "type": "select",
+          "options": ["Monsieur", "Madame"],
+          "required": true
+        },
+        "nomDelegue": {
+          "label": "Nom Delegue(e)",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Martin Dupont",
+          "icon": "person"
+        },
+        "emailDelegue": {
+          "label": "Email Delegue(e)",
+          "type": "email",
+          "required": true,
+          "placeholder": "delegue@exemple.com",
+          "icon": "email"
+        },
+        "civiliteRemplace": {
+          "label": "Civilite du/de la Remplace(e)",
+          "type": "select",
+          "options": ["Monsieur", "Madame"],
+          "required": true
+        },
+        "nomRemplace": {
+          "label": "Nom du/de la Remplace(e)",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Sophie Bernard",
+          "icon": "person"
+        }
+      }
+    },
+    "circulaire": {
+      "nom": "Circulaire",
+      "fichier": "template_circulaire.docx",
+      "description": "Circulaire d'informations",
+      "variables_specifiques": {
+        "numeroCourrier": {
+          "label": "Numero de la Circulaire",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: 2025-001",
+          "icon": "tag"
+        },
+        "objet": {
+          "label": "Objet de la Circulaire",
+          "type": "text",
+          "required": true,
+          "placeholder": "Ex: Information importante",
+          "icon": "subject"
+        },
+        "circulaireTexteA": {
+          "label": "Contenu de la Circulaire",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "Saisissez le contenu de la circulaire...",
+          "icon": "description",
+          "rows": 8
+        },
+        "circulaireTexteB": {
+          "label": "Autres contenu",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "Saisissez d'autres contenus...",
+          "icon": "edit_note",
+          "rows": 8
+        }
+      }
     }
   }
 }

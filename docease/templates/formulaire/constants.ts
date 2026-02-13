@@ -80,6 +80,12 @@ export const TEMPLATES: Template[] = [
     image: '/assets/img/convocations_template.png'
   },
   {
+    id: 'cprefp',
+    title: 'CPREFP',
+    description: 'Courrier CPREFP',
+    image: '/assets/img/CPREFP.png'
+  },
+  {
     id: 'custom',
     title: 'Document Personnalisé',
     description: 'Document personnalisé avec contenu IA',
@@ -196,6 +202,17 @@ export const TEMPLATE_SPECIFIC_FIELDS: Record<string, FormField[]> = {
   custom: [
     { id: 'objet', label: 'Objet du Document', type: 'text', placeholder: 'Ex: Demande d\'information', required: true, icon: 'subject', width: 'half' },
     { id: 'texteIa', label: 'Contenu du Document', type: 'textarea', placeholder: 'Saisissez le contenu du document (minimum 10 caractères pour déclencher l\'IA)...', required: true, icon: 'edit_note', rows: 5, width: 'full', maxLength: 800 },
+  ],
+  cprefp: [
+    { id: 'numeroCourrier', label: 'Numero de Recommande', type: 'text', placeholder: 'Ex: 2025-001', required: true, icon: 'tag', width: 'half' },
+    { id: 'civiliteDelegue', label: 'Civilite Delegue(e)', type: 'select', options: ['Monsieur', 'Madame'], required: true, width: 'third' },
+    { id: 'nomDelegue', label: 'Nom Delegue(e)', type: 'text', placeholder: 'Ex: Martin Dupont', required: true, icon: 'person', width: 'third' },
+    { id: 'emailDelegue', label: 'Email Delegue(e)', type: 'email', placeholder: 'delegue@exemple.com', required: true, icon: 'email', width: 'third' },
+    { id: 'civiliteRemplace', label: 'Civilite du/de la Remplace(e)', type: 'select', options: ['Monsieur', 'Madame'], required: true, width: 'half' },
+    { id: 'nomRemplace', label: 'Nom du/de la Remplace(e)', type: 'text', placeholder: 'Ex: Sophie Bernard', required: true, icon: 'person', width: 'half' },
+  ],
+  cprefp_coordonnees: [
+    { id: 'nomRegion', label: 'Region', type: 'text', placeholder: 'Ex: Ile-de-France', required: true, icon: 'map', width: 'half' },
   ],
 };
 

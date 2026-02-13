@@ -4,6 +4,7 @@ import { FORM_FIELDS, PREDEFINED_EMAILS, CONVOCATION_EMAILS } from '../constants
 import { Input } from './Input';
 import { AITextarea } from './AITextarea';
 import { AddressInput } from './AddressInput';
+import { RegionInput } from './RegionInput';
 import { MultiEmailInput } from './MultiEmailInput';
 import { ConvocationTypeSelect } from './ConvocationTypeSelect';
 import { DynamicAgendaPoints } from './DynamicAgendaPoints';
@@ -362,6 +363,17 @@ const FormStepComponent: React.FC<FormStepProps> = ({
                   onChange('adresse', address);
                   onChange('cpVille', `${postalCode} ${city}`);
                 }}
+                icon={field.icon}
+                required={field.required}
+                placeholder={field.placeholder}
+                error={invalidFields?.has(field.id) && field.required ? `${field.label} est requis` : undefined}
+                resetKey={`${selectedTemplate}_${step}`}
+              />
+            ) : field.id === 'nomRegion' ? (
+              <RegionInput
+                label={field.label}
+                value={data[field.id] || ''}
+                onChange={(value) => onChange(field.id, value)}
                 icon={field.icon}
                 required={field.required}
                 placeholder={field.placeholder}
