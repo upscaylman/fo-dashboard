@@ -1,0 +1,589 @@
+﻿{
+    "updatedAt":  "2025-11-13T12:41:32.109Z",
+    "createdAt":  "2025-11-13T12:41:32.109Z",
+    "id":  "TXziodPP3k2lvj1h",
+    "name":  "gpt_generator copy",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "7f72ac69-35b7-4771-a5c6-7acb18947254",
+                                         "responseMode":  "responseNode",
+                                         "options":  {
+                                                         "allowedOrigins":  "*"
+                                                     }
+                                     },
+                      "id":  "454184d3-420e-4e09-b414-cb326354ffa7",
+                      "name":  "Formulaire (Webhook)",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -720,
+                                       336
+                                   ],
+                      "webhookId":  "7f72ac69-35b7-4771-a5c6-7acb18947254"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "boolean":  [
+                                                                            {
+                                                                                "value1":  "={{ $json.texteIa \u0026\u0026 $json.texteIa.length \u003e 10 }}"
+                                                                            }
+                                                                        ]
+                                                        }
+                                     },
+                      "id":  "eececde2-0e79-421f-9d02-a264d625a7f0",
+                      "name":  "Condition IA",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -240,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "http://ollama:11434/api/generate",
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"model\": \"gemma2:2b\",\n  \"prompt\": \"Rédige un document professionnel en français basé sur ces informations : {{ $json.texteIa }}\",\n  \"stream\": false,\n  \"options\": {\n    \"num_predict\": 500,\n    \"temperature\": 0.7\n  }\n}",
+                                         "options":  {
+                                                         "timeout":  120000
+                                                     }
+                                     },
+                      "id":  "8cda3963-d168-4bcb-805d-53e3708cd254",
+                      "name":  "Appel IA Gemma",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       16,
+                                       208
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "texte_ia_genere",
+                                                                                     "name":  "texte_ia",
+                                                                                     "value":  "={{ $json.response || $(\u0027Preparer Donnees\u0027).item.json.texteIa }}",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "a61805a3-3c95-4f9b-8f0f-933ac7c4bed2",
+                      "name":  "Extraire Texte IA",
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.3,
+                      "position":  [
+                                       256,
+                                       208
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "filePath":  "={{ \u0027/templates/word/template_\u0027 + $(\u0027Preparer Donnees\u0027).item.json.typeDocument + \u0027.docx\u0027 }}"
+                                     },
+                      "id":  "8e4d0749-bc97-4a48-bde0-f9c845a84bd0",
+                      "name":  "Lire Template Word",
+                      "type":  "n8n-nodes-base.readBinaryFile",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -432,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "context":  "={{ $(\u0027Preparer Donnees\u0027).item.json }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-docxtemplater.docxTemplater",
+                      "typeVersion":  1,
+                      "position":  [
+                                       192,
+                                       336
+                                   ],
+                      "id":  "4ff5a90a-c76a-48b2-af56-766bb2c668fb",
+                      "name":  "Remplir Template Docx"
+                  },
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "1ee6e745-fc31-4fd8-bc59-531bd4a69997",
+                                         "responseMode":  "responseNode",
+                                         "options":  {
+                                                         "allowedOrigins":  "*"
+                                                     }
+                                     },
+                      "id":  "273701b1-7c4d-453f-835c-505aacfa3e51",
+                      "name":  "Validation (Webhook)",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -432,
+                                       640
+                                   ],
+                      "webhookId":  "1ee6e745-fc31-4fd8-bc59-531bd4a69997"
+                  },
+                  {
+                      "parameters":  {
+                                         "fromEmail":  "contact@fo-metaux.fr",
+                                         "toEmail":  "={{ $json.emailEnvoi }}",
+                                         "subject":  "={{ \u0027Document généré - \u0027 + $json.objet }}",
+                                         "text":  "={{ \u0027Bonjour \u0027 + ($json.customEmailMessage || \u0027Madame, Monsieur\u0027) + \u0027,\\n\\nVeuillez trouver ci-joint le document généré.\\n\\nCordialement,\\nFO METAUX\u0027 }}",
+                                         "attachments":  "data",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "50fd892e-bc54-458e-860f-336d84f36481",
+                      "name":  "Envoi Email",
+                      "type":  "n8n-nodes-base.emailSend",
+                      "typeVersion":  1,
+                      "position":  [
+                                       384,
+                                       640
+                                   ],
+                      "credentials":  {
+                                          "smtp":  {
+                                                       "id":  "DDPP2MZx5Nw5x3X9",
+                                                       "name":  "SMTP account"
+                                                   }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "functionCode":  "// Logger ce qui arrive au webhook\nconsole.log(\u0027=== VALIDATION WEBHOOK RECU ===\u0027);\nconsole.log(\u0027Body:\u0027, $json.body);\n\n// Récupérer toutes les variables\nconst civiliteDestinataire = $json.body?.civiliteDestinataire || $json.civiliteDestinataire;\nconst nomDestinataire = $json.body?.nomDestinataire || $json.nomDestinataire;\nconst statutDestinataire = $json.body?.statutDestinataire || $json.statutDestinataire;\nconst batiment = $json.body?.batiment || $json.batiment;\nconst adresse = $json.body?.adresse || $json.adresse;\nconst cpVille = $json.body?.cpVille || $json.cpVille;\nconst objet = $json.body?.objet || $json.objet;\nconst numeroCourrier = $json.body?.numeroCourrier || $json.numeroCourrier;\nconst civiliteRemplace = $json.body?.civiliteRemplace || $json.civiliteRemplace;\nconst nomRemplace = $json.body?.nomRemplace || $json.nomRemplace;\nconst codeDocument = $json.body?.codeDocument || $json.codeDocument;\nconst civiliteDelegue = $json.body?.civiliteDelegue || $json.civiliteDelegue;\nconst nomDelegue = $json.body?.nomDelegue || $json.nomDelegue;\nconst emailDelegue = $json.body?.emailDelegue || $json.emailDelegue;\nconst emailDestinataire = $json.body?.emailDestinataire || $json.emailDestinataire;\nconst emailEnvoi = $json.body?.emailEnvoi || $json.emailEnvoi;\nconst signatureExp = $json.body?.signatureExp || $json.signatureExp;\nconst wordBase64 = $json.body?.wordfile || $json.wordfile;\nconst customEmailMessage = $json.body?.customEmailMessage || $json.customEmailMessage;\n\nconsole.log(\u0027Variables recues:\u0027, { objet, nomDestinataire, emailDestinataire, hasWord: !!wordBase64 });\n\nif (!emailEnvoi) {\n  throw new Error(\u0027Aucun destinataire fourni !\u0027);\n}\n\nif (!wordBase64) {\n  throw new Error(\u0027Fichier Word manquant ! Le formulaire doit generer le Word avant d\\\u0027appeler ce webhook.\u0027);\n}\n\n// Formater les destinataires\nconst emailList = emailEnvoi.split(\u0027,\u0027).map(email =\u003e email.trim()).filter(email =\u003e email.length \u003e 0).join(\u0027, \u0027);\n\n// Retourner les données avec le binaire Word\nreturn {\n  json: {\n    civiliteDestinataire,\n    nomDestinataire,\n    statutDestinataire,\n    batiment,\n    adresse,\n    cpVille,\n    objet,\n    numeroCourrier,\n    civiliteRemplace,\n    nomRemplace,\n    codeDocument,\n    civiliteDelegue,\n    nomDelegue,\n    emailDelegue,\n    emailDestinataire,\n    emailEnvoi: emailList,\n    signatureExp\n  },\n  binary: {\n    data: {\n      data: wordBase64,\n      mimeType: \u0027application/vnd.openxmlformats-officedocument.wordprocessingml.document\u0027,\n      fileName: `Document_${objet}_${Date.now()}.docx`\n    }\n  }\n};"
+                                     },
+                      "id":  "0c2559b4-f55c-4778-a77f-ef179729acb9",
+                      "name":  "Generer Word Final",
+                      "type":  "n8n-nodes-base.function",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -128,
+                                       640
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "68bdcad8-b639-4963-8a10-6dc4a2e16a36",
+                                                                                     "name":  "entreprise",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.entreprise }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "civiliteDestinataire",
+                                                                                     "name":  "civiliteDestinataire",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.civiliteDestinataire }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "genre",
+                                                                                     "name":  "genre",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.civiliteDestinataire === \u0027Madame\u0027 ? \u0027la\u0027 : \u0027le\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "nomDestinataire",
+                                                                                     "name":  "nomDestinataire",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.nomDestinataire }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "statutDestinataire",
+                                                                                     "name":  "statutDestinataire",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.statutDestinataire }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "batiment",
+                                                                                     "name":  "batiment",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.batiment || \u0027\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "adresse",
+                                                                                     "name":  "adresse",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.adresse }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "cpVille",
+                                                                                     "name":  "cpVille",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.cpVille }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "typeDocument",
+                                                                                     "name":  "typeDocument",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.templateType }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "texteIa",
+                                                                                     "name":  "texteIa",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.texteIa || \u0027\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "objet",
+                                                                                     "name":  "objet",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.objet || \u0027\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "numeroCourrier",
+                                                                                     "name":  "numeroCourrier",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.numeroCourrier }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "civiliteRemplace",
+                                                                                     "name":  "civiliteRemplace",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.civiliteRemplace }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "nomRemplace",
+                                                                                     "name":  "nomRemplace",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.nomRemplace }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "codeDocument",
+                                                                                     "name":  "codeDocument",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.codeDocument }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "civiliteDelegue",
+                                                                                     "name":  "civiliteDelegue",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.civiliteDelegue }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "nomDelegue",
+                                                                                     "name":  "nomDelegue",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.nomDelegue }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "emailDelegue",
+                                                                                     "name":  "emailDelegue",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.emailDelegue }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "emailDestinataire",
+                                                                                     "name":  "emailDestinataire",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.emailDestinataire }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "signatureExp",
+                                                                                     "name":  "signatureExp",
+                                                                                     "value":  "={{ $(\u0027Formulaire (Webhook)\u0027).item.json.body.signatureExp || \u0027FO METAUX\u0027 }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "date",
+                                                                                     "name":  "date",
+                                                                                     "value":  "={{ $now.toFormat(\u0027dd/MM/yyyy\u0027) }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "dateComplete",
+                                                                                     "name":  "dateComplete",
+                                                                                     "value":  "={{ $now.toFormat(\u0027cccc d MMMM yyyy\u0027, { locale: \u0027fr\u0027 }) }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "heure",
+                                                                                     "name":  "heure",
+                                                                                     "value":  "={{ $now.toFormat(\u0027HH:mm\u0027) }}",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "734797c2-efb5-46d6-bf57-c2a0cb404a56",
+                      "name":  "Preparer Donnees",
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.3,
+                      "position":  [
+                                       -560,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={{ { \"success\": true, \"message\": \"Document genéré et envoye par email avec succés\", \"destinataire\": $(\u0027Generer Word Final\u0027).item.json.emailDestinataire, \"objet\": $(\u0027Generer Word Final\u0027).item.json.objet } }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "ed7b106d-7017-4c7f-91a3-d3ea46b69106",
+                      "name":  "Reponse Finale",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1,
+                      "position":  [
+                                       688,
+                                       640
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "binary",
+                                         "responseDataSource":  "set",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "c33bbf61-0f92-45f4-a1ed-3cebcd038306",
+                      "name":  "Reponse avec Word",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1,
+                      "position":  [
+                                       432,
+                                       336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// Récupérer le nom du template depuis les données\nconst templateName = $input.item.json.templateName || \u0027Document\u0027;\n\n// Nettoyer le nom (remplacer espaces par underscores, retirer caractères spéciaux)\nconst cleanName = templateName\n  .replace(/\\s+/g, \u0027_\u0027)\n  .replace(/[àâäéèêëïîôùûüÿç]/g, (match) =\u003e {\n    const accents = { \u0027à\u0027: \u0027a\u0027, \u0027â\u0027: \u0027a\u0027, \u0027ä\u0027: \u0027a\u0027, \u0027é\u0027: \u0027e\u0027, \u0027è\u0027: \u0027e\u0027, \u0027ê\u0027: \u0027e\u0027, \u0027ë\u0027: \u0027e\u0027, \u0027ï\u0027: \u0027i\u0027, \u0027î\u0027: \u0027i\u0027, \u0027ô\u0027: \u0027o\u0027, \u0027ù\u0027: \u0027u\u0027, \u0027û\u0027: \u0027u\u0027, \u0027ü\u0027: \u0027u\u0027, \u0027ÿ\u0027: \u0027y\u0027, \u0027ç\u0027: \u0027c\u0027 };\n    return accents[match] || match;\n  })\n  .replace(/[^a-zA-Z0-9_-]/g, \u0027\u0027);\n\n// Générer un timestamp\nconst timestamp = Date.now();\n\n// Nouveau nom de fichier\nconst newFileName = `${cleanName}_${timestamp}.docx`;\n\n// Récupérer l\u0027item et modifier le fileName du binaire\nconst item = $input.item;\nitem.binary.data.fileName = newFileName;\n\nreturn item;"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       128,
+                                       640
+                                   ],
+                      "id":  "15bc3498-1495-40ac-a4c9-276a1c6d20df",
+                      "name":  "Renommer Fichier"
+                  }
+              ],
+    "connections":  {
+                        "Formulaire (Webhook)":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Preparer Donnees",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Condition IA":  {
+                                             "main":  [
+                                                          [
+                                                              {
+                                                                  "node":  "Appel IA Gemma",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ],
+                                                          [
+                                                              {
+                                                                  "node":  "Lire Template Word",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ]
+                                                      ]
+                                         },
+                        "Appel IA Gemma":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Extraire Texte IA",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "Extraire Texte IA":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Lire Template Word",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Lire Template Word":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Remplir Template Docx",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Remplir Template Docx":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Reponse avec Word",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Validation (Webhook)":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Generer Word Final",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Envoi Email":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Reponse Finale",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ]
+                                                     ]
+                                        },
+                        "Generer Word Final":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Renommer Fichier",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Preparer Donnees":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Condition IA",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Renommer Fichier":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Envoi Email",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "staticData":  null,
+    "meta":  null,
+    "pinData":  {
+
+                },
+    "versionId":  "b3b7a04d-b25c-480f-b345-9d6011bffa41",
+    "triggerCount":  2,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-11-13T12:41:32.113Z",
+                       "createdAt":  "2025-11-13T12:41:32.113Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "TXziodPP3k2lvj1h",
+                       "projectId":  "iQ4tdRQc1ymkbszX",
+                       "project":  {
+                                       "updatedAt":  "2025-10-29T10:36:32.039Z",
+                                       "createdAt":  "2025-10-29T10:34:04.327Z",
+                                       "id":  "iQ4tdRQc1ymkbszX",
+                                       "name":  "fo metaux \u003caimarshall615@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-10-29T10:34:04.327Z",
+                                                                    "createdAt":  "2025-10-29T10:34:04.327Z",
+                                                                    "userId":  "fed07d32-0c24-457e-be4b-15fcc31cfd48",
+                                                                    "projectId":  "iQ4tdRQc1ymkbszX",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-13T12:25:34.000Z",
+                                                                                 "createdAt":  "2025-10-29T10:34:03.582Z",
+                                                                                 "id":  "fed07d32-0c24-457e-be4b-15fcc31cfd48",
+                                                                                 "email":  "aimarshall615@gmail.com",
+                                                                                 "firstName":  "fo",
+                                                                                 "lastName":  "metaux",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-10-29T10:37:08.025Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.117.3",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "ci-cd",
+                                                                                                                                             "cloud-infrastructure-orchestration",
+                                                                                                                                             "other"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "saas",
+                                                                                                                "role":  "devops",
+                                                                                                                "reportedSource":  "google"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "firstSuccessfulWorkflowId":  "dai6prI3FQZ3LdSS",
+                                                                                                  "userActivatedAt":  1761910919282,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "waitingForResponse":  true,
+                                                                                                                    "ignoredCount":  2,
+                                                                                                                    "lastShownAt":  1762959855514
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-12",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+
+             ]
+}

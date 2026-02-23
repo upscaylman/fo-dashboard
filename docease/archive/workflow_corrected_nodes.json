@@ -1,0 +1,25 @@
+[
+  {
+    "parameters": {
+      "functionCode": "// Récupérer le binaire Word depuis le nœud précédent\nconst wordBinary = items[0].binary?.data?.data;\n\nif (!wordBinary) {\n  throw new Error('Aucun fichier Word généré');\n}\n\n// Retourner le Word en base64 dans le JSON\nreturn {\n  json: {\n    success: true,\n    wordBase64: wordBinary,\n    message: 'Document généré avec succès'\n  }\n};"
+    },
+    "id": "convert-to-base64",
+    "name": "Convertir en Base64",
+    "type": "n8n-nodes-base.function",
+    "typeVersion": 1,
+    "position": [432, 336]
+  },
+  {
+    "parameters": {
+      "respondWith": "json",
+      "responseBody": "={{ $json }}",
+      "options": {}
+    },
+    "id": "webhook-preview-new",
+    "name": "Réponse avec Word",
+    "type": "n8n-nodes-base.respondToWebhook",
+    "typeVersion": 1,
+    "position": [672, 336]
+  }
+]
+

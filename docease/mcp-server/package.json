@@ -1,0 +1,25 @@
+{
+  "name": "n8n-mcp-server",
+  "version": "1.0.0",
+  "description": "Serveur MCP pour n8n",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc",
+    "start": "node dist/index.js",
+    "dev": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc && node dist/index.js"
+  },
+  "keywords": [
+    "n8n",
+    "mcp",
+    "automation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.21.0",
+    "@types/node": "^24.10.0",
+    "typescript": "^5.9.3",
+    "zod": "^3.22.0"
+  }
+}
