@@ -1,0 +1,55 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.13/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.13",
+  "version": "1.0.0",
+  "id": "7d9ba50d-4f9c-4a97-bd8b-acacb39303f4",
+  "packageName": "com.fometaux.teamease",
+  "developer": {
+    "name": "FO Métaux",
+    "websiteUrl": "https://fom-teamease.vercel.app",
+    "privacyUrl": "https://fom-teamease.vercel.app/privacy",
+    "termsOfUseUrl": "https://fom-teamease.vercel.app/terms"
+  },
+  "name": {
+    "short": "TeamEase",
+    "full": "TeamEase - Dashboard FO Métaux"
+  },
+  "description": {
+    "short": "Portail des Secrétaires et Militants FO Métaux",
+    "full": "Portail des Secrétaires et Militants TeamEase — Gestion des outils syndicaux FO Métaux. Accédez au tableau de bord, gérez vos équipes et suivez les activités directement depuis Microsoft Teams."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#d00013",
+  "staticTabs": [
+    {
+      "entityId": "teamease-dashboard",
+      "name": "Dashboard",
+      "contentUrl": "https://fom-teamease.vercel.app",
+      "websiteUrl": "https://fom-teamease.vercel.app",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "teamease-profile",
+      "name": "Mon Profil",
+      "contentUrl": "https://fom-teamease.vercel.app/profile",
+      "websiteUrl": "https://fom-teamease.vercel.app/profile",
+      "scopes": ["personal"]
+    }
+  ],
+  "configurableTabs": [
+    {
+      "configurationUrl": "https://fom-teamease.vercel.app",
+      "canUpdateConfiguration": true,
+      "scopes": ["team", "groupchat"]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": [
+    "fom-teamease.vercel.app",
+    "*.vercel.app",
+    "*.supabase.co"
+  ]
+}
