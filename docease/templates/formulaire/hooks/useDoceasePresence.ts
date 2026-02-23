@@ -1,20 +1,14 @@
 /**
- * Hook de présence pour DocEase
- * Gère le tracking en temps réel des utilisateurs sur DocEase
+ * Hook de presence pour DocEase
+ * Gere le tracking en temps reel des utilisateurs sur DocEase
+ * Utilise Edge Function db-proxy (PostgREST 503 permanent)
+ * 
  * NOTE: Ce tracking est 100% optionnel et non-bloquant
  * DocEase fonctionne sans Supabase - c'est juste pour le dashboard
- * 
- * TEMPORAIREMENT DESACTIVE - Surcharge PostgREST
- * Date: 2026-02-02
  */
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useDoceaseAuth } from '../context/AuthContext';
-
-// ========================================================
-// PRESENCE SYSTEM - TEMPORAIREMENT DESACTIVE
-// ========================================================
-const PRESENCE_DISABLED = true;
 
 // Configuration Supabase
 const SUPABASE_CONFIG = {
@@ -22,174 +16,187 @@ const SUPABASE_CONFIG = {
   anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlbGp3b25ja2ZtZGtheXdheGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NTM3MDAsImV4cCI6MjA4MTQyOTcwMH0.K9-DyDP1sbKo59VY8iMwSgCukLk0Cm3OTBCIkipxzUQ'
 };
 
+const EDGE_FUNCTION_URL = `${SUPABASE_CONFIG.url}/functions/v1/db-proxy`;
 const SESSION_KEY = 'docease_session_id';
-const HEARTBEAT_INTERVAL = 30000; // 30 secondes
-const FETCH_TIMEOUT = 3000; // 3 secondes timeout pour éviter de bloquer
+const USER_UUID_KEY = 'docease_user_uuid';
+const HEARTBEAT_INTERVAL = 60 * 1000; // 60 secondes
 
-// Flag pour désactiver temporairement si Supabase est down
-let supabaseAvailable = true;
-let retryAfter = 0;
+// Helper pour generer/recuperer un UUID stable
+const getOrCreateUserUUID = (email: string): string => {
+  const storageKey = `${USER_UUID_KEY}_${email}`;
+  let uuid = localStorage.getItem(storageKey);
+  if (!uuid) {
+    uuid = crypto.randomUUID();
+    localStorage.setItem(storageKey, uuid);
+  }
+  return uuid;
+};
+
+const getDefaultAvatar = (email: string): string => {
+  const seed = encodeURIComponent(email);
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=7c3aed`;
+};
+
+// Helper pour appeler l'Edge Function db-proxy
+const edgeRequest = async (payload: Record<string, unknown>): Promise<any> => {
+  try {
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'apikey': SUPABASE_CONFIG.anonKey,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+};
 
 interface UseDoceasePresenceOptions {
   currentPage?: string;
   tool?: 'docease' | 'signease';
 }
 
-// Version desactivee du hook
-const useDoceasePresenceDisabled = (_options: UseDoceasePresenceOptions = {}) => {
-  return {
-    updatePresence: async (_activity?: string) => {},
-    trackActivity: (_activity: string) => {}
-  };
-};
-
-// Helper pour fetch avec timeout
-const fetchWithTimeout = async (url: string, options: RequestInit, timeout: number): Promise<Response | null> => {
-  // Si Supabase est marqué comme indisponible, ne pas essayer
-  if (!supabaseAvailable && Date.now() < retryAfter) {
-    return null;
-  }
-  
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    // Si on a une erreur 503/502, marquer Supabase comme indisponible pour 60s
-    if (response.status === 503 || response.status === 502) {
-      supabaseAvailable = false;
-      retryAfter = Date.now() + 60000; // Réessayer dans 60 secondes
-      return null;
-    }
-    
-    // Supabase est disponible
-    supabaseAvailable = true;
-    return response;
-  } catch (e) {
-    clearTimeout(timeoutId);
-    // Timeout ou erreur réseau - ne pas spammer
-    return null;
-  }
-};
-
-const useDoceasePresenceEnabled = (options: UseDoceasePresenceOptions = {}) => {
+export const useDoceasePresence = (options: UseDoceasePresenceOptions = {}) => {
   const { user, isAuthenticated } = useDoceaseAuth();
-  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
   const lastActivityRef = useRef<string | null>(null);
 
   const { currentPage = 'formulaire', tool = 'docease' } = options;
 
-  // Mettre à jour la présence
+  // Mettre a jour la presence
   const updatePresence = useCallback(async (activity?: string) => {
     if (!isAuthenticated || !user) return;
 
-    const sessionId = localStorage.getItem(SESSION_KEY);
-    if (!sessionId) return;
+    try {
+      if (sessionIdRef.current) {
+        // UPDATE session existante
+        const result = await edgeRequest({
+          table: 'active_sessions',
+          operation: 'update',
+          data: {
+            current_page: activity || currentPage,
+            current_tool: tool,
+            last_activity: new Date().toISOString(),
+          },
+          eq: { id: sessionIdRef.current },
+        });
 
-    const updateData: Record<string, any> = {
-      current_page: activity || currentPage,
-      current_tool: tool,
-      last_activity: new Date().toISOString()
-    };
+        if (activity) lastActivityRef.current = activity;
 
-    // Stocker la dernière activité
-    if (activity) {
-      lastActivityRef.current = activity;
-    }
+        if (!result || !result.data || result.data.length === 0) {
+          sessionIdRef.current = null;
+          localStorage.removeItem(SESSION_KEY);
+        } else {
+          return;
+        }
+      }
 
-    // Utiliser fetchWithTimeout pour ne pas bloquer
-    await fetchWithTimeout(
-      `${SUPABASE_CONFIG.url}/rest/v1/active_sessions?id=eq.${sessionId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_CONFIG.anonKey,
-          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-          'Prefer': 'return=minimal'
+      // Pas de session -> en creer une
+      const userId = user.id || getOrCreateUserUUID(user.email || 'unknown');
+      const userEmail = user.email || 'unknown';
+
+      // Supprimer les anciennes sessions de cet utilisateur
+      await edgeRequest({
+        table: 'active_sessions',
+        operation: 'delete',
+        deleteFilters: { user_id: userId },
+      });
+
+      // Creer nouvelle session
+      const result = await edgeRequest({
+        table: 'active_sessions',
+        operation: 'insert',
+        data: {
+          user_id: userId,
+          user_email: userEmail,
+          user_name: user.name || userEmail.split('@')[0],
+          avatar_url: getDefaultAvatar(userEmail),
+          current_page: activity || currentPage,
+          current_tool: tool,
+          last_activity: new Date().toISOString(),
+          started_at: new Date().toISOString(),
         },
-        body: JSON.stringify(updateData)
-      },
-      FETCH_TIMEOUT
-    );
-    // Pas de catch - on ignore silencieusement les erreurs
+      });
+
+      if (result?.data?.[0]?.id) {
+        sessionIdRef.current = result.data[0].id;
+        localStorage.setItem(SESSION_KEY, result.data[0].id);
+        console.log('DocEase session created:', result.data[0].id);
+      }
+    } catch (e) {
+      // Silencieux - ne pas bloquer DocEase
+    }
   }, [isAuthenticated, user, currentPage, tool]);
 
-  // Enregistrer une activité (génération de document, téléchargement, etc.)
-  const trackActivity = useCallback(async (
-    activityType: 'generate' | 'download' | 'email_sent' | 'preview' | 'template_selected',
-    metadata?: Record<string, any>
+  // Enregistrer une activite
+  const trackActivity = useCallback((
+    activityType: string,
+    _metadata?: Record<string, any>
   ) => {
     if (!isAuthenticated || !user) return;
-
-    // Mettre à jour la présence avec l'activité
     const activityPage = `${currentPage}:${activityType}`;
-    await updatePresence(activityPage);
-
-    // Optionnel: Enregistrer l'activité dans une table dédiée (pour historique)
-    // Silencieux et non-bloquant
-    fetchWithTimeout(
-      `${SUPABASE_CONFIG.url}/rest/v1/docease_activities`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_CONFIG.anonKey,
-          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          user_email: user.email,
-          activity_type: activityType,
-          tool: tool,
-          metadata: metadata || {},
-          created_at: new Date().toISOString()
-        })
-      },
-      FETCH_TIMEOUT
-    );
-    // Pas de catch - on ignore silencieusement les erreurs
-  }, [isAuthenticated, user, currentPage, tool, updatePresence]);
+    updatePresence(activityPage);
+  }, [isAuthenticated, user, currentPage, updatePresence]);
 
   // Heartbeat pour maintenir la session active
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
+    // Recuperer session existante
+    const storedSessionId = localStorage.getItem(SESSION_KEY);
+    if (storedSessionId) sessionIdRef.current = storedSessionId;
+
     // Premier update
     updatePresence();
 
-    // Démarrer le heartbeat
+    // Heartbeat
     heartbeatRef.current = setInterval(() => {
       updatePresence(lastActivityRef.current || undefined);
     }, HEARTBEAT_INTERVAL);
 
+    // Visibilite
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') updatePresence();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup a la fermeture (best effort via sendBeacon)
+    const handleBeforeUnload = () => {
+      if (sessionIdRef.current) {
+        const payload = JSON.stringify({
+          table: 'active_sessions',
+          operation: 'delete',
+          deleteFilters: { id: sessionIdRef.current },
+        });
+        navigator.sendBeacon?.(EDGE_FUNCTION_URL, new Blob([payload], { type: 'application/json' }));
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
-      if (heartbeatRef.current) {
-        clearInterval(heartbeatRef.current);
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Supprimer la session au demontage
+      if (sessionIdRef.current) {
+        edgeRequest({
+          table: 'active_sessions',
+          operation: 'delete',
+          deleteFilters: { id: sessionIdRef.current },
+        }).catch(() => {});
+        sessionIdRef.current = null;
+        localStorage.removeItem(SESSION_KEY);
       }
     };
   }, [isAuthenticated, user, updatePresence]);
 
-  // Mettre à jour sur changement de visibilité
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        updatePresence();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [updatePresence]);
-
-  return {
-    updatePresence,
-    trackActivity
-  };
+  return { updatePresence, trackActivity };
 };
 
-// Export conditionnel selon l'etat du systeme
-export const useDoceasePresence = PRESENCE_DISABLED ? useDoceasePresenceDisabled : useDoceasePresenceEnabled;
 export default useDoceasePresence;
