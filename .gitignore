@@ -30,3 +30,4 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+.vercel
