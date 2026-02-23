@@ -1,0 +1,17 @@
+{
+  "name": "docease-telegram-bot",
+  "version": "1.0.0",
+  "description": "Bot Telegram pour contrôler DocEase à distance",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "node --watch bot.js"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
