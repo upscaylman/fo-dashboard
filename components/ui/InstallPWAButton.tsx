@@ -216,7 +216,7 @@ export const InstallPWAButton: React.FC = () => {
         steps: [
           'Cliquez sur l\'icône d\'installation dans la barre d\'adresse',
           'Ou ouvrez le menu du navigateur (⋮)',
-          'Sélectionnez "Installer FO Métaux"',
+          'Sélectionnez "Installer TeamEase"',
         ],
       },
       unknown: {
@@ -279,9 +279,9 @@ export const InstallPWAButton: React.FC = () => {
             <span className="text-2xl">📱</span>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg">Installer FO Métaux</h3>
+            <h3 className="font-semibold text-lg">Installer TeamEase</h3>
             <p className="text-sm text-white/80 mt-1">
-              Ajoutez le portail à votre écran d'accueil pour un accès rapide
+              Ajoutez TeamEase à votre écran d'accueil pour un accès rapide
             </p>
           </div>
           <button 
