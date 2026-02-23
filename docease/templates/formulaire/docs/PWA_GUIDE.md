@@ -79,7 +79,7 @@ cd docease/templates/formulaire
 
 - **Sur iPhone** : utilisez uniquement Safari
 - **Sur Android** : utilisez Chrome
-- Vérifiez que vous êtes sur HTTPS (Netlify le fournit)
+- Vérifiez que vous êtes sur HTTPS (Vercel le fournit automatiquement)
 
 ### L'app ne se met pas à jour
 
@@ -104,7 +104,7 @@ Pour vérifier le score PWA :
 
 ## 🔐 HTTPS obligatoire
 
-Les PWA nécessitent HTTPS. Avec Netlify, c'est automatique.
+Les PWA nécessitent HTTPS. Avec Vercel, c'est automatique.
 
 Pour le développement local, utilisez :
 ```bash

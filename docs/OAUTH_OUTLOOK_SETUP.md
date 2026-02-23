@@ -1,6 +1,6 @@
-# 🔐 Guide : Configuration Authentification Outlook/Microsoft
+# 🔐 Guide : Configuration Authentification Outlook/Microsoft (TeamEase)
 
-Ce guide vous permet de configurer l'authentification OAuth avec Microsoft pour que vos utilisateurs se connectent avec leur compte Outlook professionnel.
+Ce guide vous permet de configurer l'authentification OAuth avec Microsoft pour que les utilisateurs de **TeamEase** se connectent avec leur compte Outlook professionnel.
 
 ---
 
@@ -36,7 +36,7 @@ Ce guide vous permet de configurer l'authentification OAuth avec Microsoft pour 
 3. Cliquez sur **"+ New registration"** (Nouvelle inscription)
 
 **Remplissez le formulaire** :
-- **Name** : `FO Métaux Dashboard`
+- **Name** : `TeamEase Dashboard`
 - **Supported account types** : Sélectionnez :
   - "Accounts in any organizational directory and personal Microsoft accounts"
   - (Si seulement pour votre organisation : choisissez la première option)
@@ -102,7 +102,7 @@ On reviendra ici après avoir configuré Supabase pour ajouter l'URL de callback
 ### Étape 1 : Activer le Provider Azure
 
 1. Allez sur https://supabase.com/dashboard
-2. Ouvrez votre projet **fo-metaux-dashboard**
+2. Ouvrez votre projet **TeamEase** (anciennement fo-metaux-dashboard)
 3. Dans le menu de gauche, cliquez sur **🔐 Authentication**
 4. Cliquez sur **"Providers"**
 5. Faites défiler jusqu'à **"Azure"**
@@ -136,10 +136,38 @@ Vous verrez un formulaire avec plusieurs champs :
 
 ---
 
-### Étape 3 : Retour sur Azure - Ajouter l'URL de Redirection
+### Étape 3 : Configurer le Site URL et les Redirect URLs (⚠️ CRITIQUE)
+
+Cette étape est **indispensable** pour que l'authentification redirige vers Vercel (et non vers un ancien domaine Netlify).
+
+1. Dans Supabase Dashboard, allez dans **🔐 Authentication**
+2. Cliquez sur **"URL Configuration"**
+3. Configurez :
+
+| Champ | Valeur |
+|-------|--------|
+| **Site URL** | `https://fom-teamease.vercel.app` |
+| **Redirect URLs** | `https://fom-teamease.vercel.app/**` |
+
+4. Cliquez sur **"Save"**
+
+> ⚠️ **IMPORTANT** : Le **Site URL** est l'URL vers laquelle Supabase redirige l'utilisateur **après** l'authentification OAuth. Si ce champ pointe encore vers un ancien domaine Netlify, l'utilisateur sera redirigé vers un site qui n'existe plus après s'être connecté.
+
+**Flux complet d'authentification** :
+```
+1. Utilisateur sur https://fom-teamease.vercel.app → clique "Se connecter avec Outlook"
+2. → Redirection vers Azure AD (Microsoft login)
+3. → Azure redirige vers https://geljwonckfmdkaywaxly.supabase.co/auth/v1/callback
+4. → Supabase traite le token et redirige vers le Site URL
+5. → L'utilisateur arrive sur https://fom-teamease.vercel.app (✅ Vercel)
+```
+
+---
+
+### Étape 4 : Retour sur Azure - Ajouter l'URL de Redirection
 
 1. Retournez sur https://portal.azure.com/
-2. Allez dans votre application **FO Métaux Dashboard**
+2. Allez dans votre application **TeamEase Dashboard**
 3. Cliquez sur **"Authentication"** dans le menu de gauche
 4. Sous **"Platform configurations"**, cliquez sur **"+ Add a platform"**
 5. Sélectionnez **"Web"**
@@ -171,18 +199,20 @@ Vous verrez un formulaire avec plusieurs champs :
 
 ### Tester la connexion
 
-1. Allez sur votre application : http://localhost:4081/
+1. Allez sur votre application : **https://fom-teamease.vercel.app**
 2. Sur la page de login, cliquez sur **"Se connecter avec Outlook"**
 3. Vous serez redirigé vers Microsoft
 4. Connectez-vous avec votre compte Microsoft/Outlook
 5. Acceptez les permissions
-6. Vous serez redirigé vers votre dashboard
+6. Vous serez redirigé vers le dashboard TeamEase
 
 **Si ça marche** : 🎉 Authentification Outlook configurée !
 
 **Si erreur** :
 - Vérifiez les Client ID/Secret
-- Vérifiez l'URL de callback
+- Vérifiez l'URL de callback (`https://geljwonckfmdkaywaxly.supabase.co/auth/v1/callback`)
+- Vérifiez que le **Site URL** dans Supabase pointe vers `https://fom-teamease.vercel.app`
+- Vérifiez la **Redirect URI** dans Azure AD
 - Consultez les logs Supabase (Dashboard → Logs)
 
 ---
@@ -226,6 +256,15 @@ Vous verrez un formulaire avec plusieurs champs :
 
 ---
 
+## 🌐 URLs de Référence
+
+| Élément | URL |
+|---------|-----|
+| **TeamEase (Vercel)** | `https://fom-teamease.vercel.app` |
+| **Supabase Callback** | `https://geljwonckfmdkaywaxly.supabase.co/auth/v1/callback` |
+| **Azure Portal** | `https://portal.azure.com/` |
+| **Supabase Dashboard** | `https://supabase.com/dashboard` |
+
 ## 🚀 Une fois terminé
 
-Dites-moi : **"Configuration Outlook terminée"** et on pourra tester ensemble !
+Testez la connexion OAuth sur https://fom-teamease.vercel.app et vérifiez que vous êtes bien redirigé vers le dashboard après authentification.

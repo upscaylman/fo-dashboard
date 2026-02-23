@@ -86,7 +86,7 @@ Pour plus de sécurité, remplacez `"origin": ["*"]` par vos domaines spécifiqu
 {
   "origin": [
     "http://localhost:3000",
-    "https://signeasyfo.netlify.app",
+    "https://fom-signease.vercel.app",
     "https://votre-domaine-personnalise.com"
   ],
   ...

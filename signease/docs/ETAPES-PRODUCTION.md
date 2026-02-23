@@ -77,7 +77,7 @@ service firebase.storage {
 
 ---
 
-### **3. Déployer sur Netlify** ✅ FACULTATIF
+### **3. Déployer sur Vercel** ✅ FACULTATIF
 
 **Fichier :** `docs/DEPLOIEMENT.md`
 
@@ -86,12 +86,12 @@ service firebase.storage {
 # 1. Build
 npm run build
 
-# 2. Configurer variables Netlify
-# Allez sur : https://app.netlify.com/sites/signeasyfo/settings/env
-# Ajoutez toutes les variables VITE_FIREBASE_*
+# 2. Configurer variables Vercel
+# Allez sur le dashboard Vercel > projet fom-signease > Settings > Environment Variables
+# Ajoutez toutes les variables VITE_FIREBASE_*, VITE_EMAILJS_*, VITE_SUPABASE_*
 
 # 3. Déployer
-# Glissez-déposez le dossier dist/ sur https://app.netlify.com/drop
+vercel --prod
 ```
 
 **Durée estimée :** 15 minutes
@@ -114,8 +114,8 @@ npm run build
 ### **Phase 3 : Déploiement (QUAND PRÊT)**
 
 6. ✅ Build de l'application (`npm run build`)
-7. ✅ Configurer variables Netlify
-8. ✅ Déployer sur Netlify
+7. ✅ Configurer variables Vercel
+8. ✅ Déployer sur Vercel
 9. ✅ Tester en production
 
 ---
@@ -129,7 +129,7 @@ npm run build
 - ✅ Tester la signature
 
 ### **Après Déploiement Production :**
-- ✅ Créer un document sur `signeasyfo.netlify.app`
+- ✅ Créer un document sur `fom-signease.vercel.app`
 - ✅ Envoyer pour signature
 - ✅ Vérifier Inbox
 - ✅ Tester la signature
@@ -148,13 +148,13 @@ npm run build
 | **Storage** | 5 GB stockage | Moyen (PDFs) |
 | **Storage** | 1 GB transfert/jour | Faible-Moyen |
 
-### **Netlify (Plan Gratuit)**
+### **Vercel (Plan Gratuit - Hobby)**
 
 | Service | Limite Gratuite |
-|---------|-----------------|
+|---------|------------------|
 | **Bande passante** | 100 GB/mois |
-| **Build minutes** | 300 min/mois |
-| **Sites** | Illimité |
+| **Builds** | 6000 min/mois |
+| **Projets** | Illimité |
 
 ---
 
@@ -177,7 +177,7 @@ npm run build
 
 ### **Erreur en production**
 1. Ouvrez la console navigateur (F12)
-2. Vérifiez les variables d'environnement sur Netlify
+2. Vérifiez les variables d'environnement sur Vercel
 3. Vérifiez les règles Firebase
 
 ### **Besoin d'aide**
@@ -192,13 +192,13 @@ npm run build
 **Pour passer en production :**
 1. **Configurer CORS** (10 min) ⚠️ OBLIGATOIRE
 2. **Sécuriser Firebase** (5 min) ⚠️ OBLIGATOIRE
-3. **Déployer sur Netlify** (15 min) ✅ Optionnel
+3. **Déployer sur Vercel** (15 min) ✅ Optionnel
 
 **Total : ~30 minutes**
 
 **L'application sera alors :**
 - ✅ Sans limitation de taille pour les PDFs
-- ✅ Accessible publiquement
+- ✅ Accessible publiquement sur https://fom-signease.vercel.app
 - ✅ Sécurisée (règles Firebase)
-- ✅ Performante (CDN Netlify)
+- ✅ Performante (CDN Vercel Edge Network)
 

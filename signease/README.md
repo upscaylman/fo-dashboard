@@ -1,4 +1,6 @@
-# SignEase - Plateforme de Signature Électronique
+# SignEase - Plateforme de Signature Électronique FO Métaux
+
+**Production** : https://fom-signease.vercel.app
 
 ## 🚀 Démarrage Rapide
 
@@ -20,7 +22,7 @@ Application accessible sur : **http://localhost:3000**
 
 ```bash
 npm run build
-npm run preview
+vercel --prod
 ```
 
 ---
@@ -35,12 +37,12 @@ Toute la documentation se trouve dans le dossier **`docs/`** :
 
 ### **🚀 Production**
 - **`docs/ETAPES-PRODUCTION.md`** - ⭐ **GUIDE COMPLET** - Liste des étapes pour passer en production
-- **`docs/DEPLOIEMENT.md`** - Guide détaillé de déploiement sur Netlify
+- **`docs/DEPLOIEMENT.md`** - Guide détaillé de déploiement sur Vercel
 
 ### **📖 Ordre de Lecture Recommandé**
 1. `docs/ETAPES-PRODUCTION.md` - Vue d'ensemble
 2. `docs/CONFIGURATION-CORS.md` - Configuration CORS (obligatoire)
-3. `docs/DEPLOIEMENT.md` - Déploiement sur Netlify
+3. `docs/DEPLOIEMENT.md` - Déploiement sur Vercel
 
 ---
 
@@ -73,6 +75,20 @@ VITE_EMAILJS_PUBLIC_KEY=...
 - Tailwind CSS
 - PDF.js + pdf-lib
 - EmailJS
+
+---
+
+## 🌐 Déploiement Vercel
+
+Le projet est déployé sur **Vercel** sous le nom `fom-signease`.
+
+Les 11 variables d'environnement (Firebase x6, EmailJS x3, Supabase x2) sont configurées dans le dashboard Vercel.
+
+| Projet | URL |
+|--------|-----|
+| **SignEase** | https://fom-signease.vercel.app |
+| **TeamEase** (Dashboard) | https://fom-teamease.vercel.app |
+| **DocEase** (Documents) | https://fom-docease.vercel.app |
 
 ---
 

@@ -1,7 +1,7 @@
 # 📊 Intégration Tracking DocEase
 
 ## 🎯 Objectif
-Compter automatiquement les documents générés sur **DocEase** (https://fo-docease.netlify.app/) et les afficher dans le dashboard FO Métaux.
+Compter automatiquement les documents générés sur **DocEase** (https://fom-docease.vercel.app/) et les afficher dans le dashboard TeamEase.
 
 ---
 
@@ -270,7 +270,7 @@ const handleOpenDocEase = () => {
   localStorage.setItem('docease_opened_at', Date.now().toString())
   
   // Ouvrir DocEase
-  window.open('https://fo-docease.netlify.app/', '_blank')
+  window.open('https://fom-docease.vercel.app/', '_blank')
 }
 
 // Quand l'utilisateur revient, demander combien de docs générés

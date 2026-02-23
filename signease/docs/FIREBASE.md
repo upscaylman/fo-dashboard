@@ -51,5 +51,5 @@ service firebase.storage {
 ## 🚀 Déploiement
 
 1. Build : `npm run build`
-2. Ajouter les variables sur Netlify
-3. Déployer le dossier `dist`
+2. Ajouter les variables sur Vercel (projet `fom-signease`)
+3. Déployer : `vercel --prod`

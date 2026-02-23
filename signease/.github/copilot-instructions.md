@@ -117,6 +117,7 @@ Other useful docs:
 ## Production Deployment
 
 - Build with `npm run build` (outputs to `/dist`)
-- Configured for Netlify deployment (see `netlify.toml`)
-- Environment variables for EmailJS configuration
+- Configured for Vercel deployment (see `vercel.json`)
+- Vercel project name: `fom-signease` → https://fom-signease.vercel.app
+- Environment variables for Firebase + EmailJS + Supabase configured in Vercel dashboard
 - See `docs/ETAPES-PRODUCTION.md` for complete deployment steps

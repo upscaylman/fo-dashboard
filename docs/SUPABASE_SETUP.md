@@ -1,6 +1,6 @@
 # 🚀 Guide de Configuration Supabase
 
-Ce guide vous accompagne pas à pas pour configurer Supabase avec votre dashboard FO Métaux.
+Ce guide vous accompagne pas à pas pour configurer Supabase avec **TeamEase** (Dashboard FO Métaux).
 
 ## Étape 1 : Créer un compte Supabase
 
@@ -13,7 +13,7 @@ Ce guide vous accompagne pas à pas pour configurer Supabase avec votre dashboar
 
 1. Cliquez sur **"New Project"**
 2. Remplissez les informations :
-   - **Name** : `fo-metaux-dashboard`
+   - **Name** : `teamease` (ou `fo-metaux-dashboard`)
    - **Database Password** : Choisissez un mot de passe fort (notez-le !)
    - **Region** : Sélectionnez `Europe (Frankfurt)` ou `Europe (Paris)` pour la proximité
    - **Pricing Plan** : Sélectionnez **Free** (gratuit)
@@ -46,6 +46,8 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 3. **Sauvegardez** le fichier
 
 > ⚠️ **Important** : Ne partagez jamais ces clés publiquement (elles sont déjà dans `.gitignore`)
+
+> 💡 **En production** : Ces mêmes variables sont configurées sur le dashboard **Vercel** du projet `fom-teamease`.
 
 ## Étape 5 : Créer les tables de la base de données
 
@@ -106,9 +108,11 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 Une fois Supabase configuré, nous allons :
 - ✅ Installer le SDK Supabase dans le projet
-- ✅ Créer le client de connexion
-- ✅ Migrer l'authentification
-- ✅ Remplacer les données mockées par de vraies requêtes
+- ✅ Créer le client de connexion (`lib/supabase.ts`)
+- ✅ Configurer l'Edge Function `db-proxy` v8 (PostgREST est en 503)
+- ✅ Configurer l'authentification OAuth Outlook (voir [OAUTH_OUTLOOK_SETUP.md](OAUTH_OUTLOOK_SETUP.md))
+- ✅ Configurer le Site URL vers `https://fom-teamease.vercel.app`
+- ✅ Déployer sur Vercel (`fom-teamease`)
 
 ## 🆘 Besoin d'aide ?
 

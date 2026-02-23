@@ -157,7 +157,7 @@ signease-fo-metaux/
 │   ├── FIREBASE.md               # Config Firebase détaillée
 │   ├── CONFIGURATION-CORS.md     # Config CORS Storage
 │   ├── CONFIGURATION-PRODUCTION.md # Config prod
-│   ├── DEPLOIEMENT.md            # Déploiement Netlify
+│   ├── DEPLOIEMENT.md            # Déploiement Vercel
 │   ├── ETAPES-PRODUCTION.md      # Guide production
 │   ├── BUGS ET AMÉLIORATIONS.md  # Bugs connus + TODO
 │   ├── SIGNATURES-EIDAS.md      # Spécifications eIDAS
@@ -170,7 +170,7 @@ signease-fo-metaux/
 ├── package.json                   # Dépendances NPM
 ├── tsconfig.json                  # Config TypeScript
 ├── vite.config.ts                 # Config Vite
-├── netlify.toml                   # Config déploiement Netlify
+├── vercel.json                    # Config déploiement Vercel
 └── README.md                      # Readme principal
 ```
 
@@ -349,7 +349,7 @@ npm run build
 npm run preview
 ```
 
-Build dans `dist/`, déploiement Netlify automatique
+Build dans `dist/`, déploiement Vercel automatique
 
 📖 **Voir** `docs/DEPLOIEMENT.md` pour déploiement
 
@@ -538,7 +538,7 @@ npm run preview  # Prévisualisation build
 **Composants**: Pures fonctions React + TypeScript
 **Services**: `firebaseApi.ts` centralise toutes les opérations Firebase
 **Contextes**: `UserContext` pour auth globale
-**Routing**: HashRouter (compatible Netlify)
+**Routing**: HashRouter (compatible Vercel)
 
 ### Mode Strict React
 
@@ -566,14 +566,16 @@ ReactDOM.createRoot(document.getElementById('root')!); // Pas de StrictMode
 
 ## 🚀 Production et Déploiement
 
-### Netlify
+### Vercel
 
-**Config**: `netlify.toml`
+**Config**: `vercel.json`
 - Build: `npm run build`
-- Publish: `dist/`
-- SPA fallback: `#/*` → `index.html`
+- Output: `dist/`
+- SPA rewrite: `/*` → `/index.html`
 
-**Variables d'environnement**: Configurées dashboard Netlify
+**Variables d'environnement**: Configurées dans le dashboard Vercel (projet `fom-signease`)
+
+**URL de production** : https://fom-signease.vercel.app
 
 ### Configuration Production
 
@@ -581,16 +583,16 @@ ReactDOM.createRoot(document.getElementById('root')!); // Pas de StrictMode
 
 **Étapes**:
 1. Config Firebase (Firestore + Storage + CORS)
-2. Variables d'environnement Netlify
+2. Variables d'environnement Vercel
 3. EmailJS templates
-4. Build & deploy
+4. Build & deploy (`vercel --prod`)
 5. Tests end-to-end
 
 ### Monitoring
 
 - Firebase Console → Usage Storage/Firestore
 - EmailJS Dashboard → Emails envoyés
-- Netlify Analytics → Performance
+- Vercel Dashboard → Performance & Web Vitals
 
 ---
 
@@ -601,7 +603,7 @@ ReactDOM.createRoot(document.getElementById('root')!); // Pas de StrictMode
 | **`docs/FIREBASE.md`** | Configuration Firebase détaillée (Firestore + Storage) |
 | **`docs/CONFIGURATION-CORS.md`** | ⚠️ Config CORS Storage (obligatoire) |
 | **`docs/CONFIGURATION-PRODUCTION.md`** | Config prod (variables, secrets) |
-| **`docs/DEPLOIEMENT.md`** | Guide déploiement Netlify |
+| **`docs/DEPLOIEMENT.md`** | Guide déploiement Vercel |
 | **`docs/ETAPES-PRODUCTION.md`** | ⭐ Checklist production |
 | **`docs/BUGS ET AMÉLIORATIONS.md`** | Bugs connus + TODO |
 | **`docs/SIGNATURES-EIDAS.md`** | Spécifications eIDAS/PAdES |

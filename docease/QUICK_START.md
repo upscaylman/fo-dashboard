@@ -1,6 +1,8 @@
-# 🚀 Démarrage Rapide
+# 🚀 Démarrage Rapide — DocEase
 
-Guide ultra-rapide pour démarrer avec le projet.
+Guide ultra-rapide pour démarrer avec DocEase.
+
+**Production (formulaire)** : https://fom-docease.vercel.app
 
 ## ⚡ 3 Commandes pour Démarrer
 
@@ -86,4 +88,34 @@ Avant de commencer :
 ---
 
 **C'est tout !** Bonne utilisation ! 🎉
+
+---
+
+## 🌐 Déploiement Vercel (Formulaire)
+
+Le formulaire DocEase est déployé sur **Vercel** sous le nom `fom-docease`.
+
+**Dossier source** : `docease/templates/formulaire/`
+**URL** : https://fom-docease.vercel.app
+
+Le fichier `vercel.json` est configuré dans `docease/templates/formulaire/` avec :
+- Réécriture SPA (`/*` → `/index.html`)
+- Headers de sécurité
+
+### Déployer
+
+```bash
+cd docease/templates/formulaire
+vercel --prod
+```
+
+---
+
+## 🔗 Projets liés
+
+| Projet | Nom Vercel | URL |
+|--------|-----------|-----|
+| **TeamEase** (Dashboard) | `fom-teamease` | https://fom-teamease.vercel.app |
+| **SignEase** (Signature) | `fom-signease` | https://fom-signease.vercel.app |
+| **DocEase** (Documents) | `fom-docease` | https://fom-docease.vercel.app |
 

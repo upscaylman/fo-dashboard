@@ -5,7 +5,7 @@ Avant de continuer, vous devez exécuter les scripts SQL dans votre dashboard Su
 ## 🔴 ÉTAPE 1 : Créer les tables
 
 1. Allez sur https://supabase.com/dashboard
-2. Ouvrez votre projet `fo-metaux-dashboard`
+2. Ouvrez votre projet **TeamEase** (anciennement `fo-metaux-dashboard`)
 3. Cliquez sur **🗄️ SQL Editor** dans le menu de gauche
 4. Cliquez sur **"+ New query"**
 5. **Ouvrez le fichier** `SUPABASE_SCHEMA.sql` sur votre ordinateur
