@@ -1,7 +1,7 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.13/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.13",
-  "version": "1.0.0",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.1.0",
   "id": "7003a193-a7f8-4bc4-b44d-f3d79f3d5f89",
   "packageName": "com.fometaux.signease",
   "developer": {
@@ -16,7 +16,7 @@
   },
   "description": {
     "short": "Signature électronique sécurisée pour documents syndicaux",
-    "full": "Solution professionnelle de signature électronique sécurisée pour vos documents syndicaux FO Métaux. Signez, envoyez et suivez vos documents directement depuis Microsoft Teams."
+    "full": "Solution professionnelle de signature électronique sécurisée pour vos documents syndicaux FO Métaux. Signez, envoyez et suivez vos documents directement depuis Microsoft Teams et Outlook."
   },
   "icons": {
     "color": "color.png",
@@ -29,14 +29,16 @@
       "name": "SignEase",
       "contentUrl": "https://fom-signease.vercel.app",
       "websiteUrl": "https://fom-signease.vercel.app",
-      "scopes": ["personal"]
+      "scopes": ["personal"],
+      "context": ["personalTab"]
     },
     {
       "entityId": "signease-inbox",
       "name": "Mes Documents",
       "contentUrl": "https://fom-signease.vercel.app/#/inbox",
       "websiteUrl": "https://fom-signease.vercel.app/#/inbox",
-      "scopes": ["personal"]
+      "scopes": ["personal"],
+      "context": ["personalTab"]
     }
   ],
   "configurableTabs": [
@@ -50,5 +52,10 @@
   "validDomains": [
     "fom-signease.vercel.app",
     "*.vercel.app"
-  ]
+  ],
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": []
+    }
+  }
 }

@@ -1,7 +1,7 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.13/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.13",
-  "version": "1.0.0",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.1.0",
   "id": "7d9ba50d-4f9c-4a97-bd8b-acacb39303f4",
   "packageName": "com.fometaux.teamease",
   "developer": {
@@ -16,7 +16,7 @@
   },
   "description": {
     "short": "Portail des Secrétaires et Militants FO Métaux",
-    "full": "Portail des Secrétaires et Militants TeamEase — Gestion des outils syndicaux FO Métaux. Accédez au tableau de bord, gérez vos équipes et suivez les activités directement depuis Microsoft Teams."
+    "full": "Portail des Secrétaires et Militants TeamEase — Gestion des outils syndicaux FO Métaux. Accédez au tableau de bord, gérez vos équipes et suivez les activités directement depuis Microsoft Teams et Outlook."
   },
   "icons": {
     "color": "color.png",
@@ -29,14 +29,16 @@
       "name": "Dashboard",
       "contentUrl": "https://fom-teamease.vercel.app",
       "websiteUrl": "https://fom-teamease.vercel.app",
-      "scopes": ["personal"]
+      "scopes": ["personal"],
+      "context": ["personalTab"]
     },
     {
       "entityId": "teamease-profile",
       "name": "Mon Profil",
       "contentUrl": "https://fom-teamease.vercel.app/profile",
       "websiteUrl": "https://fom-teamease.vercel.app/profile",
-      "scopes": ["personal"]
+      "scopes": ["personal"],
+      "context": ["personalTab"]
     }
   ],
   "configurableTabs": [
@@ -51,5 +53,10 @@
     "fom-teamease.vercel.app",
     "*.vercel.app",
     "*.supabase.co"
-  ]
+  ],
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": []
+    }
+  }
 }

@@ -1,7 +1,7 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.13/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.13",
-  "version": "1.0.0",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.1.0",
   "id": "1fec8b89-c409-471b-bd7e-d7d36d960cc3",
   "packageName": "com.fometaux.docease",
   "developer": {
@@ -16,7 +16,7 @@
   },
   "description": {
     "short": "Génération de documents syndicaux FO Métaux",
-    "full": "Générateur de documents FO Métaux — Convocations, Désignations, Circulaires et plus. Créez et gérez vos documents syndicaux directement depuis Microsoft Teams."
+    "full": "Générateur de documents FO Métaux — Convocations, Désignations, Circulaires et plus. Créez et gérez vos documents syndicaux directement depuis Microsoft Teams et Outlook."
   },
   "icons": {
     "color": "color.png",
@@ -29,14 +29,16 @@
       "name": "DocEase",
       "contentUrl": "https://fom-docease.vercel.app",
       "websiteUrl": "https://fom-docease.vercel.app",
-      "scopes": ["personal"]
+      "scopes": ["personal"],
+      "context": ["personalTab"]
     },
     {
       "entityId": "docease-convocation",
       "name": "Convocation",
       "contentUrl": "https://fom-docease.vercel.app/?type=convocation",
       "websiteUrl": "https://fom-docease.vercel.app/?type=convocation",
-      "scopes": ["personal"]
+      "scopes": ["personal"],
+      "context": ["personalTab"]
     }
   ],
   "configurableTabs": [
@@ -50,5 +52,10 @@
   "validDomains": [
     "fom-docease.vercel.app",
     "*.vercel.app"
-  ]
+  ],
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": []
+    }
+  }
 }

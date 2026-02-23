@@ -94,40 +94,62 @@ Pour ajouter en tant qu'onglet dans un canal :
 
 ---
 
-## Installation dans Outlook
+## Installation dans Outlook (app pleine page)
 
-### Option A : Outlook Web (recommandé)
+Les apps apparaissent dans Outlook comme des **applications pleine page** (et non un simple volet latéral). On utilise le **même package .zip Teams** — les manifestes v1.16 avec `staticTabs` et `context: personalTab` sont automatiquement reconnus par Outlook.
 
-1. Ouvrez **[Outlook Web](https://outlook.office.com)**
-2. Cliquez sur l'icône ⚙️ (Paramètres) en haut à droite
-3. Allez dans **Courrier** → **Compléments** (ou **Gérer les compléments**)
-4. Cliquez sur **Mes compléments** → **Ajouter un complément personnalisé** → **Ajouter à partir d'un fichier**
-5. Sélectionnez le fichier XML souhaité :
-   - `microsoft365\outlook\signease\signease-addin.xml`
-   - `microsoft365\outlook\docease\docease-addin.xml`
-   - `microsoft365\outlook\teamease\teamease-addin.xml`
-6. Confirmez l'installation
+### Option A : Via le Centre d'administration Microsoft 365 (recommandé)
 
-### Option B : Déploiement centralisé (administrateur M365)
+> C'est la méthode la plus fiable pour que les apps soient disponibles en tant qu'applications intégrées pleine page.
 
 1. Connectez-vous au **[Centre d'administration Microsoft 365](https://admin.microsoft.com)**
-2. Allez dans **Paramètres** → **Compléments intégrés**
-3. Cliquez sur **Charger des compléments personnalisés**
-4. Pour chaque app, chargez le fichier `.xml` correspondant
-5. Attribuez aux utilisateurs/groupes souhaités
+2. Allez dans **Paramètres** → **Applications intégrées**
+3. Cliquez sur **Charger des applications personnalisées**
+4. Sélectionnez le fichier `.zip` correspondant (le même que pour Teams) :
+   - `microsoft365\dist\signease-teams.zip`
+   - `microsoft365\dist\docease-teams.zip`
+   - `microsoft365\dist\teamease-teams.zip`
+5. Choisissez **Outlook** (et/ou Teams) comme plateforme cible
+6. Attribuez aux utilisateurs/groupes souhaités
+7. Cliquez sur **Déployer**
+
+### Option B : Via Teams Admin Center
+
+1. Connectez-vous au **[Teams Admin Center](https://admin.teams.microsoft.com)**
+2. Allez dans **Apps Teams** → **Gérer les apps**
+3. Cliquez sur **Charger une nouvelle application**
+4. Sélectionnez le `.zip`
+5. L'app sera automatiquement disponible dans **Teams ET Outlook**
+
+### Option C : Sideload dans Teams (propagation Outlook automatique)
+
+1. Installez l'app dans Teams via sideload (voir section précédente)
+2. Ouvrez **[Outlook Web](https://outlook.office.com)**
+3. Dans la barre latérale gauche, cliquez sur **Apps** (icône grille / "Plus d'applications")
+4. L'app Teams apparaît automatiquement — cliquez dessus pour l'ouvrir en **pleine page**
+
+> ⚠️ La propagation de Teams vers Outlook peut prendre jusqu'à **24h**. Si l'app n'apparaît pas immédiatement dans Outlook, patientez.
 
 ### Résultat
 
-Après installation, chaque complément ajoute :
-- Un **bouton dans le ruban** lors de la lecture d'un mail
-- Un **bouton dans la barre de composition** lors de la rédaction d'un mail
-- Cliquer sur le bouton ouvre un **volet latéral** (TaskPane) avec l'application
+Chaque application apparaît comme une **app pleine page** dans Outlook, accessible depuis :
+- La **barre latérale gauche** d'Outlook (section "Apps")
+- Le menu **"Plus d'applications"** (icône grille `⊞`)
 
-| Complément | Bouton (lecture) | Bouton (composition) |
-|---|---|---|
-| **SignEase** | "Ouvrir SignEase" | "Signer un document" |
-| **DocEase** | "Ouvrir DocEase" | "Créer un document" |
-| **TeamEase** | "Ouvrir TeamEase" | "Dashboard" |
+| Application | Onglets dans Outlook |
+|---|---|
+| **SignEase** | "SignEase" (accueil) · "Mes Documents" |
+| **DocEase** | "DocEase" (accueil) · "Convocation" |
+| **TeamEase** | "Dashboard" (accueil) · "Mon Profil" |
+
+### Alternative : Add-in XML (volet latéral uniquement)
+
+Si vous préférez un bouton dans le ruban des emails avec volet latéral, les fichiers XML sont toujours disponibles :
+- `microsoft365\outlook\signease\signease-addin.xml`
+- `microsoft365\outlook\docease\docease-addin.xml`
+- `microsoft365\outlook\teamease\teamease-addin.xml`
+
+Pour les installer : [outlook.office.com/mail/inclientstore](https://outlook.office.com/mail/inclientstore) → Mes compléments → Ajouter un complément personnalisé → Ajouter à partir d'un fichier.
 
 ---
 
