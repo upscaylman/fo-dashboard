@@ -13,8 +13,8 @@
   <DisplayName DefaultValue="SignEase - Signature Électronique"/>
   <Description DefaultValue="Solution de signature électronique sécurisée pour documents syndicaux FO Métaux. Signez vos documents directement depuis Outlook."/>
 
-  <IconUrl DefaultValue="https://fom-signease.vercel.app/icon-128x128.png"/>
-  <HighResolutionIconUrl DefaultValue="https://fom-signease.vercel.app/icon-512x512.png"/>
+  <IconUrl DefaultValue="https://fom-signease.vercel.app/icon-64x64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://fom-signease.vercel.app/icon-128x128.png"/>
 
   <SupportUrl DefaultValue="https://fom-signease.vercel.app"/>
 
@@ -114,9 +114,9 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="icon16" DefaultValue="https://fom-signease.vercel.app/icon-72x72.png"/>
-        <bt:Image id="icon32" DefaultValue="https://fom-signease.vercel.app/icon-96x96.png"/>
-        <bt:Image id="icon80" DefaultValue="https://fom-signease.vercel.app/icon-128x128.png"/>
+        <bt:Image id="icon16" DefaultValue="https://fom-signease.vercel.app/icon-16x16.png"/>
+        <bt:Image id="icon32" DefaultValue="https://fom-signease.vercel.app/icon-32x32.png"/>
+        <bt:Image id="icon80" DefaultValue="https://fom-signease.vercel.app/icon-80x80.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="taskPaneUrl" DefaultValue="https://fom-signease.vercel.app"/>
