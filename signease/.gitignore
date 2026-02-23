@@ -43,3 +43,4 @@ test-output/
 
 # Local Netlify folder
 .netlify
+.vercel
