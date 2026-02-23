@@ -43,7 +43,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
         {/* Text Animation */}
         <div className="text-center space-y-2 animate-[fadeIn_1s_ease-out]">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                FO Métaux
+                Team<span className="text-fo-red">Ease</span>
             </h1>
             <p className="text-slate-500 dark:text-slate-400 font-medium">
                 Portail Secrétaires & Militants

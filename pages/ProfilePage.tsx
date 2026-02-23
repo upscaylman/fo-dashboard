@@ -201,59 +201,26 @@ const ProfilePage: React.FC = () => {
   const fetchProfile = async () => {
     if (!user) return;
     
-    // Skip si le service est en backoff
-    if (isInBackoff()) {
-      console.log('Profile: skipped (service in backoff)');
-      setLoading(false);
-      return;
-    }
-    
     setLoading(true);
     
-    // Essayer PostgREST d'abord
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    if (error) {
-      recordFailure(error);
-      
-      // Si 503, utiliser Edge Function fallback
-      if (isTransientError(error)) {
-        console.log('Profile: PostgREST 503, trying Edge Function fallback...');
-        const edgeResult = await queryViaEdgeFunction<UserProfile[]>('users', {
-          select: '*',
-          eq: { id: user.id },
-          limit: 1
-        });
-        
-        if (!edgeResult.error && edgeResult.data && edgeResult.data.length > 0) {
-          console.log('Profile: Edge Function fallback success');
-          const profileData = edgeResult.data[0];
-          setProfile(profileData);
-          setFormData({
-            name: profileData.name || '',
-            phone: profileData.phone || '',
-            avatar: profileData.avatar || 'avatar-1'
-          });
-          setLoading(false);
-          return;
-        }
-        console.log('Profile: Edge Function fallback also failed');
-      } else {
-        console.error('Erreur chargement profil:', error);
-        addToast('Erreur lors du chargement du profil', 'error');
-      }
-    } else {
-      recordSuccess();
-      setProfile(data);
+    // Utiliser Edge Function directement (PostgREST 503)
+    const { data, error: edgeError } = await queryViaEdgeFunction<UserProfile[]>('users', {
+      select: '*',
+      eq: { id: user.id },
+      limit: 1
+    });
+    
+    if (!edgeError && data && data.length > 0) {
+      const profileData = data[0];
+      setProfile(profileData);
       setFormData({
-        name: data.name || '',
-        phone: data.phone || '',
-        avatar: data.avatar || 'avatar-1'
+        name: profileData.name || '',
+        phone: profileData.phone || '',
+        avatar: profileData.avatar || 'avatar-1'
       });
+    } else {
+      console.error('Erreur chargement profil:', edgeError);
+      addToast('Erreur lors du chargement du profil', 'error');
     }
     setLoading(false);
   };
@@ -268,23 +235,37 @@ const ProfilePage: React.FC = () => {
     }
 
     setSaving(true);
-    const { error } = await supabase
-      .from('users')
-      .update({
-        name: formData.name,
-        phone: formData.phone,
-        avatar: formData.avatar
-      })
-      .eq('id', profile.id);
+    // Utiliser Edge Function pour la mise à jour (PostgREST 503)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          table: 'users',
+          operation: 'update',
+          data: {
+            name: formData.name,
+            phone: formData.phone,
+            avatar: formData.avatar
+          },
+          eq: { id: profile.id },
+        }),
+      });
 
-    if (error) {
-      console.error('Erreur mise à jour profil:', error);
-      addToast('Erreur lors de la mise à jour', 'error');
-    } else {
+      if (!response.ok) {
+        throw new Error(`Edge function error: ${response.status}`);
+      }
+
       addToast('Profil mis à jour avec succès', 'success');
       await fetchProfile();
-      // Rafraîchir l'utilisateur dans le contexte pour mettre à jour le Header
       await refreshUser();
+    } catch (error) {
+      console.error('Erreur mise à jour profil:', error);
+      addToast('Erreur lors de la mise à jour', 'error');
     }
     setSaving(false);
   };

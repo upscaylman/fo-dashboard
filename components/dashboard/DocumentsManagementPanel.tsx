@@ -162,14 +162,14 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
     
     try {
       setLoading(true);
-      // Requête simple sans jointure de clé étrangère
-      const { data, error } = await supabase
-        .from('shared_documents')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Utiliser Edge Function (PostgREST 503)
+      const { data, error } = await queryViaEdgeFunction<any[]>('shared_documents', {
+        select: '*',
+        orderBy: 'created_at',
+        orderDesc: true,
+      });
 
       if (error) {
-        if (isTransientError(error)) recordFailure(error);
         throw error;
       }
       
@@ -253,13 +253,8 @@ const DocumentsManagementPanel: React.FC<DocumentsManagementPanelProps> = ({ isO
         }
       }
 
-      // Supprimer l'entrée de la base de données
-      const { error } = await supabase
-        .from('shared_documents')
-        .delete()
-        .eq('id', doc.id);
-
-      if (error) throw error;
+      // Supprimer l'entrée de la base de données via Edge Function
+      await deleteViaEdgeFunction('shared_documents', { id: doc.id });
 
       addToast(`"${doc.name}" supprimé avec succès`, 'success');
       fetchDocuments();

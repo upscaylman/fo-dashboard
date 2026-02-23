@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { FileText, Download, Calendar, User, Users, Filter, Search, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, CheckCircle, AlertCircle, Eye, X, RotateCcw, List } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { queryViaEdgeFunction } from '../../../lib/supabaseRetry';
 import { useAuth } from '../../../context/AuthContext';
 import { DOCEASE_URL } from '../../../constants';
 import SelectBottomSheet from '../../ui/SelectBottomSheet';
@@ -97,24 +98,42 @@ const DoceaseDocumentsTable: React.FC<DoceaseDocumentsTableProps> = ({ timeRange
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('docease_documents')
-        .select(`
-          *,
-          user:users(name, email, avatar, avatar_url)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100);
 
-      // Filtrer par user_id si rôle restreint
+      // Utiliser Edge Function (PostgREST 503)
+      const docsParams: any = {
+        select: '*',
+        orderBy: 'created_at',
+        orderDesc: true,
+        limit: 100,
+      };
       if (isRestrictedView && user?.id) {
-        query = query.eq('user_id', user.id);
+        docsParams.eq = { user_id: user.id };
       }
 
-      const { data, error } = await query;
+      const { data: docs } = await queryViaEdgeFunction<any[]>('docease_documents', docsParams);
 
-      if (error) throw error;
-      setDocuments(data || []);
+      // Récupérer les utilisateurs associés pour enrichir les documents
+      const userIds = [...new Set((docs || []).map((d: any) => d.user_id).filter(Boolean))];
+      let usersMap: Record<string, { name: string; email: string; avatar?: string; avatar_url?: string }> = {};
+
+      if (userIds.length > 0) {
+        const { data: usersData } = await queryViaEdgeFunction<any[]>('users', {
+          select: 'id,name,email,avatar,avatar_url',
+        });
+        if (usersData) {
+          for (const u of usersData) {
+            usersMap[u.id] = { name: u.name, email: u.email, avatar: u.avatar, avatar_url: u.avatar_url };
+          }
+        }
+      }
+
+      // Fusionner les données
+      const enrichedDocs = (docs || []).map((d: any) => ({
+        ...d,
+        user: d.user_id && usersMap[d.user_id] ? usersMap[d.user_id] : undefined,
+      }));
+
+      setDocuments(enrichedDocs);
     } catch (error) {
       console.error('Erreur chargement documents DocEase:', error);
     } finally {

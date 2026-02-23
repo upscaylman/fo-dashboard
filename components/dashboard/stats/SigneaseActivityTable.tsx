@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Edit3, Calendar, Search, ChevronDown, ArrowUp, ArrowDown, Send, CheckCircle, XCircle, FileText, ExternalLink, X, Download, Eye, Users, List } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { queryViaEdgeFunction } from '../../../lib/supabaseRetry';
 import { useAuth } from '../../../context/AuthContext';
 import { SIGNEASE_URL } from '../../../constants';
 import SelectBottomSheet from '../../ui/SelectBottomSheet';
@@ -92,30 +93,27 @@ const SigneaseActivityTable: React.FC<SigneaseActivityTableProps> = ({ timeRange
   const fetchActivities = async () => {
     try {
       setLoading(true);
-      
-      // Récupérer les activités
-      let query = supabase
-        .from('signease_activity')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
 
-      // Filtrer par user_email si rôle restreint
+      // Utiliser Edge Function (PostgREST 503)
+      const actParams: any = {
+        select: '*',
+        orderBy: 'created_at',
+        orderDesc: true,
+        limit: 100,
+      };
       if (isRestrictedView && user?.email) {
-        query = query.eq('user_email', user.email);
+        actParams.eq = { user_email: user.email };
       }
 
-      const { data: activitiesData, error } = await query;
+      const { data: activitiesData } = await queryViaEdgeFunction<any[]>('signease_activity', actParams);
 
-      if (error) throw error;
-      
-      // Récupérer les avatars des utilisateurs
-      const { data: usersData } = await supabase
-        .from('users')
-        .select('email, avatar, avatar_url');
-      
+      // Récupérer les avatars des utilisateurs via Edge Function
+      const { data: usersData } = await queryViaEdgeFunction<any[]>('users', {
+        select: 'email,avatar,avatar_url',
+      });
+
       const usersMap = new Map((usersData || []).map((u: any) => [u.email, u]));
-      
+
       // Enrichir les activités avec les avatars
       const enrichedActivities = (activitiesData || []).map(activity => {
         const userInfo = usersMap.get(activity.user_email);
@@ -124,7 +122,7 @@ const SigneaseActivityTable: React.FC<SigneaseActivityTableProps> = ({ timeRange
           user_avatar: userInfo?.avatar || userInfo?.avatar_url
         };
       });
-      
+
       setActivities(enrichedActivities);
     } catch (error) {
       console.error('Erreur chargement activités SignEase:', error);

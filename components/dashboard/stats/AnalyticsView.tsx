@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader } from '../../ui/Card';
 import { supabase } from '../../../lib/supabase';
+import { queryViaEdgeFunction } from '../../../lib/supabaseRetry';
 import { useAuth } from '../../../context/AuthContext';
 import SelectBottomSheet from '../../ui/SelectBottomSheet';
 
@@ -93,64 +94,44 @@ const AnalyticsView: React.FC = () => {
       const startDate = getStartDate();
 
       // Récupérer les utilisateurs avec leurs avatars
-      const { data: usersData } = await supabase
-        .from('users')
-        .select('id, email, name, avatar, avatar_url');
+      const { data: usersData } = await queryViaEdgeFunction<any[]>(
+        'users',
+        { select: 'id, email, name, avatar, avatar_url' }
+      );
 
       // Créer une map par id ET par email pour la correspondance
       const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]));
       const usersMapByEmail = new Map((usersData || []).map((u: any) => [u.email, u]));
 
-      // Récupérer les documents DocEase
-      let doceaseQuery = supabase
-        .from('docease_documents')
-        .select('id, document_type, title, created_at, metadata, user_id')
-        .order('created_at', { ascending: false });
-      
-      if (startDate) {
-        doceaseQuery = doceaseQuery.gte('created_at', startDate);
-      }
-      
-      // Filtrer par utilisateur si vue restreinte
-      if (isRestrictedView && effectiveUserId) {
-        doceaseQuery = doceaseQuery.eq('user_id', effectiveUserId);
-      }
-      
-      const { data: doceaseData } = await doceaseQuery;
+      // Récupérer les documents DocEase via Edge Function (PostgREST est 503)
+      const doceaseOpts: any = {
+        select: 'id, document_type, title, created_at, metadata, user_id',
+        orderBy: 'created_at',
+        orderDesc: true
+      };
+      if (startDate) doceaseOpts.gte = { created_at: startDate };
+      if (isRestrictedView && effectiveUserId) doceaseOpts.eq = { user_id: effectiveUserId };
+      const { data: doceaseData } = await queryViaEdgeFunction<any[]>('docease_documents', doceaseOpts);
 
-      // Récupérer les signatures
-      let signaturesQuery = supabase
-        .from('signatures')
-        .select('id, signed_at, user_id, document_id')
-        .order('signed_at', { ascending: false });
-      
-      if (startDate) {
-        signaturesQuery = signaturesQuery.gte('signed_at', startDate);
-      }
-      
-      // Filtrer par utilisateur si vue restreinte
-      if (isRestrictedView && effectiveUserId) {
-        signaturesQuery = signaturesQuery.eq('user_id', effectiveUserId);
-      }
-      
-      const { data: signaturesData } = await signaturesQuery;
+      // Récupérer les signatures via Edge Function
+      const signaturesOpts: any = {
+        select: 'id, signed_at, user_id, document_id',
+        orderBy: 'signed_at',
+        orderDesc: true
+      };
+      if (startDate) signaturesOpts.gte = { signed_at: startDate };
+      if (isRestrictedView && effectiveUserId) signaturesOpts.eq = { ...(signaturesOpts.eq || {}), user_id: effectiveUserId };
+      const { data: signaturesData } = await queryViaEdgeFunction<any[]>('signatures', signaturesOpts);
 
-      // Récupérer les activités SignEase
-      let signeaseQuery = supabase
-        .from('signease_activity')
-        .select('id, user_email, user_name, action_type, document_name, recipient_email, recipient_name, envelope_id, metadata, created_at')
-        .order('created_at', { ascending: false });
-      
-      if (startDate) {
-        signeaseQuery = signeaseQuery.gte('created_at', startDate);
-      }
-      
-      // Filtrer par email utilisateur si vue restreinte
-      if (isRestrictedView && effectiveUserEmail) {
-        signeaseQuery = signeaseQuery.eq('user_email', effectiveUserEmail);
-      }
-      
-      const { data: signeaseData } = await signeaseQuery;
+      // Récupérer les activités SignEase via Edge Function
+      const signeaseOpts: any = {
+        select: 'id, user_email, user_name, action_type, document_name, recipient_email, recipient_name, envelope_id, metadata, created_at',
+        orderBy: 'created_at',
+        orderDesc: true
+      };
+      if (startDate) signeaseOpts.gte = { created_at: startDate };
+      if (isRestrictedView && effectiveUserEmail) signeaseOpts.eq = { ...(signeaseOpts.eq || {}), user_email: effectiveUserEmail };
+      const { data: signeaseData } = await queryViaEdgeFunction<any[]>('signease_activity', signeaseOpts);
 
       // Construire la liste des activités
       const allActivities: ActivityEvent[] = [];

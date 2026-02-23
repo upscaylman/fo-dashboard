@@ -53,7 +53,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ archiveLinks, loading }) 
            <Sidebar archiveLinks={archiveLinks} loading={loading} />
            
            <div className="mt-8 text-center text-xs text-slate-400">
-              <p>© 2025 Fédération FO Métaux</p>
+              <p>© 2025 TeamEase</p>
               <p className="mt-1">Version Mobile 1.0</p>
            </div>
         </div>

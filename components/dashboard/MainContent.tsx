@@ -10,7 +10,7 @@ import { useBookmarks } from '../../context/BookmarkContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { isCircuitOpen, recordSuccess, recordFailure, isTransientError, probeSupabaseHealth, queryViaEdgeFunction } from '../../lib/supabaseRetry';
+import { isCircuitOpen, recordSuccess, recordFailure, isTransientError, probeSupabaseHealth, queryViaEdgeFunction, insertViaEdgeFunction, deleteViaEdgeFunction } from '../../lib/supabaseRetry';
 import { DOCEASE_URL, SIGNEASE_URL } from '../../constants';
 import DocumentsManagementPanel from './DocumentsManagementPanel';
 import SelectBottomSheet from '../ui/SelectBottomSheet';
@@ -296,10 +296,12 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
     if (!isHealthy) return;
     
     try {
-      const { data, error } = await supabase
-        .from('shared_documents')
-        .select('*, users:uploaded_by(name, email)')
-        .order('created_at', { ascending: false });
+      // Utiliser Edge Function (PostgREST 503)
+      const { data, error } = await queryViaEdgeFunction<any[]>('shared_documents', {
+        select: '*',
+        orderBy: 'created_at',
+        orderDesc: true,
+      });
       
       if (error) {
         if (isTransientError(error)) {
@@ -310,10 +312,10 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
       
       recordSuccess();
       
-      // Mapper les données pour inclure le nom du créateur
+      // Mapper les données
       const docsWithCreator = (data || []).map(doc => ({
         ...doc,
-        created_by_name: doc.users?.name || doc.users?.email?.split('@')[0] || 'Inconnu'
+        created_by_name: doc.created_by_name || 'Inconnu'
       }));
       setSharedDocuments(docsWithCreator);
     } catch (e) {
@@ -392,17 +394,16 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
 
       const { data: userData } = await supabase.auth.getUser();
       
-      const { error } = await supabase
-        .from('shared_documents')
-        .insert([{
-          name: newDoc.name,
-          file_url: fileUrl,
-          file_type: newDoc.file_type,
-          file_size: newDoc.file_size,
-          category: newDoc.category,
-          description: newDoc.description,
-          uploaded_by: userData.user?.id
-        }]);
+      // Insérer via Edge Function (PostgREST 503)
+      const { error } = await insertViaEdgeFunction('shared_documents', {
+        name: newDoc.name,
+        file_url: fileUrl,
+        file_type: newDoc.file_type,
+        file_size: newDoc.file_size,
+        category: newDoc.category,
+        description: newDoc.description,
+        uploaded_by: userData.user?.id
+      });
 
       if (error) {
         addToast('Erreur lors de l\'ajout du document', 'error');
@@ -425,10 +426,7 @@ const MainContent: React.FC<MainContentProps> = ({ news, loading, refreshing, er
   const handleDeleteDocument = async (id: string, name: string) => {
     if (!confirm(`Voulez-vous vraiment supprimer "${name}" ?`)) return;
 
-    const { error } = await supabase
-      .from('shared_documents')
-      .delete()
-      .eq('id', id);
+    const { error } = await deleteViaEdgeFunction('shared_documents', { id });
 
     if (error) {
       addToast('Erreur lors de la suppression', 'error');

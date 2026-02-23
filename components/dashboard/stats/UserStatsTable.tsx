@@ -6,7 +6,7 @@ import { Badge } from '../../ui/Badge';
 import { useToast } from '../../../context/ToastContext';
 import { useAuth } from '../../../context/AuthContext';
 import { supabase } from '../../../lib/supabase';
-import { deleteViaEdgeFunction } from '../../../lib/supabaseRetry';
+import { deleteViaEdgeFunction, queryViaEdgeFunction } from '../../../lib/supabaseRetry';
 import { ROLE_COLORS, ROLE_LABELS, UserRole } from '../../../lib/permissions';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { TimeRange } from '../../../hooks/useStats';
@@ -128,45 +128,50 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
     setShowUserDetailsModal(true);
     
     try {
-      // Récupérer les documents DocEase de l'utilisateur
-      const { data: doceaseData } = await supabase
-        .from('docease_documents')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Récupérer les documents DocEase de l'utilisateur via Edge Function
+      const { data: doceaseData } = await queryViaEdgeFunction<any[]>('docease_documents', {
+        select: '*',
+        eq: { user_id: user.id },
+        orderBy: 'created_at',
+        orderDesc: true,
+        limit: 10,
+      });
 
-      // Récupérer les activités SignEase liées à l'email de l'utilisateur
-      const { data: userData } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', user.id)
-        .single();
+      // Récupérer l'email de l'utilisateur via Edge Function
+      const { data: userData } = await queryViaEdgeFunction<any[]>('users', {
+        select: 'email',
+        eq: { id: user.id },
+        limit: 1,
+      });
 
-      const userEmail = userData?.email || '';
+      const userEmail = userData?.[0]?.email || '';
       
-      const { data: signeaseData } = await supabase
-        .from('signease_activity')
-        .select('*')
-        .eq('user_email', userEmail)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Récupérer les activités SignEase via Edge Function
+      const { data: signeaseData } = await queryViaEdgeFunction<any[]>('signease_activity', {
+        select: '*',
+        eq: { user_email: userEmail },
+        orderBy: 'created_at',
+        orderDesc: true,
+        limit: 10,
+      });
 
-      // Récupérer les favoris de l'utilisateur
-      const { data: bookmarksData } = await supabase
-        .from('bookmarks')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Récupérer les favoris de l'utilisateur via Edge Function
+      const { data: bookmarksData } = await queryViaEdgeFunction<any[]>('bookmarks', {
+        select: '*',
+        eq: { user_id: user.id },
+        orderBy: 'created_at',
+        orderDesc: true,
+        limit: 10,
+      });
 
-      // Récupérer les sessions actives
-      const { data: sessionsData } = await supabase
-        .from('active_sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('last_activity', { ascending: false })
-        .limit(5);
+      // Récupérer les sessions actives via Edge Function
+      const { data: sessionsData } = await queryViaEdgeFunction<any[]>('active_sessions', {
+        select: '*',
+        eq: { user_id: user.id },
+        orderBy: 'last_activity',
+        orderDesc: true,
+        limit: 5,
+      });
 
       setSelectedUserDetails({
         user: { ...user, email: userEmail } as UserStat,
@@ -190,17 +195,17 @@ const UserStatsTable: React.FC<UserStatsTableProps> = ({ users, timeRange = 'mon
       const periodStart = getStartDateFromRange(timeRange);
       const statsMap = new Map<string, { letters: number; signatures: number }>();
       
-      // Récupérer les documents DocEase par utilisateur
-      const { data: doceaseData } = await supabase
-        .from('docease_documents')
-        .select('user_id')
-        .gte('created_at', periodStart.toISOString());
+      // Récupérer les documents DocEase par utilisateur via Edge Function
+      const { data: doceaseData } = await queryViaEdgeFunction<any[]>('docease_documents', {
+        select: 'user_id',
+        gte: { created_at: periodStart.toISOString() },
+      });
       
-      // Récupérer les signatures par utilisateur
-      const { data: signaturesData } = await supabase
-        .from('signatures')
-        .select('user_id')
-        .gte('signed_at', periodStart.toISOString());
+      // Récupérer les signatures par utilisateur via Edge Function
+      const { data: signaturesData } = await queryViaEdgeFunction<any[]>('signatures', {
+        select: 'user_id',
+        gte: { signed_at: periodStart.toISOString() },
+      });
       
       // Compter par user_id
       doceaseData?.forEach(doc => {

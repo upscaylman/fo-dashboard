@@ -7,6 +7,8 @@ import {
   recordFailure, 
   isTransientError,
   queryViaEdgeFunction,
+  insertViaEdgeFunction,
+  deleteViaEdgeFunction,
   shouldUseEdgeFallback,
   enableEdgeFallback
 } from '../lib/supabaseRetry';
@@ -60,53 +62,21 @@ export const useNotifications = () => {
     lastFetchRef.current = now;
 
     try {
-      let data = null;
-      let usedFallback = false;
-      
-      // Essayer PostgREST d'abord
-      const { data: postgrestData, error } = await supabase
-        .from('notifications')
-        .select(`
-          *,
-          actor:users!notifications_actor_id_fkey(name, email, avatar)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Utiliser Edge Function directement (PostgREST 503)
+      const { data, error: edgeError } = await queryViaEdgeFunction<Notification[]>('notifications', {
+        select: 'id,user_id,actor_id,type,title,message,data,read,created_at',
+        eq: { user_id: user.id },
+        orderBy: 'created_at',
+        orderDesc: true,
+        limit: 50
+      });
 
-      if (error) {
-        recordFailure(error);
-        
-        // Si erreur 503, tenter Edge Function fallback
-        if (isTransientError(error)) {
-          console.log('Notifications: PostgREST 503, trying Edge Function...');
-          enableEdgeFallback();
-          
-          const edgeResult = await queryViaEdgeFunction<Notification[]>('notifications', {
-            select: 'id,user_id,actor_id,type,title,message,data,read,created_at',
-            filters: { user_id: user.id },
-            limit: 50
-          });
-          
-          if (!edgeResult.error && edgeResult.data) {
-            data = edgeResult.data;
-            usedFallback = true;
-            console.log('Notifications: Edge Function fallback success');
-          } else {
-            console.log('Notifications: Edge Function also failed');
-            setLoading(false);
-            return;
-          }
-        } else {
-          console.error('Erreur notifications:', error);
-          setLoading(false);
-          return;
-        }
-      } else {
-        data = postgrestData;
+      if (edgeError) {
+        console.error('Notifications: Edge Function failed', edgeError);
+        setLoading(false);
+        return;
       }
 
-      if (!usedFallback) recordSuccess();
       setNotifications(data || []);
       setUnreadCount((data || []).filter(n => !n.read).length);
     } catch (e) {
@@ -162,13 +132,24 @@ export const useNotifications = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
+      // Utiliser Edge Function pour la mise à jour
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          table: 'notifications',
+          operation: 'update',
+          data: { read: true },
+          eq: { id: notificationId },
+        }),
+      });
 
-      if (error) {
-        console.error('Erreur markAsRead:', error);
+      if (!response.ok) {
+        console.error('Erreur markAsRead:', response.status);
         return;
       }
 
@@ -183,14 +164,23 @@ export const useNotifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', user?.id)
-        .eq('read', false);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          table: 'notifications',
+          operation: 'update',
+          data: { read: true },
+          eq: { user_id: user?.id, read: false },
+        }),
+      });
 
-      if (error) {
-        console.error('Erreur markAllAsRead:', error);
+      if (!response.ok) {
+        console.error('Erreur markAllAsRead:', response.status);
         return;
       }
 
@@ -203,15 +193,7 @@ export const useNotifications = () => {
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) {
-        console.error('Erreur deleteNotification:', error);
-        return;
-      }
+      await deleteViaEdgeFunction('notifications', { id: notificationId });
 
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       setUnreadCount(prev => {
@@ -225,16 +207,8 @@ export const useNotifications = () => {
 
   const deleteAllRead = async () => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', user?.id)
-        .eq('read', true);
-
-      if (error) {
-        console.error('Erreur deleteAllRead:', error);
-        return;
-      }
+      // Supprimer via Edge Function les notifs lues de cet utilisateur
+      await deleteViaEdgeFunction('notifications', { user_id: user?.id, read: true });
 
       setNotifications(prev => prev.filter(n => !n.read));
     } catch (e) {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { queryViaEdgeFunction, insertViaEdgeFunction, deleteViaEdgeFunction } from '../lib/supabaseRetry';
 
 // ========================================================
 // PRESENCE SYSTEM - TEMPORAIREMENT DESACTIVE
@@ -34,12 +35,215 @@ interface UsePresenceReturn {
 }
 
 // Version desactivee du hook
+// Version légère: lecture via Edge Function + écriture via Edge Function
+// Pas de heartbeat agressif, pas de PostgREST direct
 const usePresenceDisabled = (): UsePresenceReturn => {
+  const { user, isImpersonating } = useAuth();
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [isOnline, setIsOnline] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const sessionIdRef = useRef<string | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Timeout d'inactivité: 3 minutes
+  const INACTIVITY_MS = 3 * 60 * 1000;
+  // Heartbeat: toutes les 90 secondes
+  const HEARTBEAT_MS = 90 * 1000;
+  // Refresh liste: toutes les 60 secondes
+  const REFRESH_MS = 60 * 1000;
+
+  // Récupérer les utilisateurs actifs via Edge Function
+  const fetchActiveUsers = useCallback(async () => {
+    try {
+      const timeoutAgo = new Date(Date.now() - INACTIVITY_MS).toISOString();
+
+      // Nettoyer les vieilles sessions (best effort)
+      try {
+        const { data: old } = await queryViaEdgeFunction<any[]>('active_sessions', {
+          select: 'id',
+          lt: { last_activity: timeoutAgo },
+        });
+        if (old && old.length > 0) {
+          for (const s of old) {
+            await deleteViaEdgeFunction('active_sessions', { id: s.id });
+          }
+        }
+      } catch { /* ignorer */ }
+
+      // Récupérer les sessions actives
+      const { data } = await queryViaEdgeFunction<ActiveUser[]>('active_sessions', {
+        select: '*',
+        gte: { last_activity: timeoutAgo },
+        orderBy: 'last_activity',
+        orderDesc: true,
+      });
+
+      if (data) {
+        // Dédupliquer par email
+        const emailMap = new Map<string, ActiveUser>();
+        data.forEach((session: any) => {
+          const emailKey = (session.user_email || '').toLowerCase().trim();
+          const tool: 'dashboard' | 'docease' | 'signease' =
+            session.current_tool === 'docease' ? 'docease' :
+            session.current_tool === 'signease' ? 'signease' : 'dashboard';
+
+          const existing = emailMap.get(emailKey);
+          if (!existing) {
+            emailMap.set(emailKey, {
+              ...session,
+              tools: [tool],
+              names: session.user_name ? [session.user_name] : [],
+            });
+          } else {
+            if (!existing.tools?.includes(tool)) {
+              existing.tools = [...(existing.tools || []), tool];
+            }
+            if (session.user_name && !existing.names?.includes(session.user_name)) {
+              existing.names = [...(existing.names || []), session.user_name];
+            }
+            // Garder la dernière activité la plus récente
+            if (new Date(session.last_activity) > new Date(existing.last_activity)) {
+              existing.last_activity = session.last_activity;
+              existing.avatar_url = session.avatar_url || existing.avatar_url;
+            }
+          }
+        });
+        setActiveUsers(Array.from(emailMap.values()));
+      }
+    } catch (e) {
+      console.error('Presence fetch error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Créer/mettre à jour la session via Edge Function
+  const updatePresence = useCallback(async (
+    page: string = 'dashboard',
+    tool: 'docease' | 'signease' | null = null
+  ) => {
+    if (!user || isImpersonating) return;
+
+    try {
+      // Récupérer le nom de l'utilisateur
+      let userName: string | null = null;
+      let avatarUrl: string | null = null;
+      try {
+        const { data: uData } = await queryViaEdgeFunction<any[]>('users', {
+          select: 'name,avatar',
+          eq: { id: user.id },
+          limit: 1,
+        });
+        if (uData?.[0]) {
+          userName = uData[0].name;
+          avatarUrl = uData[0].avatar;
+        }
+      } catch { /* ignorer */ }
+
+      if (sessionIdRef.current) {
+        // Mettre à jour via Edge Function
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-proxy`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            table: 'active_sessions',
+            operation: 'update',
+            data: {
+              current_page: page,
+              current_tool: tool,
+              last_activity: new Date().toISOString(),
+              user_name: userName,
+              avatar_url: avatarUrl,
+            },
+            eq: { id: sessionIdRef.current },
+          }),
+        });
+        if (!response.ok) {
+          // Session perdue - recréer
+          sessionIdRef.current = null;
+        }
+      }
+
+      if (!sessionIdRef.current) {
+        // Supprimer les anciennes sessions de cet utilisateur
+        try {
+          const { data: oldSessions } = await queryViaEdgeFunction<any[]>('active_sessions', {
+            select: 'id',
+            eq: { user_id: user.id },
+          });
+          if (oldSessions) {
+            for (const s of oldSessions) {
+              await deleteViaEdgeFunction('active_sessions', { id: s.id });
+            }
+          }
+        } catch { /* ignorer */ }
+
+        // Créer nouvelle session
+        const { data: newSession } = await insertViaEdgeFunction<any>('active_sessions', {
+          user_id: user.id,
+          user_email: user.email || 'unknown',
+          user_name: userName,
+          avatar_url: avatarUrl,
+          current_page: page,
+          current_tool: tool,
+          last_activity: new Date().toISOString(),
+          started_at: new Date().toISOString(),
+        });
+
+        if (newSession?.id) {
+          sessionIdRef.current = newSession.id;
+        } else if (Array.isArray(newSession) && newSession[0]?.id) {
+          sessionIdRef.current = newSession[0].id;
+        }
+        setIsOnline(true);
+      }
+    } catch (e) {
+      console.error('Presence update error:', e);
+    }
+  }, [user, isImpersonating]);
+
+  // Initialisation et intervalles
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // Première récupération
+    fetchActiveUsers();
+    updatePresence('dashboard', null);
+
+    // Heartbeat pour garder la session vivante
+    heartbeatRef.current = setInterval(() => {
+      updatePresence('dashboard', null);
+    }, HEARTBEAT_MS);
+
+    // Rafraîchir la liste des utilisateurs actifs
+    refreshRef.current = setInterval(() => {
+      fetchActiveUsers();
+    }, REFRESH_MS);
+
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      if (refreshRef.current) clearInterval(refreshRef.current);
+      // Nettoyer la session au démontage
+      if (sessionIdRef.current) {
+        deleteViaEdgeFunction('active_sessions', { id: sessionIdRef.current }).catch(() => {});
+        sessionIdRef.current = null;
+      }
+    };
+  }, [user?.id]);
+
   return {
-    activeUsers: [],
-    isOnline: false,
-    updatePresence: async () => {},
-    loading: false,
+    activeUsers,
+    isOnline,
+    updatePresence,
+    loading,
     serviceHealthy: true
   };
 };

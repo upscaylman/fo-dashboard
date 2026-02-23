@@ -95,7 +95,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
                         <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center mb-6">
                             <Globe className="w-6 h-6 text-white" />
                         </div>
-                        <h1 className="text-4xl font-bold mb-4">Fédération FO de la Métallurgie</h1>
+                        <h1 className="text-4xl font-bold mb-4">Team<span className="text-fo-red">Ease</span></h1>
                         <p className="text-lg text-white/80 max-w-md">
                             Gérez vos documents, suivez l'activité syndicale et accédez aux ressources fédérales en un seul endroit.
                         </p>
@@ -275,7 +275,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
                     </div>
 
                     <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-8">
-                        © 2025 Fédération FO Métaux. Tous droits réservés.
+                        © 2025 TeamEase. Tous droits réservés.
                         <br />
                         En vous connectant, vous acceptez les CGU et la politique de confidentialité.
                     </p>

@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">FO Métaux</h1>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Team<span className="text-fo-red">Ease</span></h1>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Portail Secrétaires</p>
             </div>
           </button>

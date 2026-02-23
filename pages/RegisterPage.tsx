@@ -78,7 +78,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
                         <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center mb-6">
                             <Globe className="w-6 h-6 text-white" />
                         </div>
-                        <h1 className="text-4xl font-bold mb-4">Rejoignez FO Métaux</h1>
+                        <h1 className="text-4xl font-bold mb-4">Rejoignez Team<span className="text-fo-red">Ease</span></h1>
                         <p className="text-lg text-white/80 max-w-md">
                             Créez votre compte pour accéder aux outils, documents et ressources de la fédération.
                         </p>
@@ -107,7 +107,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
                             <Globe className="w-8 h-8 text-white" />
                         </div>
                         <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Créer un compte</h2>
-                        <p className="text-slate-500 dark:text-slate-400 mt-2">Rejoignez l'espace numérique FO Métaux.</p>
+                        <p className="text-slate-500 dark:text-slate-400 mt-2">Rejoignez l'espace numérique TeamEase.</p>
                     </div>
 
                     {error && (
