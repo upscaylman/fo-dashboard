@@ -1,46 +1,5 @@
-@import "tailwindcss";
-
 /* SignEase by FO Metaux - Styles globaux */
 /* Material Design 3 Expressive - Enhanced System */
-
-/* Tailwind v4 custom theme - remplace le CDN runtime */
-@theme {
-  --font-sans: "Manrope", sans-serif;
-
-  --color-primary: #B71C1C;
-  --color-onPrimary: #FFFFFF;
-  --color-primaryContainer: #FFDAD4;
-  --color-onPrimaryContainer: #410001;
-  --color-secondary: #775651;
-  --color-onSecondary: #FFFFFF;
-  --color-secondaryContainer: #FFDAD4;
-  --color-onSecondaryContainer: #2C1512;
-  --color-tertiary: #705C2E;
-  --color-onTertiary: #FFFFFF;
-  --color-tertiaryContainer: #FBDFA6;
-  --color-onTertiaryContainer: #251A00;
-  --color-error: #BA1A1A;
-  --color-onError: #FFFFFF;
-  --color-errorContainer: #FFDAD6;
-  --color-onErrorContainer: #410002;
-  --color-background: #FFFBFF;
-  --color-onBackground: #201A19;
-  --color-surface: #FFFBFF;
-  --color-onSurface: #201A19;
-  --color-surfaceVariant: #F5DDDA;
-  --color-onSurfaceVariant: #534341;
-  --color-outline: #857370;
-  --color-outlineVariant: #D8C2BF;
-  --color-shadow: #000000;
-  --color-scrim: #000000;
-  --color-inverseSurface: #362F2E;
-  --color-inverseOnSurface: #FBEEEC;
-  --color-inversePrimary: #FFB4A8;
-
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-3xl: 24px;
-}
 
 /* Reset et base */
 * {
