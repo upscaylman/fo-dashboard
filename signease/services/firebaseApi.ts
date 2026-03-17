@@ -54,11 +54,33 @@ export const checkEmailAccess = async (email: string): Promise<boolean> => {
       return true;
     }
 
-    // Vérifier si a reçu un fichier à signer (destinataire d'une enveloppe)
-    const envelopesSnapshot = await getDocs(collection(db, "envelopes"));
-    for (const env of envelopesSnapshot.docs) {
+    // Vérifier whitelist dynamique ET emails de destinataires en parallèle
+    const [whitelistSnapshot, emailsSnapshot] = await Promise.all([
+      getDocs(
+        query(collection(db, "authorizedUsers"), where("email", "==", emailLower))
+      ),
+      getDocs(
+        query(collection(db, "emails"), where("to", "==", emailLower))
+      ),
+    ]);
+
+    if (whitelistSnapshot.size > 0 || emailsSnapshot.size > 0) {
+      return true;
+    }
+
+    // Fallback : vérifier dans les enveloppes (query indexée si possible)
+    const envelopesSnapshot = await getDocs(
+      query(collection(db, "envelopes"), where("recipientEmails", "array-contains", emailLower))
+    );
+    if (envelopesSnapshot.size > 0) {
+      return true;
+    }
+
+    // Dernier recours : scan limité (seulement si les index ne marchent pas)
+    const allEnvelopes = await getDocs(collection(db, "envelopes"));
+    for (const env of allEnvelopes.docs) {
       const envelopeData = env.data() as Envelope;
-      const isRecipient = envelopeData.recipients.some(
+      const isRecipient = envelopeData.recipients?.some(
         (r) => r.email.toLowerCase() === emailLower
       );
       if (isRecipient) {
@@ -66,11 +88,7 @@ export const checkEmailAccess = async (email: string): Promise<boolean> => {
       }
     }
 
-    // Vérifier si dans la whitelist dynamique (ajoutée par admin)
-    const whitelistSnapshot = await getDocs(
-      query(collection(db, "authorizedUsers"), where("email", "==", emailLower))
-    );
-    return whitelistSnapshot.size > 0;
+    return false;
   } catch (error) {
     console.error("Erreur checkEmailAccess:", error);
     return false;
@@ -251,31 +269,50 @@ export const subscribeToDocuments = (
   }
 
   const userEmailLower = userEmail.toLowerCase();
-  const q = query(collection(db, "documents"), orderBy("updatedAt", "desc"));
+  // ✅ Filtrer côté serveur par creatorEmail (évite de télécharger TOUS les documents)
+  const q = query(
+    collection(db, "documents"),
+    where("creatorEmail", "==", userEmailLower),
+    orderBy("updatedAt", "desc")
+  );
 
   // Créer le listener en temps réel
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const allDocuments = snapshot.docs.map(
-      (doc) =>
-        ({
-          ...doc.data(),
-          id: doc.id,
-        } as Document)
-    );
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const visibleDocuments = snapshot.docs.map(
+        (doc) =>
+          ({
+            ...doc.data(),
+            id: doc.id,
+          } as Document)
+      );
 
-    // Filtrer uniquement les documents de l'utilisateur (insensible à la casse)
-    const visibleDocuments = allDocuments.filter(
-      (doc) => doc.creatorEmail?.toLowerCase() === userEmailLower
-    );
-
-    console.log(
-      "🔄 Documents mis à jour en temps réel:",
-      visibleDocuments.length,
-      "- Statuts:",
-      visibleDocuments.map(d => `${d.name}: ${d.status}`).join(", ")
-    );
-    onUpdate(visibleDocuments);
-  });
+      console.log(
+        "🔄 Documents mis à jour en temps réel:",
+        visibleDocuments.length
+      );
+      onUpdate(visibleDocuments);
+    },
+    (error) => {
+      // Fallback si l'index composite n'existe pas encore
+      if (error.code === "failed-precondition") {
+        console.warn("⚠️ Index composite manquant pour documents, fallback sans filtre serveur");
+        const qFallback = query(collection(db, "documents"), orderBy("updatedAt", "desc"));
+        return onSnapshot(qFallback, (snapshot) => {
+          const allDocuments = snapshot.docs.map(
+            (doc) => ({ ...doc.data(), id: doc.id } as Document)
+          );
+          const visibleDocuments = allDocuments.filter(
+            (doc) => doc.creatorEmail?.toLowerCase() === userEmailLower
+          );
+          onUpdate(visibleDocuments);
+        });
+      }
+      console.error("❌ Erreur subscribeToDocuments:", error);
+      onUpdate([]);
+    }
+  );
 
   // Retourner la fonction de désabonnement
   return unsubscribe;
@@ -1739,6 +1776,51 @@ export const getTokenForDocumentSigner = async (
     console.error("Erreur getTokenForDocumentSigner:", error);
     return null;
   }
+};
+
+// ✅ Batch: charger plusieurs enveloppes en une seule requête (évite N+1)
+export const getEnvelopesByDocumentIds = async (
+  documentIds: string[]
+): Promise<Map<string, Envelope>> => {
+  const result = new Map<string, Envelope>();
+  if (documentIds.length === 0) return result;
+
+  // Firestore "in" queries acceptent max 30 valeurs
+  const envelopeIds = documentIds.map((id) => `env${id.substring(3)}`);
+  const chunks: string[][] = [];
+  for (let i = 0; i < envelopeIds.length; i += 30) {
+    chunks.push(envelopeIds.slice(i, i + 30));
+  }
+
+  try {
+    const snapshots = await Promise.all(
+      chunks.map((chunk) =>
+        getDocs(
+          query(collection(db, "envelopes"), where("__name__", "in", chunk))
+        )
+      )
+    );
+
+    for (const snapshot of snapshots) {
+      for (const envDoc of snapshot.docs) {
+        const envelopeData = envDoc.data() as Envelope;
+        // Retrouver le documentId original depuis l'envelopeId
+        const docId = `doc${envDoc.id.substring(3)}`;
+        result.set(docId, envelopeData);
+      }
+    }
+  } catch (error) {
+    console.error("Erreur getEnvelopesByDocumentIds:", error);
+    // Fallback: requêtes individuelles
+    await Promise.all(
+      documentIds.map(async (docId) => {
+        const env = await getEnvelopeByDocumentId(docId);
+        if (env) result.set(docId, env);
+      })
+    );
+  }
+
+  return result;
 };
 
 // Récupérer l'enveloppe complète par document ID

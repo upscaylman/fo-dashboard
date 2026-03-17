@@ -17,7 +17,6 @@ import {
   X,
 } from "lucide-react";
 import React, {
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -36,10 +35,7 @@ import {
   deleteDocuments,
   deleteEmails,
   downloadDocument,
-  getDocumentIdFromToken,
-  getDocuments,
-  getEmails,
-  getEnvelopeByDocumentId,
+  getEnvelopesByDocumentIds,
   getTokenForDocumentSigner,
   subscribeToDocuments,
   subscribeToEmails,
@@ -173,96 +169,6 @@ const DashboardPage: React.FC = () => {
     };
   };
 
-  // Récupérer les documents unifiés (envoyés + reçus)
-  const fetchUnifiedDocuments = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [sentDocs, receivedEmails] = await Promise.all([
-        getDocuments(currentUser?.email),
-        getEmails(currentUser?.email),
-      ]);
-
-      // Déterminer le rôle de l'utilisateur
-      let role: "destinataire" | "expéditeur" | "both" = "expéditeur";
-      if (sentDocs.length > 0 && receivedEmails.length > 0) {
-        role = "both";
-      } else if (receivedEmails.length > 0 && sentDocs.length === 0) {
-        role = "destinataire";
-      }
-      setUserRole(role);
-
-      // Filtrer les éléments supprimés localement
-      const deletedItems = getDeletedItems();
-
-      // Convertir les documents envoyés en UnifiedDocument avec leurs destinataires
-      const unifiedSentDocs: UnifiedDocument[] = await Promise.all(
-        sentDocs
-          .filter((doc) => !deletedItems.has(doc.id)) // Filtrer les documents supprimés
-          .map(async (doc) => {
-            const envelope = await getEnvelopeByDocumentId(doc.id);
-            return {
-              ...doc,
-              source: "sent" as const,
-              recipients: envelope?.recipients || [],
-            };
-          })
-      );
-
-      // Convertir les emails reçus en UnifiedDocument et filtrer ceux supprimés
-      // Récupérer les IDs de documents associés aux emails de manière asynchrone
-      const emailDocumentIds = await Promise.all(
-        receivedEmails.map(async (email) => {
-          try {
-            if (email.signatureLink) {
-              const token = email.signatureLink.split("/").pop();
-              if (token) {
-                const documentId = await getDocumentIdFromToken(token);
-                return { emailId: email.id, documentId };
-              }
-            }
-          } catch (err) {
-            console.error("Erreur récupération documentId:", err);
-          }
-          return { emailId: email.id, documentId: null };
-        })
-      );
-
-      const unifiedReceivedDocs: UnifiedDocument[] = receivedEmails
-        .filter((email) => {
-          // Filtrer les emails supprimés (ID format: email-{emailId})
-          const emailItemId = `email-${email.id}`;
-          if (deletedItems.has(emailItemId)) return false;
-
-          // Filtrer aussi si le document associé est supprimé
-          const emailDocMapping = emailDocumentIds.find(
-            (m) => m.emailId === email.id
-          );
-          if (
-            emailDocMapping?.documentId &&
-            deletedItems.has(emailDocMapping.documentId)
-          ) {
-            return false;
-          }
-
-          return true;
-        })
-        .map(emailToUnifiedDocument);
-
-      // Combiner et trier par date décroissante
-      const allDocs = [...unifiedSentDocs, ...unifiedReceivedDocs].sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
-
-      setDocuments(allDocs);
-    } catch (error) {
-      console.error("Failed to fetch unified documents", error);
-      addToast("Erreur lors du chargement", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser?.email, addToast]);
-
   // 🔄 Listener en temps réel pour les documents unifiés (envoyés + reçus)
   useEffect(() => {
     if (!currentUser?.email) {
@@ -275,8 +181,9 @@ const DashboardPage: React.FC = () => {
 
     let sentDocs: Document[] = [];
     let receivedEmails: MockEmail[] = [];
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // Fonction pour mettre à jour les documents unifiés
+    // Fonction optimisée pour mettre à jour les documents unifiés
     const updateUnifiedDocuments = async () => {
       try {
         // Déterminer le rôle de l'utilisateur
@@ -291,57 +198,23 @@ const DashboardPage: React.FC = () => {
         // Filtrer les éléments supprimés localement
         const deletedItems = getDeletedItems();
 
-        // Convertir les documents envoyés en UnifiedDocument avec leurs destinataires
-        const unifiedSentDocs: UnifiedDocument[] = await Promise.all(
-          sentDocs
-            .filter((doc) => !deletedItems.has(doc.id)) // Filtrer les documents supprimés
-            .map(async (doc) => {
-              const envelope = await getEnvelopeByDocumentId(doc.id);
-              return {
-                ...doc,
-                source: "sent" as const,
-                recipients: envelope?.recipients || [],
-              };
-            })
+        // ✅ BATCH: charger toutes les enveloppes en 1 requête au lieu de N requêtes individuelles
+        const docsToLoad = sentDocs.filter((doc) => !deletedItems.has(doc.id));
+        const envelopesMap = await getEnvelopesByDocumentIds(
+          docsToLoad.map((doc) => doc.id)
         );
 
-        // Convertir les emails reçus en UnifiedDocument et filtrer ceux supprimés
-        // Récupérer les IDs de documents associés aux emails de manière asynchrone
-        const emailDocumentIds = await Promise.all(
-          receivedEmails.map(async (email) => {
-            try {
-              if (email.signatureLink) {
-                const token = email.signatureLink.split("/").pop();
-                if (token) {
-                  const documentId = await getDocumentIdFromToken(token);
-                  return { emailId: email.id, documentId };
-                }
-              }
-            } catch (err) {
-              console.error("Erreur récupération documentId:", err);
-            }
-            return { emailId: email.id, documentId: null };
-          })
-        );
+        const unifiedSentDocs: UnifiedDocument[] = docsToLoad.map((doc) => ({
+          ...doc,
+          source: "sent" as const,
+          recipients: envelopesMap.get(doc.id)?.recipients || [],
+        }));
 
+        // Convertir les emails reçus en UnifiedDocument (sans requête réseau supplémentaire)
         const unifiedReceivedDocs: UnifiedDocument[] = receivedEmails
           .filter((email) => {
-            // Filtrer les emails supprimés (ID format: email-{emailId})
             const emailItemId = `email-${email.id}`;
-            if (deletedItems.has(emailItemId)) return false;
-
-            // Filtrer aussi si le document associé est supprimé
-            const emailDocMapping = emailDocumentIds.find(
-              (m) => m.emailId === email.id
-            );
-            if (
-              emailDocMapping?.documentId &&
-              deletedItems.has(emailDocMapping.documentId)
-            ) {
-              return false;
-            }
-
-            return true;
+            return !deletedItems.has(emailItemId);
           })
           .map(emailToUnifiedDocument);
 
@@ -360,10 +233,16 @@ const DashboardPage: React.FC = () => {
       }
     };
 
+    // Debounce pour éviter la double exécution quand les 2 listeners arrivent quasi simultanément
+    const debouncedUpdate = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(updateUnifiedDocuments, 100);
+    };
+
     // S'abonner aux changements en temps réel des documents envoyés
     const unsubscribeSent = subscribeToDocuments(currentUser.email, (docs) => {
       sentDocs = docs;
-      updateUnifiedDocuments();
+      debouncedUpdate();
     });
 
     // S'abonner aux changements en temps réel des emails reçus
@@ -371,13 +250,12 @@ const DashboardPage: React.FC = () => {
       currentUser.email,
       (emails) => {
         receivedEmails = emails;
-        updateUnifiedDocuments();
+        debouncedUpdate();
       }
     );
 
     // Écouter les événements de suppression depuis InboxPage
     const handleItemsDeleted = () => {
-      // Forcer la mise à jour des documents pour filtrer les éléments supprimés
       updateUnifiedDocuments();
     };
 
@@ -386,6 +264,7 @@ const DashboardPage: React.FC = () => {
     // Nettoyer les listeners au démontage du composant
     return () => {
       console.log("📤 Désabonnement des listeners en temps réel");
+      if (debounceTimer) clearTimeout(debounceTimer);
       unsubscribeSent();
       unsubscribeReceived();
       window.removeEventListener("itemsDeleted", handleItemsDeleted);

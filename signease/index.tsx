@@ -51,15 +51,7 @@ window.addEventListener("unhandledrejection", (event) => {
   }
 });
 
-// 🗑️ Désenregistrer tout service worker existant (nettoyage)
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    registrations.forEach((registration) => {
-      registration.unregister();
-      console.log("🗑️ Service worker désenregistré:", registration.scope);
-    });
-  });
-}
+// Service Worker géré dans index.html — pas de désenregistrement ici
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

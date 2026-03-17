@@ -48,7 +48,7 @@ const AppContent: React.FC = () => {
   if (isLoading) {
     return (
       <>
-        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={800} />}
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="inline-block">
@@ -65,7 +65,7 @@ const AppContent: React.FC = () => {
   if (!currentUser && !isSigningRoute) {
     return (
       <>
-        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={800} />}
         <LoginPage
           onSubmit={(email) => setCurrentUser({ email })}
         />
@@ -80,7 +80,7 @@ const AppContent: React.FC = () => {
   // Si utilisateur, afficher l'app
   return (
     <>
-      {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+      {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={800} />}
       {currentUser && <Header />}
       {currentUser && <PresenceTracker />}
       <main className="flex-grow animate-fade-in page-transition">
