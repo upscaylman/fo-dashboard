@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import {
   HashRouter,
   Navigate,
@@ -6,30 +6,53 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
-import CookieBanner from "./components/CookieBanner";
-import Footer from "./components/Footer";
-import Header from "./components/Header";
-import { InstallPWAButton } from "./components/InstallPWAButton";
-import { PresenceTracker } from "./components/PresenceTracker";
+
+// ⏱️ Diagnostic
+(window as any).__PERF?.mark('App.tsx module chargé');
 import { SplashScreen } from "./components/SplashScreen";
 import { ToastProvider } from "./components/Toast";
 import { UserProvider, useUser } from "./components/UserContext";
-import VersionUpdateBanner from "./components/VersionUpdateBanner";
-import CookiePolicyPage from "./pages/CookiePolicyPage";
-import DashboardPage from "./pages/DashboardPage";
-import DeleteUserDataPage from "./pages/DeleteUserDataPage";
-import InboxPage from "./pages/InboxPage";
-import LoginPage from "./pages/LoginPage";
-import PrepareDocumentPage from "./pages/PrepareDocumentPage";
-import QuickSignPage from "./pages/QuickSignPage";
-import SignDocumentPage from "./pages/SignDocumentPage";
-import VerifyPage from "./pages/VerifyPage";
-// Vérification automatique de la configuration Firebase
-import "./utils/firebaseCheck";
+import Header from "./components/Header";
+
+// Lazy load des composants non-critiques pour le premier rendu
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const InstallPWAButton = lazy(() => import("./components/InstallPWAButton").then(m => ({ default: m.InstallPWAButton })));
+const VersionUpdateBanner = lazy(() => import("./components/VersionUpdateBanner"));
+
+// Vérification Firebase différée (pas bloquant)
+if (typeof window !== 'undefined') {
+  requestIdleCallback?.(() => import("./utils/firebaseCheck"), { timeout: 10000 });
+}
+
+// Lazy load des pages lourdes (PDF, signature, etc.)
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const PrepareDocumentPage = lazy(() => import("./pages/PrepareDocumentPage"));
+const QuickSignPage = lazy(() => import("./pages/QuickSignPage"));
+const SignDocumentPage = lazy(() => import("./pages/SignDocumentPage"));
+const InboxPage = lazy(() => import("./pages/InboxPage"));
+const VerifyPage = lazy(() => import("./pages/VerifyPage"));
+const CookiePolicyPage = lazy(() => import("./pages/CookiePolicyPage"));
+const DeleteUserDataPage = lazy(() => import("./pages/DeleteUserDataPage"));
+
+// Lazy load des composants secondaires
+const CookieBanner = lazy(() => import("./components/CookieBanner"));
+const Footer = lazy(() => import("./components/Footer"));
+const PresenceTracker = lazy(() => import("./components/PresenceTracker").then(m => ({ default: m.PresenceTracker })));
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+  </div>
+);
 
 const AppContent: React.FC = () => {
   const { currentUser, setCurrentUser, isLoading } = useUser();
   const location = useLocation();
+  
+  // ⏱️ Diagnostic - mesurer le premier rendu
+  useEffect(() => {
+    (window as any).__PERF?.mark('AppContent monté (1er rendu React)');
+  }, []);
   
   // Splash screen au premier chargement
   const [showSplash, setShowSplash] = useState(() => {
@@ -48,7 +71,7 @@ const AppContent: React.FC = () => {
   if (isLoading) {
     return (
       <>
-        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={800} />}
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="inline-block">
@@ -65,11 +88,13 @@ const AppContent: React.FC = () => {
   if (!currentUser && !isSigningRoute) {
     return (
       <>
-        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
-        <LoginPage
-          onSubmit={(email) => setCurrentUser({ email })}
-        />
-        <InstallPWAButton />
+        {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={800} />}
+        <Suspense fallback={null}>
+          <LoginPage
+            onSubmit={(email) => setCurrentUser({ email })}
+          />
+        </Suspense>
+        <Suspense fallback={null}><InstallPWAButton /></Suspense>
       </>
     );
   }
@@ -80,10 +105,11 @@ const AppContent: React.FC = () => {
   // Si utilisateur, afficher l'app
   return (
     <>
-      {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={1800} />}
+      {showSplash && <SplashScreen onFinished={handleSplashFinished} minDuration={800} />}
       {currentUser && <Header />}
-      {currentUser && <PresenceTracker />}
+      {currentUser && <Suspense fallback={null}><PresenceTracker /></Suspense>}
       <main className="flex-grow animate-fade-in page-transition">
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/prepare" element={<PrepareDocumentPage />} />
@@ -98,10 +124,11 @@ const AppContent: React.FC = () => {
           <Route path="/admin/delete-user-data" element={<DeleteUserDataPage />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
+        </Suspense>
       </main>
-      {currentUser && shouldShowFooter && <Footer />}
-      {currentUser && <CookieBanner />}
-      <InstallPWAButton />
+      {currentUser && shouldShowFooter && <Suspense fallback={null}><Footer /></Suspense>}
+      {currentUser && <Suspense fallback={null}><CookieBanner /></Suspense>}
+      <Suspense fallback={null}><InstallPWAButton /></Suspense>
     </>
   );
 };
@@ -113,7 +140,7 @@ const App: React.FC = () => {
         <HashRouter>
           <div className="min-h-screen bg-background text-onBackground flex flex-col">
             <AppContent />
-            <VersionUpdateBanner />
+            <Suspense fallback={null}><VersionUpdateBanner /></Suspense>
           </div>
         </HashRouter>
       </ToastProvider>

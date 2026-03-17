@@ -247,32 +247,30 @@ export const subscribeToDocuments = (
   onUpdate: (documents: Document[]) => void
 ): (() => void) => {
   if (!userEmail) {
-    return () => {}; // Retourner une fonction vide si pas d'email
+    return () => {};
   }
 
   const userEmailLower = userEmail.toLowerCase();
-  const q = query(collection(db, "documents"), orderBy("updatedAt", "desc"));
+  // Filtrer côté Firestore au lieu de récupérer TOUS les documents
+  const q = query(
+    collection(db, "documents"),
+    where("creatorEmail", "==", userEmailLower),
+    orderBy("updatedAt", "desc")
+  );
 
-  // Créer le listener en temps réel
+  const subStart = performance.now();
+  let firstSnapshot = true;
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    const allDocuments = snapshot.docs.map(
+    if (firstSnapshot) {
+      console.log(`\u23F1\uFE0F [Firestore] subscribeToDocuments premier snapshot: ${(performance.now() - subStart).toFixed(0)}ms (${snapshot.docs.length} docs)`);
+      firstSnapshot = false;
+    }
+    const visibleDocuments = snapshot.docs.map(
       (doc) =>
         ({
           ...doc.data(),
           id: doc.id,
         } as Document)
-    );
-
-    // Filtrer uniquement les documents de l'utilisateur (insensible à la casse)
-    const visibleDocuments = allDocuments.filter(
-      (doc) => doc.creatorEmail?.toLowerCase() === userEmailLower
-    );
-
-    console.log(
-      "🔄 Documents mis à jour en temps réel:",
-      visibleDocuments.length,
-      "- Statuts:",
-      visibleDocuments.map(d => `${d.name}: ${d.status}`).join(", ")
     );
     onUpdate(visibleDocuments);
   });
@@ -300,18 +298,20 @@ export const subscribeToEmails = (
 
   // Créer le listener en temps réel
   try {
+    const emailSubStart = performance.now();
+    let emailFirstSnapshot = true;
     unsubscribeFn = onSnapshot(
       q,
       (snapshot) => {
+        if (emailFirstSnapshot) {
+          console.log(`\u23F1\uFE0F [Firestore] subscribeToEmails premier snapshot: ${(performance.now() - emailSubStart).toFixed(0)}ms (${snapshot.docs.length} emails)`);
+          emailFirstSnapshot = false;
+        }
         const emails = snapshot.docs.map((docSnapshot) => {
           const data = docSnapshot.data();
           return { id: docSnapshot.id, ...data } as MockEmail;
         });
 
-        console.log(
-          "🔄 Emails reçus mis à jour en temps réel:",
-          emails.length
-        );
         onUpdate(emails);
       },
       (error) => {
@@ -334,10 +334,6 @@ export const subscribeToEmails = (
             emails.sort(
               (a, b) =>
                 new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime()
-            );
-            console.log(
-              "🔄 Emails reçus mis à jour en temps réel (sans orderBy):",
-              emails.length
             );
             onUpdate(emails);
           });
@@ -1741,17 +1737,32 @@ export const getTokenForDocumentSigner = async (
   }
 };
 
-// Récupérer l'enveloppe complète par document ID
+// Cache des enveloppes pour éviter les lectures Firestore répétées
+const envelopeCache = new Map<string, { data: Envelope | null; timestamp: number }>();
+const ENVELOPE_CACHE_TTL = 60000; // 60 secondes
+
+// Récupérer l'enveloppe complète par document ID (avec cache)
 export const getEnvelopeByDocumentId = async (
   documentId: string
 ): Promise<Envelope | null> => {
   try {
     const envelopeId = `env${documentId.substring(3)}`;
+    
+    // Vérifier le cache
+    const cached = envelopeCache.get(envelopeId);
+    if (cached && Date.now() - cached.timestamp < ENVELOPE_CACHE_TTL) {
+      return cached.data;
+    }
+    
+    const envStart = performance.now();
     const envelopeDoc = await getDoc(doc(db, "envelopes", envelopeId));
-
-    if (!envelopeDoc.exists()) return null;
-
-    return envelopeDoc.data() as Envelope;
+    console.log(`\u23F1\uFE0F [Firestore] getEnvelope ${envelopeId}: ${(performance.now() - envStart).toFixed(0)}ms`);
+    const data = envelopeDoc.exists() ? envelopeDoc.data() as Envelope : null;
+    
+    // Stocker en cache
+    envelopeCache.set(envelopeId, { data, timestamp: Date.now() });
+    
+    return data;
   } catch (error) {
     console.error("Erreur getEnvelopeByDocumentId:", error);
     return null;

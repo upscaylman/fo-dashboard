@@ -1,17 +1,9 @@
 // Service Worker pour SignEase PWA
-const CACHE_NAME = 'signease-cache-v1';
+const CACHE_NAME = 'signease-cache-v3';
 const OFFLINE_URL = '/offline.html';
 
-// Ressources à mettre en cache immédiatement
+// Précacher uniquement la page offline (index.html géré par stale-while-revalidate)
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/index.css',
-  '/signEase_HD.png',
-  '/FOmetaux_HD.png',
-  '/logo-fo-metaux.svg',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
   '/offline.html'
 ];
 
@@ -45,49 +37,60 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Stratégie de cache : Network First, puis Cache, puis Offline
+// Stratégie de cache optimisée :
+// - Assets hashés (/assets/*) → Cache First (le hash garantit la fraîcheur)
+// - Navigation → Network Only (pas d'interception pour éviter la latence)
+// - Autres same-origin → Stale-While-Revalidate
 self.addEventListener('fetch', (event) => {
   // Ignorer les requêtes non-GET
   if (event.request.method !== 'GET') return;
   
   const url = new URL(event.request.url);
   
-  // Ignorer les requêtes vers des APIs externes (Firebase, etc.)
+  // Ignorer les requêtes vers des APIs externes (Firebase, Supabase, CDN)
   if (url.origin !== self.location.origin) return;
   
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Si la réponse est valide, la mettre en cache
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
+  // Navigation (page HTML) → NE PAS intercepter pour éviter la latence
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(OFFLINE_URL) || new Response('Hors ligne', { status: 503 });
       })
-      .catch(async () => {
-        // En cas d'échec réseau, chercher dans le cache
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        // Si c'est une navigation, afficher la page offline
-        if (event.request.mode === 'navigate') {
-          const offlineResponse = await caches.match(OFFLINE_URL);
-          if (offlineResponse) {
-            return offlineResponse;
+    );
+    return;
+  }
+  
+  // Assets hashés → Cache First (instantané, le hash garantit la version)
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
-        }
-        
-        // Sinon retourner une erreur
-        return new Response('Contenu non disponible hors ligne', {
-          status: 503,
-          statusText: 'Service Unavailable'
+          return response;
         });
       })
+    );
+    return;
+  }
+  
+  // Autres ressources same-origin (images, manifest, etc.) → Stale-While-Revalidate
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      const fetchPromise = fetch(event.request).then((response) => {
+        if (response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => cached || new Response('', { status: 503 }));
+      
+      // Retourner le cache immédiatement si disponible, sinon attendre le réseau
+      return cached || fetchPromise;
+    })
   );
 });
 

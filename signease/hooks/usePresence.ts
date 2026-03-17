@@ -106,7 +106,7 @@ export const usePresence = (options?: UsePresenceOptions) => {
       if (result?.data?.[0]?.id) {
         sessionIdRef.current = result.data[0].id;
         localStorage.setItem(SESSION_STORAGE_KEY, result.data[0].id);
-        console.log('SignEase session created:', result.data[0].id);
+        // Session créée silencieusement
       }
     } catch (e) {
       console.warn('Presence SignEase error:', e);
@@ -134,11 +134,22 @@ export const usePresence = (options?: UsePresenceOptions) => {
     const storedSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
     if (storedSessionId) sessionIdRef.current = storedSessionId;
 
-    updatePresence('signease');
-
-    heartbeatRef.current = setInterval(() => {
+    // Différer le tracking initial pour ne pas bloquer le rendu
+    const startPresence = () => {
       updatePresence('signease');
-    }, HEARTBEAT_INTERVAL_MS);
+      heartbeatRef.current = setInterval(() => {
+        updatePresence('signease');
+      }, HEARTBEAT_INTERVAL_MS);
+    };
+
+    // Utiliser requestIdleCallback si disponible, sinon setTimeout
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if ('requestIdleCallback' in window) {
+      idleId = (window as any).requestIdleCallback(startPresence, { timeout: 5000 });
+    } else {
+      timeoutId = setTimeout(startPresence, 3000);
+    }
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') updatePresence('signease');
@@ -158,6 +169,8 @@ export const usePresence = (options?: UsePresenceOptions) => {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
+      if (idleId !== undefined && 'cancelIdleCallback' in window) (window as any).cancelIdleCallback(idleId);
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);

@@ -441,31 +441,37 @@ bot.command('monitor', guard, async (ctx) => {
 });
 
 // --- Démarrage ---
-bot.launch().then(async () => {
-  console.log('[OK] Bot Telegram DocEase demarre.');
-  console.log(`[INFO] Utilisateurs autorises: ${ALLOWED_USERS.length > 0 ? ALLOWED_USERS.join(', ') : 'tous (aucune restriction)'}`);
+// Note: Telegraf 4.x launch() ne résout la Promise qu'à l'arrêt du bot.
+// L'initialisation doit se faire AVANT ou en parallèle de launch().
+(async () => {
+  try {
+    // Enregistrement des commandes dans le menu Telegram
+    await bot.telegram.setMyCommands([
+      { command: 'demarrer',  description: 'Demarrer tous les services DocEase' },
+      { command: 'arreter',   description: 'Arreter tous les services DocEase' },
+      { command: 'status',    description: 'Etat des services (n8n, formulaire, ngrok...)' },
+      { command: 'url',       description: 'Obtenir l\'URL publique ngrok' },
+      { command: 'logs',      description: 'Afficher les derniers logs n8n' },
+      { command: 'monitor',   description: 'Activer/desactiver les alertes de panne' },
+      { command: 'aide',      description: 'Afficher l\'aide et les commandes disponibles' },
+    ]);
+    console.log('[OK] Commandes Telegram enregistrees.');
 
-  // Enregistrement des commandes dans le menu Telegram
-  await bot.telegram.setMyCommands([
-    { command: 'demarrer',  description: 'Demarrer tous les services DocEase' },
-    { command: 'arreter',   description: 'Arreter tous les services DocEase' },
-    { command: 'status',    description: 'Etat des services (n8n, formulaire, ngrok...)' },
-    { command: 'url',       description: 'Obtenir l\'URL publique ngrok' },
-    { command: 'logs',      description: 'Afficher les derniers logs n8n' },
-    { command: 'monitor',   description: 'Activer/desactiver les alertes de panne' },
-    { command: 'aide',      description: 'Afficher l\'aide et les commandes disponibles' },
-  ]);
-  console.log('[OK] Commandes Telegram enregistrees.');
+    // Lancer le polling (ne bloque pas grâce à l'absence d'await)
+    bot.launch({ dropPendingUpdates: true });
+    console.log('[OK] Bot Telegram DocEase demarre.');
+    console.log(`[INFO] Utilisateurs autorises: ${ALLOWED_USERS.length > 0 ? ALLOWED_USERS.join(', ') : 'tous (aucune restriction)'}`);
 
-  // Demarrage du monitoring
-  monitorInterval = setInterval(monitorServices, MONITOR_INTERVAL);
-  console.log(`[OK] Surveillance active (toutes les ${MONITOR_INTERVAL / 1000}s).`);
-  // Premier check apres 10s (laisser le temps au bot de s'initialiser)
-  setTimeout(monitorServices, 10000);
-}).catch(err => {
-  console.error('[ERREUR] Impossible de demarrer le bot:', err.message);
-  process.exit(1);
-});
+    // Demarrage du monitoring
+    monitorInterval = setInterval(monitorServices, MONITOR_INTERVAL);
+    console.log(`[OK] Surveillance active (toutes les ${MONITOR_INTERVAL / 1000}s).`);
+    // Premier check apres 10s (laisser le temps au bot de s'initialiser)
+    setTimeout(monitorServices, 10000);
+  } catch (err) {
+    console.error('[ERREUR] Impossible de demarrer le bot:', err.message);
+    process.exit(1);
+  }
+})();
 
 // Arrêt propre
 process.once('SIGINT',  () => bot.stop('SIGINT'));

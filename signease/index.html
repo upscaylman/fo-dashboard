@@ -2,6 +2,8 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <!-- ⏱️ DIAGNOSTIC PERF - point de départ -->
+    <script>window.__PERF={t0:performance.now(),marks:[]};window.__PERF.mark=function(n){var t=performance.now();this.marks.push({name:n,time:t,delta:t-this.t0});console.log('⏱️ '+n+': '+(t-this.t0).toFixed(0)+'ms');};</script>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
@@ -81,8 +83,12 @@
     />
     <meta name="author" content="FO Métaux" />
     
+    <script>window.__PERF.mark('avant-fonts');</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Preconnect Firebase pour réduire la latence -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
@@ -91,6 +97,69 @@
       href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap"
       rel="stylesheet"
     />
+
+    <link rel="stylesheet" href="/index.css" />
+    <!-- Styles critiques inline pour éviter FOUC pendant le chargement de Tailwind -->
+    <style>
+      body { background: #FFFBFF; color: #201A19; font-family: Manrope, sans-serif; -webkit-font-smoothing: antialiased; }
+      .bg-background { background: #FFFBFF; }
+      .text-onSurface { color: #201A19; }
+      .text-onBackground { color: #201A19; }
+      .bg-surface { background: #FFFBFF; }
+      .font-sans { font-family: Manrope, sans-serif; }
+      .antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+      .min-h-screen { min-height: 100vh; }
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .items-center { align-items: center; }
+      .justify-center { justify-content: center; }
+      .h-screen { height: 100vh; }
+      .text-center { text-align: center; }
+      .animate-spin { animation: spin 1s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .rounded-full { border-radius: 9999px; }
+      .h-12 { height: 3rem; }
+      .w-12 { width: 3rem; }
+      .border-b-2 { border-bottom: 2px solid; }
+      .border-primary { border-color: #B71C1C; }
+      .mt-4 { margin-top: 1rem; }
+      .text-onSurfaceVariant { color: #534341; }
+    </style>
+    <!-- EmailJS SDK chargé en async (utilisé uniquement à l'envoi de documents) -->
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+      async
+    ></script>
+  </head>
+  <body class="bg-background text-onSurface font-sans antialiased">
+    <noscript>
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          text-align: center;
+          padding: 2rem;
+          font-family: system-ui, -apple-system, sans-serif;
+        "
+      >
+        <div>
+          <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem">
+            SignEase by FO Metaux
+          </h1>
+          <p style="color: #666">
+            Veuillez activer JavaScript pour utiliser cette application.
+          </p>
+        </div>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    <script>window.__PERF.mark('avant-app-js');</script>
+    <script type="module" src="/index.tsx"></script>
+    
+    <!-- Tailwind CSS CDN chargé APRÈS le JS principal pour ne pas bloquer le rendu initial -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -139,49 +208,6 @@
         },
       };
     </script>
-    <link rel="stylesheet" href="/index.css" />
-    <script type="importmap">
-      {
-        "imports": {
-          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-          "react/": "https://aistudiocdn.com/react@^19.2.0/",
-          "react": "https://aistudiocdn.com/react@^19.2.0",
-          "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.4",
-          "lucide-react": "https://aistudiocdn.com/lucide-react@^0.545.0",
-          "pdfjs-dist": "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs"
-        }
-      }
-    </script>
-    <script
-      type="text/javascript"
-      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
-    ></script>
-  </head>
-  <body class="bg-background text-onSurface font-sans antialiased">
-    <noscript>
-      <div
-        style="
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 100vh;
-          text-align: center;
-          padding: 2rem;
-          font-family: system-ui, -apple-system, sans-serif;
-        "
-      >
-        <div>
-          <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem">
-            SignEase by FO Metaux
-          </h1>
-          <p style="color: #666">
-            Veuillez activer JavaScript pour utiliser cette application.
-          </p>
-        </div>
-      </div>
-    </noscript>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
     
     <!-- Enregistrement du Service Worker pour PWA -->
     <script>
@@ -210,11 +236,48 @@
         console.log('📱 SignEase a été installé!');
       });
       
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        console.log('💡 Installation disponible');
+      // beforeinstallprompt est géré par InstallPWAButton.tsx
+      // Ne PAS intercepter ici pour éviter le warning Chrome
+    </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        window.__PERF.mark('DOMContentLoaded');
+      });
+      window.addEventListener('load', function() {
+        window.__PERF.mark('window-load');
+        // Résumé final
+        setTimeout(function() {
+          console.log('\n📊 === RÉSUMÉ PERF SIGNEASE ===');
+          window.__PERF.marks.forEach(function(m) {
+            var bar = '█'.repeat(Math.min(Math.round(m.delta/100), 30));
+            console.log(bar + ' ' + m.name + ': ' + m.delta.toFixed(0) + 'ms');
+          });
+          // Navigation Timing
+          var nav = performance.getEntriesByType('navigation')[0];
+          if (nav) {
+            console.log('\n🌐 === NETWORK TIMING ===');
+            console.log('DNS: ' + (nav.domainLookupEnd - nav.domainLookupStart).toFixed(0) + 'ms');
+            console.log('TCP: ' + (nav.connectEnd - nav.connectStart).toFixed(0) + 'ms');
+            console.log('TLS: ' + (nav.secureConnectionStart > 0 ? (nav.connectEnd - nav.secureConnectionStart).toFixed(0) : '0') + 'ms');
+            console.log('TTFB: ' + (nav.responseStart - nav.requestStart).toFixed(0) + 'ms');
+            console.log('Download HTML: ' + (nav.responseEnd - nav.responseStart).toFixed(0) + 'ms');
+            console.log('DOM Interactive: ' + nav.domInteractive.toFixed(0) + 'ms');
+            console.log('DOM Complete: ' + nav.domComplete.toFixed(0) + 'ms');
+            console.log('Load Event: ' + nav.loadEventEnd.toFixed(0) + 'ms');
+          }
+          // Resources lentes
+          var res = performance.getEntriesByType('resource');
+          var slow = res.filter(function(r) { return r.duration > 200; }).sort(function(a,b) { return b.duration - a.duration; });
+          if (slow.length > 0) {
+            console.log('\n🐌 === RESSOURCES LENTES (>200ms) ===');
+            slow.forEach(function(r) {
+              var name = r.name.split('/').pop().substring(0, 50);
+              var size = r.transferSize ? (r.transferSize/1024).toFixed(0) + 'kB' : '(cache)';
+              console.log(r.duration.toFixed(0) + 'ms  ' + size + '  ' + name);
+            });
+          }
+          console.log('📊 === FIN RÉSUMÉ ===\n');
+        }, 500);
       });
     </script>
   </body>

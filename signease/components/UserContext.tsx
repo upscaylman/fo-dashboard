@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { isAdmin as checkIsAdmin } from '../services/firebaseApi';
+import { isAdmin as checkIsAdmin } from '../utils/adminCheck';
 
 interface User {
   email: string;
