@@ -138,24 +138,33 @@ if ($port8080) {
     }
 }
 
-$servePath = Join-Path $formulaireDir "serve.cjs"
-if (-not (Test-Path $servePath)) {
-    Write-Err "serve.cjs introuvable : $servePath"
+$watchdogPath = Join-Path $formulaireDir "watchdog.cjs"
+if (-not (Test-Path $watchdogPath)) {
+    Write-Err "watchdog.cjs introuvable : $watchdogPath"
     Read-Host "Appuyez sur Entree pour fermer"
     exit 1
 }
 
-Start-Process node -ArgumentList "`"$servePath`"" -WindowStyle Minimized -WorkingDirectory $formulaireDir
-Write-Info "Attente du demarrage (3s)..."
-Start-Sleep -Seconds 3
+Start-Process node -ArgumentList "`"$watchdogPath`"" -WindowStyle Minimized -WorkingDirectory $formulaireDir
+Write-Info "Attente du demarrage (5s)..."
+Start-Sleep -Seconds 5
 
-# Verifier que le serveur repond
-try {
-    $null = Invoke-WebRequest -Uri "http://localhost:8080" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
-    Write-Ok "Serveur formulaire demarre : http://localhost:8080"
-} catch {
+# Verifier que le serveur repond (3 tentatives)
+$serverOk = $false
+for ($i = 1; $i -le 3; $i++) {
+    try {
+        $null = Invoke-WebRequest -Uri "http://localhost:8080/api/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+        $serverOk = $true
+        break
+    } catch {
+        if ($i -lt 3) { Start-Sleep -Seconds 2 }
+    }
+}
+if ($serverOk) {
+    Write-Ok "Serveur formulaire demarre : http://localhost:8080 (watchdog actif)"
+} else {
     Write-Warn "Le serveur ne repond pas encore sur le port 8080."
-    Write-Info "Il est peut-etre en cours de demarrage. Reessayez dans quelques secondes."
+    Write-Info "Le watchdog le relancera automatiquement."
 }
 
 Write-Host ""

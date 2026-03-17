@@ -66,18 +66,27 @@ if (Test-Path (Join-Path $formulaireDir "package.json")) {
     Push-Location $formulaireDir
     npm run build 2>&1 | ForEach-Object { Write-Host "       $_" -ForegroundColor Gray }
     Pop-Location
-    Write-Host "[INFO] Demarrage du serveur Node.js..." -ForegroundColor Yellow
-    $servePath = Join-Path $formulaireDir "serve.cjs"
-    Start-Process node -ArgumentList "`"$servePath`"" -WindowStyle Minimized
-    Write-Host "[INFO] Attente du demarrage serveur (3s)..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 3
+    Write-Host "[INFO] Demarrage du serveur Node.js (avec watchdog)..." -ForegroundColor Yellow
+    $watchdogPath = Join-Path $formulaireDir "watchdog.cjs"
+    Start-Process node -ArgumentList "`"$watchdogPath`"" -WindowStyle Minimized
+    Write-Host "[INFO] Attente du demarrage serveur (5s)..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 5
     
-    # Verifier que le port 8080 repond
-    try {
-        $null = Invoke-WebRequest -Uri "http://localhost:8080" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
-        Write-Host "[OK] Serveur formulaire demarre sur http://localhost:8080" -ForegroundColor Green
-    } catch {
-        Write-Host "[ATTENTION] Le port 8080 ne repond pas encore." -ForegroundColor Yellow
+    # Verifier que le port 8080 repond (3 tentatives)
+    $serverOk = $false
+    for ($i = 1; $i -le 3; $i++) {
+        try {
+            $null = Invoke-WebRequest -Uri "http://localhost:8080/api/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            $serverOk = $true
+            break
+        } catch {
+            if ($i -lt 3) { Start-Sleep -Seconds 2 }
+        }
+    }
+    if ($serverOk) {
+        Write-Host "[OK] Serveur formulaire demarre sur http://localhost:8080 (watchdog actif)" -ForegroundColor Green
+    } else {
+        Write-Host "[ATTENTION] Le port 8080 ne repond pas encore. Le watchdog le relancera automatiquement." -ForegroundColor Yellow
     }
 } else {
     Write-Host "[ATTENTION] templates\formulaire introuvable, serveur non demarre." -ForegroundColor Yellow

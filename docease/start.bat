@@ -63,11 +63,11 @@ if exist "%SCRIPT_DIR%templates\formulaire\package.json" (
     cd /d "%SCRIPT_DIR%templates\formulaire"
     call npm run build
     cd /d "%SCRIPT_DIR%"
-    echo [INFO] Demarrage du serveur Node.js...
-    start "DocEase - Formulaire" /min node "%SCRIPT_DIR%templates\formulaire\serve.cjs"
-    echo [INFO] Attente du demarrage serveur (3s)...
-    timeout /t 3 /nobreak >nul
-    echo [OK] Serveur formulaire demarre sur http://localhost:8080
+    echo [INFO] Demarrage du serveur Node.js (avec watchdog)...
+    start "DocEase - Formulaire (watchdog)" /min node "%SCRIPT_DIR%templates\formulaire\watchdog.cjs"
+    echo [INFO] Attente du demarrage serveur (5s)...
+    timeout /t 5 /nobreak >nul
+    echo [OK] Serveur formulaire demarre sur http://localhost:8080 (watchdog actif)
 ) else (
     echo [ATTENTION] templates\formulaire introuvable, serveur non demarre
 )
