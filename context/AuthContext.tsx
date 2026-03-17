@@ -201,6 +201,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Vérifier si on a un callback OAuth dans le hash
       const hash = window.location.hash;
       
+      // Gérer les erreurs OAuth renvoyées par Azure dans le hash
+      if (hash.includes('error=')) {
+        const errorParams = new URLSearchParams(hash.substring(1));
+        const errorCode = errorParams.get('error');
+        const errorDescription = errorParams.get('error_description');
+        console.error('❌ Erreur OAuth callback:', errorCode, errorDescription);
+        window.history.replaceState({}, document.title, '/');
+        if (mounted) setIsLoading(false);
+        return;
+      }
+      
       if (hash.includes('access_token')) {
         console.log('🎯 Callback OAuth détecté dans le hash!');
         
@@ -327,15 +338,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw new Error(error.message);
     } else if (provider === 'outlook') {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'azure',
-        options: {
-          scopes: 'email',
-          redirectTo: window.location.origin,
-        },
-      });
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'azure',
+          options: {
+            scopes: 'openid email profile',
+            redirectTo: window.location.origin,
+          },
+        });
 
-      if (error) throw new Error('Erreur Outlook');
+        if (error) {
+          console.error('OAuth Azure error:', error);
+          if (error.message?.includes('provider is not enabled')) {
+            throw new Error('Le fournisseur Azure/Outlook n\'est pas activé dans Supabase. Contactez l\'administrateur.');
+          }
+          throw new Error(`Erreur Outlook: ${error.message}`);
+        }
+      } catch (err: any) {
+        if (err.message?.includes('fetch') || err.message?.includes('network') || err.message?.includes('Failed to fetch')) {
+          throw new Error('Impossible de joindre le serveur d\'authentification. Vérifiez votre connexion ou réessayez plus tard.');
+        }
+        throw err;
+      }
     }
   };
 

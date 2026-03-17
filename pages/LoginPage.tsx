@@ -53,7 +53,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
             await login('outlook');
         } catch (err: any) {
             console.error('Erreur OAuth:', err);
-            setError(err.message || 'Erreur de connexion avec Outlook.');
+            // Messages d'erreur spécifiques selon le type d'erreur
+            if (err.message?.includes('serveur d\'authentification') || err.message?.includes('fetch')) {
+                setError('Le serveur d\'authentification est temporairement indisponible. Réessayez dans quelques minutes ou utilisez la connexion par email.');
+            } else if (err.message?.includes('provider is not enabled')) {
+                setError('La connexion Outlook n\'est pas activée. Contactez l\'administrateur.');
+            } else {
+                setError(err.message || 'Erreur de connexion avec Outlook. Vérifiez votre compte Microsoft.');
+            }
         } finally {
             setIsSubmitting(false);
         }
