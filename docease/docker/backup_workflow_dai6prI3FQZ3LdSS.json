@@ -1,0 +1,9 @@
+{
+  "id": "dai6prI3FQZ3LdSS",
+  "name": "gpt_generator",
+  "active": 0,
+  "nodes": "[]",
+  "connections": "{}",
+  "settings": "{\"executionOrder\":\"v1\",\"callerPolicy\":\"workflowsFromSameOwner\",\"availableInMCP\":false,\"errorWorkflow\":\"dai6prI3FQZ3LdSS\"}",
+  "staticData": null
+}
