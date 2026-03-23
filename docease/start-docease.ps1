@@ -37,7 +37,7 @@ Write-Host "   DocEase - DEMARRAGE" -ForegroundColor Cyan
 Write-Host "  ============================================" -ForegroundColor Cyan
 Write-Host ""
 
-$totalSteps = 4
+$totalSteps = 5
 
 # ═══════════════════════════════════════════
 # ETAPE 1 : Docker
@@ -134,7 +134,6 @@ if ($port8080) {
         Write-Info "Processus arrete."
     } else {
         Write-Warn "Serveur non demarre (port occupe)."
-        goto :ngrok
     }
 }
 
@@ -198,6 +197,39 @@ if ($ngrokRunning) {
     }
 }
 
+Write-Host ""
+
+# ═══════════════════════════════════════════
+# ETAPE 5 : Bot Telegram
+# ═══════════════════════════════════════════
+Write-Step 5 $totalSteps "Demarrage du bot Telegram..."
+
+$telegramDir = Join-Path $ScriptDir "telegram-bot"
+$botScript = Join-Path $telegramDir "bot.js"
+
+if (Test-Path $botScript) {
+    # Verifier si le bot tourne deja
+    $botRunning = Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object {
+        try { (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)" -ErrorAction SilentlyContinue).CommandLine -match 'bot\.js' } catch { $false }
+    }
+    if ($botRunning) {
+        Write-Ok "Bot Telegram deja en cours d'execution."
+    } else {
+        # Installer les dependances si necessaire
+        if (-not (Test-Path (Join-Path $telegramDir "node_modules"))) {
+            Write-Info "Installation des dependances du bot Telegram..."
+            Push-Location $telegramDir
+            npm install 2>&1 | Select-Object -Last 3 | ForEach-Object { Write-Host "       $_" -ForegroundColor Gray }
+            Pop-Location
+        }
+        Start-Process node -ArgumentList "`"$botScript`"" -WindowStyle Minimized -WorkingDirectory $telegramDir
+        Start-Sleep -Seconds 3
+        Write-Ok "Bot Telegram demarre."
+    }
+} else {
+    Write-Warn "telegram-bot/bot.js introuvable. Bot non demarre."
+}
+
 # Recuperer l'URL ngrok
 $ngrokUrl = $null
 try {
@@ -218,6 +250,7 @@ Write-Host "    Formulaire :  " -NoNewline; Write-Host "http://localhost:8080" -
 Write-Host "    n8n :         " -NoNewline; Write-Host "http://localhost:5678" -ForegroundColor Cyan
 Write-Host "    Ollama :      " -NoNewline; Write-Host "http://localhost:11434" -ForegroundColor Cyan
 Write-Host "    ngrok panel : " -NoNewline; Write-Host "http://localhost:4040" -ForegroundColor Cyan
+Write-Host "    Telegram :    " -NoNewline; Write-Host "Bot actif" -ForegroundColor Cyan
 if ($ngrokUrl) {
     Write-Host "    URL publique :" -NoNewline; Write-Host " $ngrokUrl" -ForegroundColor Magenta
 }

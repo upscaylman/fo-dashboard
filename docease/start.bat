@@ -78,6 +78,23 @@ echo [3/3] Demarrage de ngrok (tunnel http 8080)...
 start "DocEase - ngrok" /min cmd /c ""%SCRIPT_DIR%scripts\start-ngrok-8080.bat""
 timeout /t 5 /nobreak >nul
 
+REM === ETAPE 4: Bot Telegram ===
+echo.
+echo [4/4] Demarrage du bot Telegram...
+if exist "%SCRIPT_DIR%telegram-bot\bot.js" (
+    if not exist "%SCRIPT_DIR%telegram-bot\node_modules" (
+        echo [INFO] Installation des dependances du bot Telegram...
+        cd /d "%SCRIPT_DIR%telegram-bot"
+        call npm install
+        cd /d "%SCRIPT_DIR%"
+    )
+    start "DocEase - Telegram Bot" /min node "%SCRIPT_DIR%telegram-bot\bot.js"
+    timeout /t 3 /nobreak >nul
+    echo [OK] Bot Telegram demarre
+) else (
+    echo [ATTENTION] telegram-bot/bot.js introuvable. Bot non demarre.
+)
+
 REM Recuperer l'URL ngrok
 set "NGROK_URL="
 for /f "delims=" %%u in ('powershell -ExecutionPolicy Bypass -Command "try { $r = Invoke-RestMethod -Uri 'http://localhost:4040/api/tunnels' -TimeoutSec 5 -ErrorAction Stop; ($r.tunnels | Where-Object { $_.proto -eq 'https' } | Select-Object -First 1).public_url } catch { '' }" 2^>nul') do set "NGROK_URL=%%u"
@@ -92,6 +109,7 @@ echo    - n8n:         http://localhost:5678
 echo    - Formulaire:  http://localhost:8080
 echo    - Ollama:      http://localhost:11434
 echo    - ngrok:       http://localhost:4040
+echo    - Telegram:    Bot actif
 if defined NGROK_URL (
     echo    - URL publique: %NGROK_URL%
 )

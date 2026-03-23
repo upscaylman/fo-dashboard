@@ -219,7 +219,7 @@ bot.command('demarrer', guard, async (ctx) => {
   // === ETAPE 2: Serveur formulaire ===
   try {
     await ctx.reply('[2/3] Demarrage du serveur formulaire...');
-    const serveScript = path.join(FORM_DIR, 'serve.cjs');
+    const serveScript = path.join(FORM_DIR, 'watchdog.cjs');
     const distExists = existsSync(path.join(FORM_DIR, 'dist', 'index.html'));
 
     // Build seulement si dist n'existe pas
@@ -250,7 +250,7 @@ bot.command('demarrer', guard, async (ctx) => {
         ? '[OK] Serveur formulaire demarre sur :8080'
         : '[ATTENTION] Serveur formulaire ne repond pas encore');
     } else {
-      await ctx.reply('[ATTENTION] serve.cjs ou dist/ introuvable. Lancez un build manuellement.');
+      await ctx.reply('[ATTENTION] watchdog.cjs ou dist/ introuvable. Lancez un build manuellement.');
     }
   } catch (e) {
     await ctx.reply(`[ERREUR] Etape formulaire: ${e.message}`);
